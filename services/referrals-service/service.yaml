@@ -1,0 +1,17 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: referrals-service
+port: 8091
+database: xappx_referrals_service
+owns: referrals
+external_ids: app_id, referrer_id, referee_id
+publishes:
+- com.xappx.referral.registered
+- com.xappx.referral.qualified
+- com.xappx.referral.converted
+consumes:
+- com.xappx.user.created
+health:
+  liveness: /healthz
+  readiness: /readyz

@@ -1,0 +1,19 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: vault-service
+port: 8083
+database: xappx_vault_service
+owns: vaults, files, file_acl
+external_ids: app_id, client_id, owner_id
+publishes:
+- com.xappx.vault.created
+- com.xappx.vault.item.stored
+- com.xappx.vault.retention.expired
+- com.xappx.vault.retention.opened
+consumes:
+- com.xappx.application.product.disabled
+- com.xappx.subscription.downgraded
+health:
+  liveness: /healthz
+  readiness: /readyz

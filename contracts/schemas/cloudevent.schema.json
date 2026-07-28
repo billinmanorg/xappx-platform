@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.xappx.com/schemas/cloudevent.schema.json",
+  "title": "CloudEvents v1.0 envelope",
+  "type": "object",
+  "required": [
+    "specversion",
+    "type",
+    "source",
+    "id",
+    "time"
+  ],
+  "properties": {
+    "specversion": {
+      "const": "1.0"
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^com\\.xappx\\."
+    },
+    "source": {
+      "type": "string",
+      "format": "uri",
+      "description": "Emitting service, e.g. https://api.xappx.com/services/twins-service"
+    },
+    "id": {
+      "type": "string",
+      "description": "Consumers deduplicate on this. Delivery is at-least-once."
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "datacontenttype": {
+      "const": "application/json"
+    },
+    "correlationid": {
+      "type": "string",
+      "description": "Extension. Propagated from the originating request."
+    },
+    "appid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Extension. Tenant scope of the event."
+    },
+    "data": {
+      "type": "object"
+    }
+  }
+}

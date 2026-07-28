@@ -1,0 +1,16 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: billing-service
+port: 8092
+database: xappx_billing_service
+owns: plans, subscriptions, usage_metrics
+external_ids: app_id, client_id, user_id
+publishes:
+- com.xappx.subscription.changed
+- com.xappx.subscription.downgraded
+consumes:
+- com.xappx.application.product.disabled
+health:
+  liveness: /healthz
+  readiness: /readyz

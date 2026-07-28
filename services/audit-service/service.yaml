@@ -1,0 +1,14 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: audit-service
+port: 8095
+database: xappx_audit_service
+owns: audit_log, consents
+external_ids: app_id, client_id, actor_id
+publishes: []
+consumes:
+- '*'
+health:
+  liveness: /healthz
+  readiness: /readyz

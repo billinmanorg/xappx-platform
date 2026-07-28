@@ -1,0 +1,14 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: media-service
+port: 8084
+database: xappx_media_service
+owns: media_assets, provider_jobs
+external_ids: app_id
+publishes:
+- com.xappx.media.generated
+consumes: []
+health:
+  liveness: /healthz
+  readiness: /readyz

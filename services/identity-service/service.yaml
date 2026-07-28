@@ -1,0 +1,17 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: identity-service
+port: 8082
+database: xappx_identity_service
+owns: users, roles, memberships, sessions
+external_ids: app_id, client_id
+publishes:
+- com.xappx.user.created
+- com.xappx.membership.created
+- com.xappx.user.disabled
+consumes:
+- com.xappx.application.created
+health:
+  liveness: /healthz
+  readiness: /readyz

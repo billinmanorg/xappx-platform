@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.xappx.com/schemas/problem.schema.json",
+  "title": "Problem Detail (RFC 9457)",
+  "type": "object",
+  "required": [
+    "type",
+    "title",
+    "status"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "format": "uri",
+      "default": "about:blank"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599
+    },
+    "detail": {
+      "type": "string"
+    },
+    "instance": {
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Echoes X-Correlation-Id so a failure can be traced across services."
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pointer": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

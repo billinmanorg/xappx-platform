@@ -1,0 +1,14 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: events-service
+port: 8093
+database: xappx_events_service
+owns: events_log, webhooks, webhook_deliveries, engagements
+external_ids: app_id, user_id
+publishes: []
+consumes:
+- '*'
+health:
+  liveness: /healthz
+  readiness: /readyz

@@ -1,0 +1,29 @@
+/* XAPPX design tokens — generated from tokens.json. Do not edit by hand.
+   Client brand instances override these per application via the manifest theme;
+   these are the XAPPX platform defaults. */
+
+:root {
+  --xappx-electric-cyan: #00C2FF;
+  --xappx-mid-blue:      #0066FF;
+  --xappx-deep-violet:   #7B5EFF;
+  --xappx-deep-navy:     #080B12;
+  --xappx-clean-white:   #FFFFFF;
+  --xappx-cool-gray:     #8A9BB5;
+
+  /* Always left to right, cyan to violet. */
+  --xappx-gradient-primary: linear-gradient(90deg, #00C2FF 0%, #0066FF 50%, #7B5EFF 100%);
+  --xappx-gradient-rule:    linear-gradient(90deg, #00C2FF 0%, #7B5EFF 100%);
+
+  --xappx-font-primary:   'Inter', system-ui, sans-serif;
+  --xappx-font-alternate: 'Space Grotesk', 'Inter', sans-serif;
+
+  --xappx-display:    700 72px/1.05 var(--xappx-font-primary);
+  --xappx-heading:    600 48px/1.15 var(--xappx-font-primary);
+  --xappx-subheading: 500 32px/1.25 var(--xappx-font-primary);
+  --xappx-body:       400 16px/1.6  var(--xappx-font-primary);
+  --xappx-caption:    400 12px/1.4  var(--xappx-font-primary);
+
+  --xappx-bg:        var(--xappx-deep-navy);
+  --xappx-text:      var(--xappx-clean-white);
+  --xappx-text-muted:var(--xappx-cool-gray);
+}

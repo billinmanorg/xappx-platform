@@ -1,0 +1,360 @@
+asyncapi: 3.0.0
+info:
+  title: XAPPX Platform Events
+  version: 1.0.0
+  description: Every event is a CloudEvents v1.0 JSON envelope. Producers publish
+    through their transactional outbox; consumers deduplicate on the event id because
+    delivery is at-least-once. Adding a field is a compatible change; changing a meaning
+    requires a new event type. This file is generated from the service manifests -
+    edit those, not this.
+defaultContentType: application/cloudevents+json
+channels:
+  agents:
+    address: xappx.agents
+    messages:
+      AgentCreated:
+        $ref: '#/components/messages/AgentCreated'
+  ai_orchestrator:
+    address: xappx.ai_orchestrator
+    messages:
+      AiRequestCompleted:
+        $ref: '#/components/messages/AiRequestCompleted'
+  billing:
+    address: xappx.billing
+    messages:
+      SubscriptionChanged:
+        $ref: '#/components/messages/SubscriptionChanged'
+      SubscriptionDowngraded:
+        $ref: '#/components/messages/SubscriptionDowngraded'
+  campaigns:
+    address: xappx.campaigns
+    messages:
+      ContentPublished:
+        $ref: '#/components/messages/ContentPublished'
+      CampaignStarted:
+        $ref: '#/components/messages/CampaignStarted'
+  clients:
+    address: xappx.clients
+    messages:
+      ClientCreated:
+        $ref: '#/components/messages/ClientCreated'
+      ApplicationCreated:
+        $ref: '#/components/messages/ApplicationCreated'
+      ApplicationPublished:
+        $ref: '#/components/messages/ApplicationPublished'
+      ApplicationProductEnabled:
+        $ref: '#/components/messages/ApplicationProductEnabled'
+      ApplicationProductDisabled:
+        $ref: '#/components/messages/ApplicationProductDisabled'
+  communities:
+    address: xappx.communities
+    messages:
+      CommunityJoined:
+        $ref: '#/components/messages/CommunityJoined'
+      PostCreated:
+        $ref: '#/components/messages/PostCreated'
+  export:
+    address: xappx.export
+    messages:
+      ExportCompleted:
+        $ref: '#/components/messages/ExportCompleted'
+  identity:
+    address: xappx.identity
+    messages:
+      UserCreated:
+        $ref: '#/components/messages/UserCreated'
+      MembershipCreated:
+        $ref: '#/components/messages/MembershipCreated'
+      UserDisabled:
+        $ref: '#/components/messages/UserDisabled'
+  media:
+    address: xappx.media
+    messages:
+      MediaGenerated:
+        $ref: '#/components/messages/MediaGenerated'
+  referrals:
+    address: xappx.referrals
+    messages:
+      ReferralRegistered:
+        $ref: '#/components/messages/ReferralRegistered'
+      ReferralQualified:
+        $ref: '#/components/messages/ReferralQualified'
+      ReferralConverted:
+        $ref: '#/components/messages/ReferralConverted'
+  rewards:
+    address: xappx.rewards
+    messages:
+      RewardEarned:
+        $ref: '#/components/messages/RewardEarned'
+      RewardApproved:
+        $ref: '#/components/messages/RewardApproved'
+      RewardReversed:
+        $ref: '#/components/messages/RewardReversed'
+  twins:
+    address: xappx.twins
+    messages:
+      TwinCreated:
+        $ref: '#/components/messages/TwinCreated'
+      TwinReady:
+        $ref: '#/components/messages/TwinReady'
+  vault:
+    address: xappx.vault
+    messages:
+      VaultCreated:
+        $ref: '#/components/messages/VaultCreated'
+      VaultItemStored:
+        $ref: '#/components/messages/VaultItemStored'
+      VaultRetentionExpired:
+        $ref: '#/components/messages/VaultRetentionExpired'
+      VaultRetentionOpened:
+        $ref: '#/components/messages/VaultRetentionOpened'
+operations:
+  publish_agents:
+    action: send
+    channel:
+      $ref: '#/channels/agents'
+  publish_ai_orchestrator:
+    action: send
+    channel:
+      $ref: '#/channels/ai_orchestrator'
+  publish_billing:
+    action: send
+    channel:
+      $ref: '#/channels/billing'
+  publish_campaigns:
+    action: send
+    channel:
+      $ref: '#/channels/campaigns'
+  publish_clients:
+    action: send
+    channel:
+      $ref: '#/channels/clients'
+  publish_communities:
+    action: send
+    channel:
+      $ref: '#/channels/communities'
+  publish_export:
+    action: send
+    channel:
+      $ref: '#/channels/export'
+  publish_identity:
+    action: send
+    channel:
+      $ref: '#/channels/identity'
+  publish_media:
+    action: send
+    channel:
+      $ref: '#/channels/media'
+  publish_referrals:
+    action: send
+    channel:
+      $ref: '#/channels/referrals'
+  publish_rewards:
+    action: send
+    channel:
+      $ref: '#/channels/rewards'
+  publish_twins:
+    action: send
+    channel:
+      $ref: '#/channels/twins'
+  publish_vault:
+    action: send
+    channel:
+      $ref: '#/channels/vault'
+  receive_ApplicationProductDisabled_agents_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: agents-service consumes com.xappx.application.product.disabled.
+  receive_TwinReady_agents_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: agents-service consumes com.xappx.twin.ready.
+  consume_all_audit_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: audit-service subscribes to every topic.
+  receive_ApplicationProductDisabled_billing_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: billing-service consumes com.xappx.application.product.disabled.
+  receive_ApplicationProductDisabled_communities_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: communities-service consumes com.xappx.application.product.disabled.
+  consume_all_events_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: events-service subscribes to every topic.
+  receive_ApplicationCreated_identity_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: identity-service consumes com.xappx.application.created.
+  receive_UserCreated_referrals_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: referrals-service consumes com.xappx.user.created.
+  receive_UserCreated_rewards_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: rewards-service consumes com.xappx.user.created.
+  receive_ReferralConverted_rewards_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: rewards-service consumes com.xappx.referral.converted.
+  receive_ContentPublished_rewards_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: rewards-service consumes com.xappx.content.published.
+  receive_ApplicationProductDisabled_twins_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: twins-service consumes com.xappx.application.product.disabled.
+  receive_VaultItemStored_twins_service:
+    action: receive
+    channel:
+      $ref: '#/channels/vault'
+    description: twins-service consumes com.xappx.vault.item.stored.
+  receive_ApplicationProductDisabled_vault_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: vault-service consumes com.xappx.application.product.disabled.
+  receive_SubscriptionDowngraded_vault_service:
+    action: receive
+    channel:
+      $ref: '#/channels/agents'
+    description: vault-service consumes com.xappx.subscription.downgraded.
+components:
+  messages:
+    AgentCreated:
+      name: com.xappx.agent.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    AiRequestCompleted:
+      name: com.xappx.ai.request.completed
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    SubscriptionChanged:
+      name: com.xappx.subscription.changed
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    SubscriptionDowngraded:
+      name: com.xappx.subscription.downgraded
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ContentPublished:
+      name: com.xappx.content.published
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    CampaignStarted:
+      name: com.xappx.campaign.started
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ClientCreated:
+      name: com.xappx.client.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ApplicationCreated:
+      name: com.xappx.application.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ApplicationPublished:
+      name: com.xappx.application.published
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ApplicationProductEnabled:
+      name: com.xappx.application.product.enabled
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ApplicationProductDisabled:
+      name: com.xappx.application.product.disabled
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    CommunityJoined:
+      name: com.xappx.community.joined
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    PostCreated:
+      name: com.xappx.post.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ExportCompleted:
+      name: com.xappx.export.completed
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    UserCreated:
+      name: com.xappx.user.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    MembershipCreated:
+      name: com.xappx.membership.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    UserDisabled:
+      name: com.xappx.user.disabled
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    MediaGenerated:
+      name: com.xappx.media.generated
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ReferralRegistered:
+      name: com.xappx.referral.registered
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ReferralQualified:
+      name: com.xappx.referral.qualified
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ReferralConverted:
+      name: com.xappx.referral.converted
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    RewardEarned:
+      name: com.xappx.reward.earned
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    RewardApproved:
+      name: com.xappx.reward.approved
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    RewardReversed:
+      name: com.xappx.reward.reversed
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    TwinCreated:
+      name: com.xappx.twin.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    TwinReady:
+      name: com.xappx.twin.ready
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    VaultCreated:
+      name: com.xappx.vault.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    VaultItemStored:
+      name: com.xappx.vault.item.stored
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    VaultRetentionExpired:
+      name: com.xappx.vault.retention.expired
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    VaultRetentionOpened:
+      name: com.xappx.vault.retention.opened
+      payload:
+        $ref: ../schemas/cloudevent.schema.json

@@ -1,0 +1,20 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: rewards-service
+port: 8090
+database: xappx_rewards_service
+owns: action_catalog, reward_programs, reward_rules, reward_accounts, reward_transactions,
+  ledger_entries, redemptions, token_batches
+external_ids: app_id, user_id
+publishes:
+- com.xappx.reward.earned
+- com.xappx.reward.approved
+- com.xappx.reward.reversed
+consumes:
+- com.xappx.user.created
+- com.xappx.referral.converted
+- com.xappx.content.published
+health:
+  liveness: /healthz
+  readiness: /readyz

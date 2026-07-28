@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rewards-service
+  labels: { app: rewards-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: rewards-service }
+  template:
+    metadata:
+      labels: { app: rewards-service }
+    spec:
+      containers:
+        - name: rewards-service
+          image: ghcr.io/xappx/rewards-service:latest
+          ports:
+            - containerPort: 8090
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: rewards-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: rewards-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8090 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8090 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rewards-service
+spec:
+  selector: { app: rewards-service }
+  ports:
+    - port: 80
+      targetPort: 8090
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rewards-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rewards-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

@@ -1,0 +1,15 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: campaigns-service
+port: 8089
+database: xappx_campaigns_service
+owns: contents, campaigns, projects
+external_ids: app_id, owner_id, media_id
+publishes:
+- com.xappx.content.published
+- com.xappx.campaign.started
+consumes: []
+health:
+  liveness: /healthz
+  readiness: /readyz

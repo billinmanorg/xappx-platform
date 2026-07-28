@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clients-service
+  labels: { app: clients-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: clients-service }
+  template:
+    metadata:
+      labels: { app: clients-service }
+    spec:
+      containers:
+        - name: clients-service
+          image: ghcr.io/xappx/clients-service:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: clients-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: clients-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8081 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8081 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clients-service
+spec:
+  selector: { app: clients-service }
+  ports:
+    - port: 80
+      targetPort: 8081
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: clients-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: clients-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

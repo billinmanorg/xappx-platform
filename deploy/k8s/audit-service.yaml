@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  labels: { app: audit-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: audit-service }
+  template:
+    metadata:
+      labels: { app: audit-service }
+    spec:
+      containers:
+        - name: audit-service
+          image: ghcr.io/xappx/audit-service:latest
+          ports:
+            - containerPort: 8095
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: audit-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: audit-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8095 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8095 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+spec:
+  selector: { app: audit-service }
+  ports:
+    - port: 80
+      targetPort: 8095
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: audit-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: audit-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

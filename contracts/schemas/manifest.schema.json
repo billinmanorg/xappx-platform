@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.xappx.com/schemas/manifest.schema.json",
+  "title": "XAPPX App Manifest",
+  "description": "Resolved configuration for one brand instance, served by clients-service. The front end renders from this and never hardcodes a brand's feature set.",
+  "type": "object",
+  "required": [
+    "app_id",
+    "slug",
+    "version",
+    "products",
+    "nav"
+  ],
+  "properties": {
+    "app_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "description": "applications.manifest_version; bumped by any toggle change, drives ETag invalidation."
+    },
+    "theme": {
+      "type": "object",
+      "properties": {
+        "logo_url": {
+          "type": "string"
+        },
+        "primary_color": {
+          "type": "string"
+        },
+        "font": {
+          "type": "string"
+        }
+      }
+    },
+    "copy": {
+      "type": "object"
+    },
+    "taxonomy": {
+      "type": "object",
+      "description": "Label overrides, e.g. Members vs Candidates."
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "enabled"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "nav": {
+      "type": "array",
+      "description": "Only entries whose gating product is enabled appear.",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "route"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "onboarding": {
+      "type": "array",
+      "description": "Steps, renumbered after a product is disabled.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          },
+          "product": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pricing_plans": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "legal": {
+      "type": "object",
+      "properties": {
+        "terms_url": {
+          "type": "string"
+        },
+        "privacy_url": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

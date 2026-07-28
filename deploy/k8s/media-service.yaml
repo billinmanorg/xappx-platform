@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-service
+  labels: { app: media-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: media-service }
+  template:
+    metadata:
+      labels: { app: media-service }
+    spec:
+      containers:
+        - name: media-service
+          image: ghcr.io/xappx/media-service:latest
+          ports:
+            - containerPort: 8084
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: media-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: media-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8084 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8084 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: media-service
+spec:
+  selector: { app: media-service }
+  ports:
+    - port: 80
+      targetPort: 8084
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: media-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: media-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

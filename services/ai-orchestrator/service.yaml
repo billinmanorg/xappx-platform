@@ -1,0 +1,14 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: ai-orchestrator
+port: 8087
+database: xappx_ai_orchestrator
+owns: ai_routes, ai_requests
+external_ids: app_id, user_id
+publishes:
+- com.xappx.ai.request.completed
+consumes: []
+health:
+  liveness: /healthz
+  readiness: /readyz

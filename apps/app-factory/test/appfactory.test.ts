@@ -1,0 +1,132 @@
+import { test, before, after, describe } from "node:test";
+import assert from "node:assert/strict";
+import type { Server } from "node:http";
+import express from "express";
+
+// Records every call the console makes, and serves canned platform data, so the
+// tests assert the console drives the right APIs without a real clients-service.
+interface Call { method: string; path: string; body: any }
+const calls: Call[] = [];
+let apps: any[];
+
+let source: Server;
+let console_: Server;
+let base: string;
+
+before(async () => {
+  apps = [{ app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft" }];
+  const products = [
+    { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null },
+    { code: "vault", name: "Vault", requires: [], billable: false, enabled: true, display_name: null },
+    { code: "vault_premium", name: "Vault Premium", requires: ["vault"], billable: true, enabled: false, display_name: null },
+    { code: "agents", name: "Agents", requires: [], billable: false, enabled: false, display_name: null },
+  ];
+
+  const s = express();
+  s.use(express.json());
+  s.use((req, _res, next) => { calls.push({ method: req.method, path: req.path, body: req.body }); next(); });
+  s.get("/api/v1/clients", (_q, r) => r.json({ data: [{ client_id: "c1", name: "Acme", slug: "acme" }] }));
+  s.get("/api/v1/applications", (_q, r) => r.json({ data: apps }));
+  s.get("/api/v1/applications/:slug/products", (req, r) =>
+    apps.some((a) => a.slug === req.params.slug) ? r.json({ data: products }) : r.status(404).json({ status: 404 }));
+  s.post("/api/v1/applications", (req, r) => {
+    const a = { app_id: "new", client_id: req.body.client_id, name: req.body.name, slug: req.body.slug, status: "draft" };
+    apps.push(a);
+    r.status(201).json(a);
+  });
+  s.put("/api/v1/applications/:slug/products/:code", (req, r) =>
+    r.json({ product_code: req.params.code, enabled: req.body.enabled }));
+  s.post("/api/v1/applications/:slug/publish", (req, r) => {
+    const a = apps.find((x) => x.slug === req.params.slug); if (a) a.status = "published";
+    r.json({ slug: req.params.slug, status: "published" });
+  });
+  source = await new Promise<Server>((res) => { const srv = s.listen(0, () => res(srv)); });
+  process.env.CLIENTS_API_BASE = `http://127.0.0.1:${(source.address() as { port: number }).port}`;
+
+  const { createApp } = await import("../src/main.js");
+  console_ = await new Promise<Server>((res) => { const srv = createApp().listen(0, () => res(srv)); });
+  base = `http://127.0.0.1:${(console_.address() as { port: number }).port}`;
+});
+
+after(() => { console_.close(); source.close(); });
+
+const get = (p: string) => fetch(base + p);
+const form = (m: string, p: string, obj: Record<string, string>) =>
+  fetch(base + p, {
+    method: m,
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(obj).toString(),
+    redirect: "manual",
+  });
+
+describe("the console renders from the platform API", () => {
+  test("the brands list shows existing brands", async () => {
+    const html = await (await get("/")).text();
+    assert.match(html, /Demo One/);
+    assert.match(html, /demo-one/);
+  });
+
+  test("the new-brand form offers the client and the product catalogue", async () => {
+    const html = await (await get("/new")).text();
+    assert.match(html, /Acme/); // client option
+    assert.match(html, /name="products" value="vault"/); // catalogue checkbox
+  });
+
+  test("the configure page shows the product toggles and a publish action", async () => {
+    const html = await (await get("/brands/demo-one")).text();
+    assert.match(html, /Agents/);
+    assert.match(html, /Publish brand/);
+  });
+});
+
+describe("the console drives the right API calls", () => {
+  test("creating a brand POSTs to /applications and redirects to its page", async () => {
+    const r = await form("POST", "/brands", { client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community" });
+    assert.equal(r.status, 302);
+    assert.equal(r.headers.get("location"), "/brands/aurora-x");
+    const created = calls.find((c) => c.method === "POST" && c.path === "/api/v1/applications");
+    assert.ok(created);
+    assert.equal(created!.body.slug, "aurora-x");
+    assert.deepEqual(created!.body.products, ["community"]);
+  });
+
+  test("an invalid slug is refused before it reaches the API", async () => {
+    const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
+    const r = await form("POST", "/brands", { client_id: "c1", name: "X", slug: "Not A Slug" });
+    assert.equal(r.status, 400);
+    const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
+    assert.equal(after, before); // never called the API
+  });
+
+  test("toggling a product PUTs to the product endpoint", async () => {
+    const r = await form("POST", "/brands/demo-one/toggle", { code: "agents", enabled: "true" });
+    assert.equal(r.status, 302);
+    const put = calls.find((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one/products/agents");
+    assert.ok(put);
+    assert.equal(put!.body.enabled, true);
+  });
+
+  test("publishing POSTs to the publish endpoint", async () => {
+    const r = await form("POST", "/brands/demo-one/publish", {});
+    assert.equal(r.status, 302);
+    assert.ok(calls.some((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/publish"));
+  });
+});
+
+describe("the password gate (for public deploys)", () => {
+  test("blocks without credentials, allows with them, and leaves health open", async () => {
+    process.env.FACTORY_USER = "bill";
+    process.env.FACTORY_PASS = "s3cret-demo";
+    try {
+      assert.equal((await fetch(base + "/")).status, 401); // no credentials
+      const auth = { authorization: "Basic " + Buffer.from("bill:s3cret-demo").toString("base64") };
+      assert.equal((await fetch(base + "/", { headers: auth })).status, 200);
+      const wrong = { authorization: "Basic " + Buffer.from("bill:nope").toString("base64") };
+      assert.equal((await fetch(base + "/", { headers: wrong })).status, 401);
+      assert.equal((await fetch(base + "/healthz")).status, 200); // health stays public
+    } finally {
+      delete process.env.FACTORY_USER;
+      delete process.env.FACTORY_PASS;
+    }
+  });
+});

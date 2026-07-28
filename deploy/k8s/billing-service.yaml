@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-service
+  labels: { app: billing-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: billing-service }
+  template:
+    metadata:
+      labels: { app: billing-service }
+    spec:
+      containers:
+        - name: billing-service
+          image: ghcr.io/xappx/billing-service:latest
+          ports:
+            - containerPort: 8092
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: billing-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: billing-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8092 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8092 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-service
+spec:
+  selector: { app: billing-service }
+  ports:
+    - port: 80
+      targetPort: 8092
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: billing-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: billing-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

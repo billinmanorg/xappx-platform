@@ -1,0 +1,74 @@
+# Render blueprint — XAPPX Phase-1 demo stack.
+#
+# One managed Postgres and the three services needed to show the "build an app"
+# experience: clients-service (the API + brand data), web-runtime (the brand
+# pages) and app-factory (the builder console, behind a shared password).
+#
+# The console reaches clients-service and web-runtime through the env vars below,
+# which Render fills in from the other services automatically.
+#
+# NOTE: on the free plan all three are public web services. The console is
+# password-gated; clients-service's write API is technically reachable at its own
+# URL, so treat this as a short-lived demo and delete the Blueprint afterwards.
+# A locked-down version keeps clients-service private (a paid instance type).
+
+databases:
+  - name: xappx-db
+    databaseName: xappx_clients_service
+    user: xappx
+    plan: free
+
+services:
+  - type: web
+    name: clients-service
+    runtime: node
+    rootDir: services/clients-service
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node migrate.mjs && node dist/src/main.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: xappx-db
+          property: connectionString
+
+  - type: web
+    name: web-runtime
+    runtime: node
+    rootDir: apps/web-runtime
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: WEB_API_BASE
+        fromService:
+          type: web
+          name: clients-service
+          property: host
+
+  - type: web
+    name: app-factory
+    runtime: node
+    rootDir: apps/app-factory
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: CLIENTS_API_BASE
+        fromService:
+          type: web
+          name: clients-service
+          property: host
+      - key: WEB_RUNTIME_BASE
+        fromService:
+          type: web
+          name: web-runtime
+          property: host
+      # The console password — set both in the Render dashboard (kept secret).
+      - key: FACTORY_USER
+        sync: false
+      - key: FACTORY_PASS
+        sync: false

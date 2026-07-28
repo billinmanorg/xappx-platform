@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: referrals-service
+  labels: { app: referrals-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: referrals-service }
+  template:
+    metadata:
+      labels: { app: referrals-service }
+    spec:
+      containers:
+        - name: referrals-service
+          image: ghcr.io/xappx/referrals-service:latest
+          ports:
+            - containerPort: 8091
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: referrals-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: referrals-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8091 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8091 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: referrals-service
+spec:
+  selector: { app: referrals-service }
+  ports:
+    - port: 80
+      targetPort: 8091
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: referrals-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: referrals-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

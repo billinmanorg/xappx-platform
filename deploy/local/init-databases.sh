@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_clients_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_identity_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_vault_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_media_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_twins_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_agents_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_ai_orchestrator;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_communities_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_campaigns_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_rewards_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_referrals_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_billing_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_events_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_export_service;"
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -c "create database xappx_audit_service;"

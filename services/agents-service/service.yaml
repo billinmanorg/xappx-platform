@@ -1,0 +1,16 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: agents-service
+port: 8086
+database: xappx_agents_service
+owns: agents, prompts
+external_ids: app_id, user_id, twin_id
+publishes:
+- com.xappx.agent.created
+consumes:
+- com.xappx.application.product.disabled
+- com.xappx.twin.ready
+health:
+  liveness: /healthz
+  readiness: /readyz

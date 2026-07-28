@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-service
+  labels: { app: vault-service, part-of: xappx }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: vault-service }
+  template:
+    metadata:
+      labels: { app: vault-service }
+    spec:
+      containers:
+        - name: vault-service
+          image: ghcr.io/xappx/vault-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: vault-service-db, key: url } }
+            - name: BROKER_URL
+              valueFrom: { secretKeyRef: { name: xappx-broker, key: url } }
+            - name: SERVICE_NAME
+              value: vault-service
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8083 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8083 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-service
+spec:
+  selector: { app: vault-service }
+  ports:
+    - port: 80
+      targetPort: 8083
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: vault-service
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vault-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }

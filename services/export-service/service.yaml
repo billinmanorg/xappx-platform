@@ -1,0 +1,14 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: export-service
+port: 8094
+database: xappx_export_service
+owns: export_jobs, export_artifacts
+external_ids: app_id, client_id
+publishes:
+- com.xappx.export.completed
+consumes: []
+health:
+  liveness: /healthz
+  readiness: /readyz

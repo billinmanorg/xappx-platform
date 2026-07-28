@@ -1,0 +1,17 @@
+# Service manifest. Declares what this service owns and what crosses its
+# boundary. CI reads this: a PR adding a table that is not listed under
+# owns, or an event not declared here, fails the boundary check.
+name: twins-service
+port: 8085
+database: xappx_twins_service
+owns: twins, twin_training_sources
+external_ids: app_id, client_id, owner_id, file_id, avatar_id
+publishes:
+- com.xappx.twin.created
+- com.xappx.twin.ready
+consumes:
+- com.xappx.application.product.disabled
+- com.xappx.vault.item.stored
+health:
+  liveness: /healthz
+  readiness: /readyz

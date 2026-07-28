@@ -1,0 +1,26 @@
+openapi: 3.1.0
+info:
+  title: XAPPX events-service
+  version: 1.0.0
+  description: Event log of record, outbound webhooks, and per-user action history.
+servers:
+- url: https://api.xappx.com/api/v1
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        '200':
+          description: OK
+  /readyz:
+    get:
+      summary: "Readiness \u2014 includes broker and database"
+      responses:
+        '200':
+          description: OK
+        '503':
+          description: Not ready
+components:
+  schemas:
+    Problem:
+      $ref: ../schemas/problem.schema.json

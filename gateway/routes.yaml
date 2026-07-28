@@ -1,0 +1,91 @@
+# API gateway routing.
+#
+# The gateway is the only public surface; services are never exposed directly.
+# It terminates TLS, authenticates, resolves tenant context, enforces product
+# toggles and rate limits, then forwards X-App-Id, X-Client-Id, X-User-Id and
+# X-Correlation-Id downstream so no service re-derives them.
+#
+# The toggle check here is for speed. Services check again at their own
+# boundary - the edge check is not a safety boundary on its own.
+listen: 8080
+auth:
+  jwt:
+    issuer: https://auth.xappx.com
+    audience: xappx-api
+  api_keys:
+    header: X-API-Key
+tenant_resolution:
+  from:
+  - host
+  - header: X-App-Slug
+  - jwt_claim: app_id
+  on_missing: 403
+  forwards:
+  - X-App-Id
+  - X-Client-Id
+  - X-User-Id
+  - X-Correlation-Id
+product_gate:
+  source: clients-service
+  cache_ttl: 60s
+  invalidate_on: com.xappx.application.product.*
+rate_limits:
+  default:
+    requests: 600
+    per: 1m
+  by_route:
+  - path: /api/v1/ai/*
+    requests: 60
+    per: 1m
+routes:
+- prefix: /api/v1/clients
+  service: clients-service
+- prefix: /api/v1/applications
+  service: clients-service
+- prefix: /api/v1/users
+  service: identity-service
+- prefix: /api/v1/memberships
+  service: identity-service
+- prefix: /api/v1/vaults
+  service: vault-service
+  requires_product: vault
+- prefix: /api/v1/files
+  service: vault-service
+  requires_product: vault
+- prefix: /api/v1/media
+  service: media-service
+- prefix: /api/v1/twins
+  service: twins-service
+  requires_product: twins
+- prefix: /api/v1/agents
+  service: agents-service
+  requires_product: agents
+- prefix: /api/v1/ai
+  service: ai-orchestrator
+- prefix: /api/v1/communities
+  service: communities-service
+  requires_product: community
+- prefix: /api/v1/contents
+  service: campaigns-service
+- prefix: /api/v1/campaigns
+  service: campaigns-service
+- prefix: /api/v1/reward-programs
+  service: rewards-service
+- prefix: /api/v1/reward-accounts
+  service: rewards-service
+- prefix: /api/v1/activities
+  service: rewards-service
+- prefix: /api/v1/referrals
+  service: referrals-service
+- prefix: /api/v1/plans
+  service: billing-service
+- prefix: /api/v1/subscriptions
+  service: billing-service
+- prefix: /api/v1/webhooks
+  service: events-service
+- prefix: /api/v1/engagements
+  service: events-service
+- prefix: /api/v1/exports
+  service: export-service
+- prefix: /api/v1/audit
+  service: audit-service

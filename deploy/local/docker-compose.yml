@@ -1,0 +1,241 @@
+name: xappx
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: xappx
+      POSTGRES_USER: xappx
+    ports:
+    - 5432:5432
+    volumes:
+    - ./deploy/local/init-databases.sh:/docker-entrypoint-initdb.d/init.sh
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U xappx
+      interval: 5s
+      retries: 10
+  nats:
+    image: nats:2-alpine
+    command: -js
+    ports:
+    - 4222:4222
+    - 8222:8222
+  gateway:
+    build: ./gateway
+    ports:
+    - 8080:8080
+    environment:
+      BROKER_URL: nats://nats:4222
+    depends_on:
+    - nats
+  clients-service:
+    build: ./services/clients-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_clients_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: clients-service
+      PORT: '8081'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8081:8081
+  identity-service:
+    build: ./services/identity-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_identity_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: identity-service
+      PORT: '8082'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8082:8082
+  vault-service:
+    build: ./services/vault-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_vault_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: vault-service
+      PORT: '8083'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8083:8083
+  media-service:
+    build: ./services/media-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_media_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: media-service
+      PORT: '8084'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8084:8084
+  twins-service:
+    build: ./services/twins-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_twins_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: twins-service
+      PORT: '8085'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8085:8085
+  agents-service:
+    build: ./services/agents-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_agents_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: agents-service
+      PORT: '8086'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8086:8086
+  ai-orchestrator:
+    build: ./services/ai-orchestrator
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_ai_orchestrator
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: ai-orchestrator
+      PORT: '8087'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8087:8087
+  communities-service:
+    build: ./services/communities-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_communities_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: communities-service
+      PORT: '8088'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8088:8088
+  campaigns-service:
+    build: ./services/campaigns-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_campaigns_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: campaigns-service
+      PORT: '8089'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8089:8089
+  rewards-service:
+    build: ./services/rewards-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_rewards_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: rewards-service
+      PORT: '8090'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8090:8090
+  referrals-service:
+    build: ./services/referrals-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_referrals_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: referrals-service
+      PORT: '8091'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8091:8091
+  billing-service:
+    build: ./services/billing-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_billing_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: billing-service
+      PORT: '8092'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8092:8092
+  events-service:
+    build: ./services/events-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_events_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: events-service
+      PORT: '8093'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8093:8093
+  export-service:
+    build: ./services/export-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_export_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: export-service
+      PORT: '8094'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8094:8094
+  audit-service:
+    build: ./services/audit-service
+    environment:
+      DATABASE_URL: postgres://xappx:xappx@postgres:5432/xappx_audit_service
+      BROKER_URL: nats://nats:4222
+      SERVICE_NAME: audit-service
+      PORT: '8095'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+    - 8095:8095
