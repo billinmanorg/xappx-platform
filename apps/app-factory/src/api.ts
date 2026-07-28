@@ -22,7 +22,8 @@ async function call<T = any>(method: string, path: string, body?: unknown): Prom
     method,
     headers: body === undefined ? {} : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(5000),
+    // Generous timeout: a free-tier platform API may be asleep and take ~30s to wake.
+    signal: AbortSignal.timeout(30000),
   });
   const text = await r.text();
   let data: unknown = null;

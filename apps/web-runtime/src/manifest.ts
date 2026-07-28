@@ -39,7 +39,8 @@ export async function fetchManifest(slug: string): Promise<Manifest> {
   try {
     r = await fetch(`${apiBase()}/api/v1/applications/${encodeURIComponent(slug)}/manifest`, {
       headers: { "X-App-Slug": slug },
-      signal: AbortSignal.timeout(3000),
+      // Generous timeout: a free-tier API may be asleep and take ~30s to wake.
+      signal: AbortSignal.timeout(30000),
     });
   } catch {
     throw new ManifestError(502, "The manifest service did not respond.");
