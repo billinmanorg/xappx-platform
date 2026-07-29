@@ -74,6 +74,30 @@ function head(manifest: Manifest): string {
                     font: var(--xappx-caption); }
   footer.platform .rule { height: 3px; width: 56px; border-radius: 2px;
                           background: var(--xappx-gradient-rule); }
+  header.site .auth { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+  header.site .auth a { color: var(--brand-primary); text-decoration: none; }
+  header.site .auth a:hover { text-decoration: underline; }
+  header.site .auth .who { color: var(--xappx-text-muted); }
+  header.site .auth form { margin: 0; }
+  .linkbtn { background: none; border: 1px solid rgba(255,255,255,0.18); color: var(--xappx-text);
+             border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  .linkbtn:hover { border-color: var(--brand-primary); }
+  .authwrap { max-width: 380px; margin: 0 auto; padding: 56px 24px; }
+  .authcard { border: 1px solid rgba(255,255,255,0.10); border-radius: 14px; padding: 28px 24px; }
+  .authcard h1 { font-size: 22px; margin: 0 0 6px; }
+  .authcard .sub { color: var(--xappx-text-muted); font-size: 14px; margin: 0 0 20px; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 12px; color: var(--xappx-text-muted); }
+  .field input { background: var(--xappx-bg); border: 1px solid rgba(255,255,255,0.16);
+                 border-radius: 9px; padding: 10px 12px; color: var(--xappx-text); font: inherit; font-size: 15px; }
+  .field input:focus { outline: none; border-color: var(--brand-primary); }
+  .authbtn { width: 100%; background: var(--brand-primary); color: #fff; border: none; border-radius: 9px;
+             padding: 11px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; }
+  .authbtn:hover { filter: brightness(1.08); }
+  .alt { text-align: center; margin-top: 16px; font-size: 14px; color: var(--xappx-text-muted); }
+  .alt a { color: var(--brand-primary); }
+  .err { border: 1px solid rgba(255,90,110,0.4); background: rgba(255,90,110,0.08); color: #ffb3bf;
+         border-radius: 9px; padding: 10px 12px; margin-bottom: 16px; font-size: 14px; }
 </style></head>`;
 }
 
@@ -135,12 +159,26 @@ function legalFooter(manifest: Manifest): string {
   return `<div class="panel legal">${links}</div>`;
 }
 
+export interface SessionUser {
+  email: string;
+}
+
+/** The header's sign-in area: who you are + log out, or links to log in / sign up. */
+function authArea(slug: string, user: SessionUser | null | undefined): string {
+  const base = "/" + encodeURIComponent(slug);
+  if (user) {
+    return `<span class="auth"><span class="who">${esc(user.email)}</span>` +
+      `<form method="post" action="${esc(base)}/logout"><button class="linkbtn" type="submit">Log out</button></form></span>`;
+  }
+  return `<span class="auth"><a href="${esc(base)}/login">Log in</a><a href="${esc(base)}/signup">Sign up</a></span>`;
+}
+
 /** The full brand page for a route the manifest declares. */
-export function renderPage(manifest: Manifest, current: string): string {
+export function renderPage(manifest: Manifest, current: string, user?: SessionUser | null): string {
   const logo = safeUrl(manifest.theme?.logo_url);
   const header = `<header class="site">${
     logo ? `<img src="${esc(logo)}" alt="">` : ""
-  }<span class="wordmark">${esc(brandTitle(manifest))}</span></header>`;
+  }<span class="wordmark">${esc(brandTitle(manifest))}</span>${authArea(manifest.slug, user)}</header>`;
 
   return `${head(manifest)}<body>
 ${header}
@@ -150,6 +188,36 @@ ${routePanel(manifest, current)}
 ${current === "/" ? productsPanel(manifest) + onboardingPanel(manifest) : ""}
 ${legalFooter(manifest)}
 </main>
+<footer class="platform"><span class="rule"></span><span>Powered by XAPPX</span></footer>
+</body></html>`;
+}
+
+/** The branded sign-in / sign-up page. Same theme as the brand's own pages. */
+export function renderAuthForm(manifest: Manifest, mode: "login" | "signup", error?: string): string {
+  const base = "/" + encodeURIComponent(manifest.slug);
+  const isSignup = mode === "signup";
+  const action = isSignup ? `${base}/signup` : `${base}/login`;
+  return `${head(manifest)}<body>
+<header class="site"><span class="wordmark">${esc(brandTitle(manifest))}</span></header>
+<div class="authwrap"><div class="authcard">
+  <h1>${isSignup ? "Create your account" : "Sign in"}</h1>
+  <p class="sub">${isSignup ? "Join " : "Welcome back to "}${esc(brandTitle(manifest))}.</p>
+  ${error ? `<div class="err">${esc(error)}</div>` : ""}
+  <form method="post" action="${esc(action)}">
+    ${isSignup ? `<div class="field"><label for="name">Name</label><input id="name" name="name" autocomplete="name"></div>` : ""}
+    <div class="field"><label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required autofocus></div>
+    <div class="field"><label for="password">Password</label>
+      <input id="password" name="password" type="password" required minlength="8"
+             autocomplete="${isSignup ? "new-password" : "current-password"}"></div>
+    <button class="authbtn" type="submit">${isSignup ? "Create account" : "Sign in"}</button>
+  </form>
+  <p class="alt">${
+    isSignup
+      ? `Already have an account? <a href="${esc(base)}/login">Sign in</a>`
+      : `New here? <a href="${esc(base)}/signup">Create an account</a>`
+  }</p>
+</div></div>
 <footer class="platform"><span class="rule"></span><span>Powered by XAPPX</span></footer>
 </body></html>`;
 }
