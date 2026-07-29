@@ -63,13 +63,11 @@ services:
     startCommand: npm start
     healthCheckPath: /healthz
     envVars:
+      # Dashboard-managed on purpose: Render's fromService returns a bare host
+      # without .onrender.com, so these are set by hand to the full URL and must
+      # NOT be overwritten on a Blueprint sync.
       - key: WEB_API_BASE
-        fromService:
-          type: web
-          name: clients-service
-          property: host
-      # identity-service's public URL — set this in the dashboard after identity
-      # deploys (Render's fromService returns a bare host without .onrender.com).
+        sync: false
       - key: IDENTITY_API_BASE
         sync: false
 
@@ -82,16 +80,12 @@ services:
     startCommand: npm start
     healthCheckPath: /healthz
     envVars:
+      # Dashboard-managed (full https URLs), never synced from the Blueprint —
+      # see the note on web-runtime above.
       - key: CLIENTS_API_BASE
-        fromService:
-          type: web
-          name: clients-service
-          property: host
+        sync: false
       - key: WEB_RUNTIME_BASE
-        fromService:
-          type: web
-          name: web-runtime
-          property: host
+        sync: false
       # The console password — set both in the Render dashboard (kept secret).
       - key: FACTORY_USER
         sync: false
