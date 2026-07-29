@@ -19,6 +19,10 @@ DATABASE_URL=postgres://…/xappx_identity_service npm start   # :8082
 
 | Method | Path | Notes |
 |---|---|---|
+| POST | `/api/v1/auth/signup` | Create an account (email + password) and return a bearer token |
+| POST | `/api/v1/auth/login` | Verify credentials and return a bearer token |
+| GET | `/api/v1/auth/me` | The user for a bearer token |
+| POST | `/api/v1/auth/logout` | Client-side token discard (see note) |
 | POST | `/api/v1/users` | Create a global user. Honours `Idempotency-Key` |
 | GET | `/api/v1/users` | Filter with `?email=` |
 | GET | `/api/v1/users/:id` | |
@@ -31,9 +35,19 @@ DATABASE_URL=postgres://…/xappx_identity_service npm start   # :8082
 
 ## Behaviour worth knowing before you change anything
 
-**Authentication is upstream; this service issues sessions, it does not verify
-credentials.** The gateway or an external identity provider authenticates the
-principal. `users` carries `auth_provider` and `external_id`, not a password.
+**Authentication lives here.** `POST /auth/signup` and `/auth/login` verify a
+scrypt-hashed password (`credentials` table) and mint an HS256 bearer token the
+gateway verifies at the edge with the same shared secret and the same issuer /
+audience. Requires `AUTH_JWT_SECRET` (falls back to `GATEWAY_JWT_TEST_SECRET` for
+local parity). Sign-in returns one generic `401` for a bad email *or* password
+and runs a hash even for unknown accounts, so it never reveals which emails
+exist. Tokens are stateless and short-lived; server-side revocation (refresh
+tokens + a denylist) is a deliberate follow-up — `logout` is a client-side
+discard for now.
+
+**Password auth vs external providers.** `users.auth_provider` distinguishes
+`password` accounts (verified here) from externally-federated ones. The plaintext
+password is never stored or logged — only the scrypt digest, in its own table.
 
 **No membership is a 403 with a join path, never a 401.** A user who
 authenticated successfully but has no membership for the requested brand is not

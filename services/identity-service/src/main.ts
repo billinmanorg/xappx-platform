@@ -6,6 +6,7 @@ import { users } from "./routes/users.js";
 import { memberships } from "./routes/memberships.js";
 import { sessions } from "./routes/sessions.js";
 import { internal } from "./routes/internal.js";
+import { auth } from "./routes/auth.js";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -39,7 +40,7 @@ export function createApp() {
   });
 
   app.use(internal); // relay delivery, internal only
-  app.use("/api/v1", users, memberships, sessions);
+  app.use("/api/v1", auth, users, memberships, sessions);
 
   app.use((req, res) =>
     sendProblem(res, new Problem(404, "Not found", `No route for ${req.method} ${req.path}`), req.correlationId),

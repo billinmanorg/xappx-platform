@@ -22,6 +22,9 @@ export const notFound = (what: string) =>
 export const conflict = (detail: string, type: string, extra?: Record<string, unknown>) =>
   new Problem(409, "Conflict", detail, type, extra);
 
+export const unauthorized = (detail: string) =>
+  new Problem(401, "Unauthorized", detail, "https://api.xappx.com/problems/unauthorized");
+
 export const forbidden = (detail: string) =>
   new Problem(403, "Forbidden", detail, "https://api.xappx.com/problems/forbidden");
 
