@@ -38,6 +38,49 @@ function monogram(name: string, slug: string, size = 40): string {
 }
 const statusClass = (s: string) => "st-" + String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
+/**
+ * The application taxonomy from the brief (§7). Types are open-ended — the brief
+ * lists "at least these" and ends with "Custom" — so the API stores free text
+ * and this is the Factory's curated pick-list. Audience is a closed set.
+ */
+export const APPLICATION_TYPES: ReadonlyArray<readonly [string, string]> = [
+  ["individual", "Individual"],
+  ["creator", "Creator or influencer"],
+  ["small_business", "Small business"],
+  ["professional_services", "Professional services"],
+  ["organization", "Organization"],
+  ["enterprise", "Enterprise"],
+  ["community", "Community"],
+  ["social_network", "Social network"],
+  ["event", "Event or conference"],
+  ["education", "Education or learning"],
+  ["membership", "Membership organization"],
+  ["client_portal", "Client portal"],
+  ["ai_twin", "AI twin application"],
+  ["media", "Media application"],
+  ["marketplace", "Marketplace"],
+  ["rewards", "Rewards or loyalty"],
+  ["token_ecosystem", "Token education or ecosystem"],
+  ["internal_ops", "Internal operations"],
+  ["custom", "Custom application"],
+];
+export const AUDIENCE_MODELS: ReadonlyArray<readonly [string, string]> = [
+  ["b2c", "B2C"],
+  ["b2b", "B2B"],
+  ["b2b2c", "B2B2C"],
+];
+const TYPE_LABEL = new Map(APPLICATION_TYPES);
+const AUDIENCE_LABEL = new Map(AUDIENCE_MODELS);
+export const isKnownType = (v: string) => TYPE_LABEL.has(v);
+export const isAudienceModel = (v: string) => AUDIENCE_LABEL.has(v);
+const typeLabel = (v?: string | null) => (v ? (TYPE_LABEL.get(v) ?? v) : "");
+const audienceLabel = (v?: string | null) => (v ? (AUDIENCE_LABEL.get(v) ?? String(v).toUpperCase()) : "");
+/** The muted "type · audience" line a card shows, or "" when neither is set. */
+function taxoLine(a: Application): string {
+  const bits = [typeLabel(a.application_type), audienceLabel(a.audience_model)].filter(Boolean);
+  return bits.length ? `<span class="modn">${esc(bits.join(" · "))}</span>` : "";
+}
+
 const STYLE = `
   :root{ --cyan:#00C2FF; --violet:#7B5EFF; --navy:#080B12; --panel:#0E141F; --panel2:#131B29;
     --line:#1E2836; --white:#fff; --gray:#8A9BB5; --dim:#5C6B83; --pass:#3DDC97; --amber:#F5C451; --red:#FF6B84;
@@ -194,7 +237,7 @@ export function appsPage(apps: Application[]): string {
         <a href="/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
         <div class="meta">
           <div class="nm">${esc(a.name)}</div><div class="sl">${esc(a.slug)}</div>
-          <div class="foot"><span class="status ${statusClass(a.status)}">${esc(a.status)}</span>${
+          <div class="foot"><span class="status ${statusClass(a.status)}">${esc(a.status)}</span>${taxoLine(a)}${
             a.primary_domain ? `<span class="modn">${esc(a.primary_domain)}</span>` : ""
           }</div>
           <div class="acts"><a href="/apps/${encodeURIComponent(a.slug)}">Configure</a>
@@ -212,22 +255,37 @@ export function appsPage(apps: Application[]): string {
 export function newPage(
   clients: Client[],
   catalog: ProductRow[],
-  values: { name?: string; slug?: string; client_id?: string } = {},
+  values: { name?: string; slug?: string; client_id?: string; application_type?: string; audience_model?: string } = {},
   error?: string,
 ): string {
   const clientOpts = clients
     .map((c) => `<option value="${esc(c.client_id)}"${c.client_id === values.client_id ? " selected" : ""}>${esc(c.name)}</option>`)
     .join("");
+  const typeOpts = APPLICATION_TYPES
+    .map(([v, label]) => `<option value="${v}"${v === values.application_type ? " selected" : ""}>${esc(label)}</option>`)
+    .join("");
+  const audienceChoices = AUDIENCE_MODELS
+    .map(([v, label]) =>
+      `<label class="check"><input type="radio" name="audience_model" value="${v}"${
+        v === values.audience_model ? " checked" : ""}>${esc(label)}</label>`)
+    .join("");
   const checks = catalog
     .map((p) => `<label class="check"><input type="checkbox" name="products" value="${esc(p.code)}">${esc(p.name)}</label>`)
     .join("");
-  const body = `<h1>New app</h1><p class="sub">Name it, choose a slug, switch on the modules it launches with. It goes live from its own page.</p>
+  const body = `<h1>New app</h1><p class="sub">Start with what you're building — the type and audience shape the defaults — then name it and switch on its launch modules.</p>
   ${error ? `<div class="notice err">${esc(error)}</div>` : ""}
   <form class="panel" method="post" action="/apps">
+    <div class="field"><label for="application_type">What are you building?</label>
+      <select id="application_type" name="application_type" required>
+        <option value="" disabled${values.application_type ? "" : " selected"}>Choose an application type…</option>
+        ${typeOpts}</select>
+      <span class="hint">Sets recommended modules, navigation and defaults. You can change everything later.</span></div>
+    <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div>
+      <span class="hint">B2C serves members directly · B2B serves organizations · B2B2C serves organizations who serve their own users.</span></div>
     <div class="field"><label for="client_id">Client</label>
       <select id="client_id" name="client_id" required>${clientOpts || `<option value="">No clients yet</option>`}</select></div>
     <div class="field"><label for="name">App name</label>
-      <input id="name" name="name" value="${esc(values.name ?? "")}" placeholder="Aurora" autofocus required></div>
+      <input id="name" name="name" value="${esc(values.name ?? "")}" placeholder="Aurora" required></div>
     <div class="field"><label for="slug">Slug</label>
       <input id="slug" name="slug" value="${esc(values.slug ?? "")}" placeholder="aurora" pattern="[a-z0-9]+(-[a-z0-9]+)*" required>
       <span class="hint">Lowercase words with hyphens. Used in the URL: <code>/&lt;slug&gt;</code></span></div>
@@ -259,7 +317,7 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
     .join("");
   const memberView = `${webBase()}/${encodeURIComponent(app.slug)}`;
   const body = `<div class="row">${monogram(app.name, app.slug, 44)}<div class="spacer"><h1>${esc(app.name)}</h1>
-      <p class="sub"><span class="sl">${esc(app.slug)}</span> · <span class="status ${statusClass(app.status)}">${esc(app.status)}</span></p></div>
+      <p class="sub"><span class="sl">${esc(app.slug)}</span> · <span class="status ${statusClass(app.status)}">${esc(app.status)}</span> ${taxoLine(app)}</p></div>
       <a class="btn quiet" href="${esc(memberView)}" target="_blank" rel="noreferrer">Open member view ↗</a></div>
     ${flash?.ok ? `<div class="notice ok">${esc(flash.ok)}</div>` : ""}
     ${flash?.err ? `<div class="notice err">${esc(flash.err)}</div>` : ""}

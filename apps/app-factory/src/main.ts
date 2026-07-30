@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, newPage, editPage, errorPage, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, type FactoryStats } from "./render.js";
 
 /**
  * A shared-password gate. The console can create and configure applications, so
@@ -108,16 +108,30 @@ export function createApp() {
       const name = String(req.body.name ?? "").trim();
       const slug = String(req.body.slug ?? "").trim();
       const client_id = String(req.body.client_id ?? "");
+      const application_type = String(req.body.application_type ?? "").trim();
+      const audience_model = String(req.body.audience_model ?? "").trim();
       const products = toArray(req.body.products);
       const reshow = async (status: number, detail: string) => {
         const clients = await api.listClients();
         const catalog = await loadCatalog();
-        res.status(status).type("html").send(newPage(clients.data?.data ?? [], catalog, { name, slug, client_id }, detail));
+        res.status(status).type("html").send(
+          newPage(clients.data?.data ?? [], catalog, { name, slug, client_id, application_type, audience_model }, detail),
+        );
       };
       if (!name || !SLUG.test(slug) || !client_id) {
         return reshow(400, "A client, a name, and a valid slug (lowercase words with hyphens) are all required.");
       }
-      const created = await api.createApplication({ client_id, name, slug, products });
+      if (!application_type || !isKnownType(application_type)) {
+        return reshow(400, "Choose what kind of application you are building.");
+      }
+      if (audience_model && !isAudienceModel(audience_model)) {
+        return reshow(400, "Audience model must be B2C, B2B, or B2B2C.");
+      }
+      const created = await api.createApplication({
+        client_id, name, slug, products,
+        application_type,
+        audience_model: audience_model || null,
+      });
       if (created.status >= 400) {
         return reshow(created.status, (created.data as any)?.detail ?? "Could not create the app.");
       }

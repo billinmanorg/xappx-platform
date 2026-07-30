@@ -181,3 +181,34 @@ describe("errors are problem documents", () => {
     assert.equal(r.status, 400);
   });
 });
+
+describe("application taxonomy (brief §7)", () => {
+  test("type and audience round-trip on create and in the list", async () => {
+    const clients = await (await get("/clients")).json();
+    const clientId = clients.data[0].client_id;
+    const slug = `taxo-app-${RUN}`;
+    const r = await send("POST", "/applications", {
+      client_id: clientId, name: "Taxo App", slug,
+      application_type: "marketplace", audience_model: "b2b",
+    });
+    assert.equal(r.status, 201);
+    const app = await r.json();
+    assert.equal(app.application_type, "marketplace");
+    assert.equal(app.audience_model, "b2b");
+
+    const list = await (await get(`/applications?client_id=${clientId}`)).json();
+    const found = list.data.find((a: { slug: string }) => a.slug === slug);
+    assert.ok(found);
+    assert.equal(found.application_type, "marketplace");
+    assert.equal(found.audience_model, "b2b");
+  });
+
+  test("an unknown audience_model is rejected with 400", async () => {
+    const clients = await (await get("/clients")).json();
+    const clientId = clients.data[0].client_id;
+    const r = await send("POST", "/applications", {
+      client_id: clientId, name: "Bad Audience", slug: `bad-aud-${RUN}`, audience_model: "b2x",
+    });
+    assert.equal(r.status, 400);
+  });
+});

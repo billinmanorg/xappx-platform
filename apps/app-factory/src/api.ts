@@ -36,7 +36,12 @@ async function call<T = any>(method: string, path: string, body?: unknown): Prom
 }
 
 export interface Client { client_id: string; name: string; slug: string }
-export interface Application { app_id: string; client_id: string; name: string; slug: string; status: string; primary_domain?: string | null }
+export interface Application {
+  app_id: string; client_id: string; name: string; slug: string; status: string;
+  primary_domain?: string | null;
+  application_type?: string | null;
+  audience_model?: string | null;
+}
 export interface ProductRow { code: string; name: string; requires: string[]; billable: boolean; enabled: boolean; display_name: string | null }
 
 export const listClients = () => call<{ data: Client[] }>("GET", "/api/v1/clients");
@@ -44,7 +49,8 @@ export const listApplications = () => call<{ data: Application[] }>("GET", "/api
 export const getProducts = (slug: string) =>
   call<{ data: ProductRow[] }>("GET", `/api/v1/applications/${encodeURIComponent(slug)}/products`);
 export const createApplication = (body: {
-  client_id: string; name: string; slug: string; products?: string[]; theme?: unknown; copy?: unknown;
+  client_id: string; name: string; slug: string; products?: string[];
+  application_type?: string | null; audience_model?: string | null; theme?: unknown; copy?: unknown;
 }) => call<Application>("POST", "/api/v1/applications", body);
 export const toggleProduct = (slug: string, code: string, enabled: boolean) =>
   call<any>("PUT", `/api/v1/applications/${encodeURIComponent(slug)}/products/${encodeURIComponent(code)}`, { enabled });

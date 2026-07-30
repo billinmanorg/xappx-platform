@@ -14,7 +14,8 @@ let console_: Server;
 let base: string;
 
 before(async () => {
-  apps = [{ app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft" }];
+  apps = [{ app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft",
+            application_type: "small_business", audience_model: "b2c" }];
   const products = [
     { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null },
     { code: "vault", name: "Vault", requires: [], billable: false, enabled: true, display_name: null },
@@ -30,7 +31,10 @@ before(async () => {
   s.get("/api/v1/applications/:slug/products", (req, r) =>
     apps.some((a) => a.slug === req.params.slug) ? r.json({ data: products }) : r.status(404).json({ status: 404 }));
   s.post("/api/v1/applications", (req, r) => {
-    const a = { app_id: "new", client_id: req.body.client_id, name: req.body.name, slug: req.body.slug, status: "draft" };
+    const a = {
+      app_id: "new", client_id: req.body.client_id, name: req.body.name, slug: req.body.slug, status: "draft",
+      application_type: req.body.application_type ?? null, audience_model: req.body.audience_model ?? null,
+    };
     apps.push(a);
     r.status(201).json(a);
   });
@@ -75,11 +79,20 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /demo-one/);
   });
 
-  test("the New app form offers the client and the module catalogue", async () => {
+  test("the New app form asks type + audience, and offers the client and module catalogue", async () => {
     const html = await (await get("/apps/new")).text();
     assert.match(html, /New app/);
+    assert.match(html, /What are you building\?/); // application type
+    assert.match(html, /value="small_business"/); // a catalogue type
+    assert.match(html, /name="audience_model" value="b2b2c"/); // audience model
     assert.match(html, /Acme/); // client option
     assert.match(html, /name="products" value="vault"/); // catalogue checkbox
+  });
+
+  test("the Apps list shows an app's type and audience", async () => {
+    const html = await (await get("/apps")).text();
+    assert.match(html, /Small business/); // humanised application_type
+    assert.match(html, /B2C/); // audience model
   });
 
   test("the configure page shows module toggles and a publish action", async () => {
@@ -105,19 +118,32 @@ describe("terminology is Apps, not Brands (brief §1)", () => {
 });
 
 describe("the Factory drives the right API calls", () => {
-  test("creating an app POSTs to /applications and redirects to its page", async () => {
-    const r = await form("POST", "/apps", { client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community" });
+  test("creating an app POSTs to /applications with type + audience and redirects to its page", async () => {
+    const r = await form("POST", "/apps", {
+      client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community",
+      application_type: "marketplace", audience_model: "b2b",
+    });
     assert.equal(r.status, 302);
     assert.equal(r.headers.get("location"), "/apps/aurora-x");
     const created = calls.find((c) => c.method === "POST" && c.path === "/api/v1/applications");
     assert.ok(created);
     assert.equal(created!.body.slug, "aurora-x");
+    assert.equal(created!.body.application_type, "marketplace");
+    assert.equal(created!.body.audience_model, "b2b");
     assert.deepEqual(created!.body.products, ["community"]);
   });
 
   test("an invalid slug is refused before it reaches the API", async () => {
     const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
-    const r = await form("POST", "/apps", { client_id: "c1", name: "X", slug: "Not A Slug" });
+    const r = await form("POST", "/apps", { client_id: "c1", name: "X", slug: "Not A Slug", application_type: "individual" });
+    assert.equal(r.status, 400);
+    const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
+    assert.equal(after, before); // never called the API
+  });
+
+  test("creating an app without a type is refused before it reaches the API", async () => {
+    const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
+    const r = await form("POST", "/apps", { client_id: "c1", name: "No Type", slug: "no-type" });
     assert.equal(r.status, 400);
     const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
     assert.equal(after, before); // never called the API

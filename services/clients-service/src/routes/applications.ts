@@ -8,8 +8,31 @@ import { resolveManifest } from "../manifest.js";
 export const applications = Router();
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const TYPE = /^[a-z0-9]+(_[a-z0-9]+)*$/; // canonical type slug, e.g. small_business
+const AUDIENCES = new Set(["b2c", "b2b", "b2b2c"]);
 
-/** Launch a brand. Configuration only - no code is written to add one. */
+/**
+ * Normalise the optional taxonomy inputs. audience_model is a closed set (the DB
+ * also enforces it); application_type is open-ended per the brief ("at least
+ * these" types, ending in "Custom"), so we only sanity-check its shape here.
+ */
+function taxonomy(b: Record<string, unknown>): { application_type: string | null; audience_model: string | null } {
+  let application_type: string | null = null;
+  if (b.application_type != null && String(b.application_type).trim() !== "") {
+    application_type = String(b.application_type).trim();
+    if (application_type.length > 64 || !TYPE.test(application_type))
+      throw badRequest("application_type must be a slug like 'small_business'");
+  }
+  let audience_model: string | null = null;
+  if (b.audience_model != null && String(b.audience_model).trim() !== "") {
+    audience_model = String(b.audience_model).trim().toLowerCase();
+    if (!AUDIENCES.has(audience_model))
+      throw badRequest("audience_model must be one of b2c, b2b, b2b2c");
+  }
+  return { application_type, audience_model };
+}
+
+/** Launch an application. Configuration only - no code is written to add one. */
 applications.post("/applications", async (req, res, next) => {
   try {
     const b = req.body ?? {};
@@ -17,16 +40,19 @@ applications.post("/applications", async (req, res, next) => {
     if (!b.name) throw badRequest("name is required");
     if (!SLUG.test(String(b.slug ?? "")))
       throw badRequest("slug must be lowercase words separated by hyphens");
+    const tax = taxonomy(b);
 
     const out = await withTenant(null, async (c) => {
       const prior = await replay(c, req.header("Idempotency-Key"), b.client_id, "POST /applications", b);
       if (prior) return prior;
 
       const { rows } = await c.query(
-        `insert into applications (client_id, name, slug, primary_domain, theme, copy, taxonomy)
-         values ($1,$2,$3,$4,coalesce($5,'{}'::jsonb),coalesce($6,'{}'::jsonb),coalesce($7,'{}'::jsonb))
-         returning app_id, client_id, name, slug, primary_domain, status, manifest_version`,
-        [b.client_id, b.name, b.slug, b.primary_domain ?? null, b.theme ?? null, b.copy ?? null, b.taxonomy ?? null],
+        `insert into applications
+           (client_id, name, slug, primary_domain, application_type, audience_model, theme, copy, taxonomy)
+         values ($1,$2,$3,$4,$5,$6,coalesce($7,'{}'::jsonb),coalesce($8,'{}'::jsonb),coalesce($9,'{}'::jsonb))
+         returning app_id, client_id, name, slug, primary_domain, application_type, audience_model, status, manifest_version`,
+        [b.client_id, b.name, b.slug, b.primary_domain ?? null, tax.application_type, tax.audience_model,
+         b.theme ?? null, b.copy ?? null, b.taxonomy ?? null],
       );
       const app = rows[0];
 
@@ -64,7 +90,7 @@ applications.get("/applications", async (req, res, next) => {
   try {
     const rows = await withTenant(null, async (c) => {
       const { rows } = await c.query(
-        `select app_id, client_id, name, slug, primary_domain, status
+        `select app_id, client_id, name, slug, primary_domain, application_type, audience_model, status
            from applications
           where ($1::uuid is null or client_id = $1)
           order by name`,
