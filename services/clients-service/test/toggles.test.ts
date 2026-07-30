@@ -237,6 +237,20 @@ describe("application taxonomy (brief §7)", () => {
   });
 });
 
+describe("the module registry (Phase 2)", () => {
+  test("GET /products returns the catalogue with lifecycle state and usage", async () => {
+    const reg = await (await get("/products")).json();
+    assert.ok(Array.isArray(reg.data));
+    const twins = reg.data.find((m: { code: string }) => m.code === "twins");
+    assert.ok(twins, "twins should be in the registry");
+    assert.equal(twins.status, "available"); // default state
+    assert.equal(typeof twins.app_count, "number"); // usage count present
+    const agents = reg.data.find((m: { code: string }) => m.code === "agents");
+    assert.deepEqual(agents.requires, ["twins"]); // dependency metadata carried through
+    assert.equal(typeof agents.billable, "boolean");
+  });
+});
+
 describe("filtering the app list (brief §6)", () => {
   test("GET /applications filters by type, audience and status", async () => {
     const clients = await (await get("/clients")).json();

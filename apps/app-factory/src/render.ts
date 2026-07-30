@@ -1,4 +1,4 @@
-import type { Application, Client, ProductRow, AppFilters } from "./api.js";
+import type { Application, Client, ProductRow, ModuleRow, AppFilters } from "./api.js";
 
 /**
  * The XAPPX Factory console. This IS an XAPPX platform surface, so it wears the
@@ -85,6 +85,17 @@ export const STATUS_STATES: ReadonlyArray<readonly [string, string]> = [
 ];
 const STATUS_SET = new Set(STATUS_STATES.map(([v]) => v));
 export const isStatus = (v: string) => STATUS_SET.has(v);
+
+/** Module lifecycle labels (Phase 2 registry). */
+const MODULE_STATE: Readonly<Record<string, string>> = {
+  available: "Available", beta: "Beta", coming_soon: "Coming soon", retired: "Retired",
+};
+/** A chip for a module's lifecycle state. 'available' is the norm, so it gets no chip. */
+function moduleChip(status?: string): string {
+  if (!status || status === "available") return "";
+  const label = MODULE_STATE[status] ?? status;
+  return `<span class="mchip m-${esc(status)}">${esc(label)}</span>`;
+}
 /**
  * Sensible module pre-selections per application type (brief §7: "the type
  * affects recommended modules"). Only codes that actually exist in the live
@@ -244,6 +255,21 @@ const STYLE = `
   .filters .grow{flex:1;min-width:180px} .filters .grow input{min-width:100%}
   .countline{color:var(--gray);font-size:13px;margin:2px 0 16px} .countline .clear{margin-left:10px}
   .appcard[hidden]{display:none}
+  /* module registry */
+  .mchip{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+         padding:2px 7px;border-radius:6px;border:1px solid var(--line);margin-left:8px;vertical-align:middle}
+  .mchip.m-beta{color:var(--amber);border-color:rgba(245,196,81,.4)}
+  .mchip.m-coming_soon{color:var(--violet);border-color:rgba(123,94,255,.4)}
+  .mchip.m-retired{color:var(--dim)}
+  .modrow{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:start;
+          padding:16px 0;border-bottom:1px solid var(--line)}
+  .modrow:last-child{border-bottom:none}
+  .modrow .mn{font-weight:640;font-size:16px} .modrow .mc{font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+  .modrow .md{color:var(--gray);font-size:13.5px;margin-top:3px}
+  .modrow .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .tag{font-family:var(--mono);font-size:10.5px;color:var(--gray);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+  .modrow .use{text-align:right;color:var(--gray);font-size:12.5px;white-space:nowrap}
+  .modrow .use b{display:block;font-family:var(--mono);font-size:20px;color:var(--white);font-weight:600}
 `;
 
 function layout(title: string, body: string, active = ""): string {
@@ -256,7 +282,7 @@ function layout(title: string, body: string, active = ""): string {
 <header class="top">
   <span class="wm">X<b>APP</b>X</span><span class="sep">/</span><span class="app">Factory</span>
   <span class="badge">internal</span>
-  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/apps/new", "New app")}</nav>
+  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}</nav>
 </header>
 <main>${body}</main>
 <footer>XAPPX Factory — a pure API client over the platform services. This build uses a shared-password
@@ -383,13 +409,36 @@ export function appsPage(
   return layout("Apps", body, "/apps");
 }
 
+/** The module registry (Phase 2): the platform catalogue with lifecycle state and usage. */
+export function modulesPage(modules: ModuleRow[]): string {
+  const rows = modules
+    .map((m) => {
+      const tags = [
+        m.requires.length ? `<span class="tag">needs ${esc(m.requires.join(", "))}</span>` : "",
+        m.billable ? `<span class="tag">billable</span>` : "",
+        m.admin_only ? `<span class="tag">admin only</span>` : "",
+      ].join("");
+      return `<div class="modrow">
+        <div><div class="mn">${esc(m.name)}${moduleChip(m.status)} <span class="mc">${esc(m.code)}</span></div>
+          ${m.description ? `<div class="md">${esc(m.description)}</div>` : ""}
+          ${tags ? `<div class="tags">${tags}</div>` : ""}</div>
+        <div class="use"><b>${m.app_count}</b>${m.app_count === 1 ? "app" : "apps"}</div>
+      </div>`;
+    })
+    .join("");
+  const body = `<div class="row"><div class="spacer"><h1>Modules</h1>
+      <p class="sub">The platform module catalogue. Switching a module on for an app is done from that app; this is the registry of what exists and where it stands.</p></div></div>
+    ${modules.length ? `<div class="panel">${rows}</div>` : `<div class="empty">No modules in the catalogue.</div>`}`;
+  return layout("Modules", body, "/modules");
+}
+
 export interface NewAppValues {
   name?: string; slug?: string; client_id?: string; application_type?: string; audience_model?: string;
   roles?: string; problem?: string; user_goal?: string; admin_goal?: string; onboarding?: string; workflows?: string;
 }
 
 /** The guided "Create New App" wizard (brief §7): build → people → discovery → launch. */
-export function newPage(clients: Client[], catalog: ProductRow[], values: NewAppValues = {}, error?: string): string {
+export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppValues = {}, error?: string): string {
   const v = (k: keyof NewAppValues) => esc(values[k] ?? "");
   const clientOpts = clients
     .map((c) => `<option value="${esc(c.client_id)}"${c.client_id === values.client_id ? " selected" : ""}>${esc(c.name)}</option>`)
@@ -524,7 +573,7 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
       const enabled = p.enabled;
       const req = p.requires.length ? `<span class="req">needs ${esc(p.requires.join(", "))}</span>` : "";
       return `<div class="prod">
-        <div><span class="pn">${esc(p.display_name || p.name)}</span> <span class="pc">${esc(p.code)}</span></div>
+        <div><span class="pn">${esc(p.display_name || p.name)}</span>${moduleChip(p.status)} <span class="pc">${esc(p.code)}</span></div>
         ${req}
         <form method="post" action="/apps/${encodeURIComponent(app.slug)}/toggle">
           <input type="hidden" name="code" value="${esc(p.code)}">

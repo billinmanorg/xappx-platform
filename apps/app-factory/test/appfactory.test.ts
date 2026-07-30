@@ -22,16 +22,23 @@ before(async () => {
       application_type: "creator", audience_model: "b2b" },
   ];
   const products = [
-    { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null },
-    { code: "vault", name: "Vault", requires: [], billable: false, enabled: true, display_name: null },
-    { code: "vault_premium", name: "Vault Premium", requires: ["vault"], billable: true, enabled: false, display_name: null },
-    { code: "agents", name: "Agents", requires: [], billable: false, enabled: false, display_name: null },
+    { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null, status: "available" },
+    { code: "vault", name: "Vault", requires: [], billable: false, enabled: true, display_name: null, status: "available" },
+    { code: "vault_premium", name: "Vault Premium", requires: ["vault"], billable: true, enabled: false, display_name: null, status: "available" },
+    { code: "agents", name: "Agents", requires: [], billable: false, enabled: false, display_name: null, status: "beta" },
+  ];
+  const catalog = [
+    { code: "twins", name: "Twins", description: "AI twin creation", requires: [], billable: true, admin_only: false, status: "available", sort_order: 10, app_count: 2 },
+    { code: "agents", name: "Agents", description: "Chat and task agents", requires: ["twins"], billable: true, admin_only: false, status: "beta", sort_order: 20, app_count: 0 },
+    { code: "vault", name: "Vault", description: "Member storage", requires: [], billable: false, admin_only: false, status: "available", sort_order: 30, app_count: 1 },
+    { code: "community", name: "Community", description: "Groups and messaging", requires: [], billable: false, admin_only: false, status: "coming_soon", sort_order: 60, app_count: 3 },
   ];
 
   const s = express();
   s.use(express.json());
   s.use((req, _res, next) => { calls.push({ method: req.method, path: req.path, body: req.body, query: req.query }); next(); });
   s.get("/api/v1/clients", (_q, r) => r.json({ data: [{ client_id: "c1", name: "Acme", slug: "acme" }] }));
+  s.get("/api/v1/products", (_q, r) => r.json({ data: catalog }));
   s.get("/api/v1/applications", (req, r) => {
     let data = apps;
     const f = req.query as Record<string, string>;
@@ -143,9 +150,20 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /B2C/); // audience model
   });
 
+  test("the Modules registry lists the catalogue with state and usage", async () => {
+    const html = await (await get("/modules")).text();
+    assert.match(html, />Modules</);
+    assert.match(html, /Community/); // a module name
+    assert.match(html, /Coming soon/); // its lifecycle state chip
+    assert.match(html, /Beta/); // agents' state
+    assert.match(html, /admin only|billable|needs twins/); // capability tags
+    assert.match(html, /apps/); // usage count label
+  });
+
   test("the configure page shows modules, the lifecycle control, and an editable details form", async () => {
     const html = await (await get("/apps/demo-one")).text();
     assert.match(html, /Agents/); // module toggle
+    assert.match(html, /Beta/); // module state chip on the toggle
     assert.match(html, /Lifecycle status/); // status control
     assert.match(html, /<option value="published"/); // publishing is now a lifecycle transition
     assert.match(html, /Save details/); // details form

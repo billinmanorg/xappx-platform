@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, modulesPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, type FactoryStats } from "./render.js";
 
 /**
  * A shared-password gate. The console can create and configure applications, so
@@ -95,6 +95,16 @@ export function createApp() {
       };
       const [apps, clients] = await Promise.all([api.listApplications(filters), api.listClients()]);
       res.type("html").send(appsPage(apps.data?.data ?? [], { clients: clients.data?.data ?? [], filters }));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // ---- module registry ----
+  app.get("/modules", async (_req, res, next) => {
+    try {
+      const r = await api.listModules();
+      res.type("html").send(modulesPage(r.data?.data ?? []));
     } catch (e) {
       next(e);
     }
@@ -276,13 +286,10 @@ export function createApp() {
   return app;
 }
 
-/** The module catalogue, read from any existing app (no bare catalogue endpoint yet). */
+/** The module catalogue, from the registry endpoint. */
 async function loadCatalog() {
-  const apps = await api.listApplications();
-  const first = (apps.data?.data ?? [])[0];
-  if (!first) return [];
-  const products = await api.getProducts(first.slug);
-  return products.data?.data ?? [];
+  const r = await api.listModules();
+  return r.data?.data ?? [];
 }
 
 const flash = (req: express.Request) => ({

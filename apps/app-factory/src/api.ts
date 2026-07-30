@@ -47,7 +47,11 @@ export interface Application {
   audience_model?: string | null;
   intake?: AppIntake | null;
 }
-export interface ProductRow { code: string; name: string; requires: string[]; billable: boolean; enabled: boolean; display_name: string | null }
+export interface ProductRow { code: string; name: string; requires: string[]; billable: boolean; enabled: boolean; display_name: string | null; status?: string }
+export interface ModuleRow {
+  code: string; name: string; description: string | null; requires: string[];
+  billable: boolean; admin_only: boolean; status: string; sort_order: number; app_count: number;
+}
 
 export interface AppFilters { client_id?: string; status?: string; application_type?: string; audience_model?: string }
 
@@ -60,6 +64,7 @@ export const listApplications = (filters: AppFilters = {}) => {
 };
 export const getApplication = (slug: string) =>
   call<Application>("GET", `/api/v1/applications/${encodeURIComponent(slug)}`);
+export const listModules = () => call<{ data: ModuleRow[] }>("GET", "/api/v1/products");
 export const getProducts = (slug: string) =>
   call<{ data: ProductRow[] }>("GET", `/api/v1/applications/${encodeURIComponent(slug)}/products`);
 export const createApplication = (body: {

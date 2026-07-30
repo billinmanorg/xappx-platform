@@ -21,6 +21,30 @@ async function activeSubscribers(appId: string, code: string): Promise<number | 
   }
 }
 
+/**
+ * The module registry (Bill's Phase 2): every module in the catalogue with its
+ * lifecycle state and how many apps currently have it switched on. Read-only —
+ * the platform's view of what modules exist, independent of any one app.
+ */
+products.get("/products", async (_req, res, next) => {
+  try {
+    const rows = await withTenant(null, async (c) => {
+      const { rows } = await c.query(
+        `select p.code, p.name, p.description, p.requires, p.billable, p.admin_only,
+                p.status, p.sort_order,
+                (select count(*)::int from app_products ap
+                  where ap.product_code = p.code and ap.enabled) as app_count
+           from products p
+          order by p.sort_order, p.name`,
+      );
+      return rows;
+    });
+    res.json({ data: rows });
+  } catch (e) {
+    next(e);
+  }
+});
+
 products.get("/applications/:slug/products", async (req, res, next) => {
   try {
     const rows = await withTenant(null, async (c) => {
@@ -29,11 +53,11 @@ products.get("/applications/:slug/products", async (req, res, next) => {
       ]);
       if (!apps[0]) throw notFound(`Application '${req.params.slug}'`);
       const { rows } = await c.query(
-        `select p.code, p.name, p.requires, p.billable,
+        `select p.code, p.name, p.requires, p.billable, p.status,
                 coalesce(ap.enabled,false) as enabled, ap.display_name, ap.changed_at
            from products p
            left join app_products ap on ap.product_code=p.code and ap.app_id=$1
-          order by p.code`,
+          order by p.sort_order, p.code`,
         [apps[0].app_id],
       );
       return rows;
