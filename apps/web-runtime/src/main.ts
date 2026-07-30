@@ -59,7 +59,7 @@ export function createApp() {
       return await fetchManifest(slug);
     } catch (e) {
       const status = e instanceof ManifestError ? e.status : 502;
-      const msg = status === 404 ? "This brand does not exist." : "The brand could not be loaded.";
+      const msg = status === 404 ? "This app does not exist." : "The app could not be loaded.";
       res.status(status).type("html").send(renderError(status, msg));
       return null;
     }

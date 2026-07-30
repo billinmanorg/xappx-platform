@@ -3,16 +3,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { listPage, newPage, editPage, errorPage } from "./render.js";
+import { dashboardPage, appsPage, newPage, editPage, errorPage, type FactoryStats } from "./render.js";
 
 /**
- * A shared-password gate. The console can create and delete brands, so it must
- * not be openly reachable once it's on a public URL. When FACTORY_USER/PASS are
- * set it requires HTTP Basic Auth; when they are unset (local dev) it stays open.
+ * A shared-password gate. The console can create and configure applications, so
+ * it must not be openly reachable on a public URL. When FACTORY_USER/PASS are set
+ * it requires HTTP Basic Auth; unset (local dev) it stays open.
  *
- * This is a deliberately minimal demo gate — one shared credential — NOT the
- * platform's real per-user auth. It still counts as auth code and should be
- * reviewed before it protects anything that matters.
+ * Deliberately minimal — one shared credential, NOT the platform's role-based
+ * auth. It is auth code and should be reviewed. Role-based sign-in is planned.
  */
 function timingEqual(a: string, b: string): boolean {
   const x = Buffer.from(a);
@@ -23,8 +22,7 @@ function timingEqual(a: string, b: string): boolean {
 function basicAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   const user = process.env.FACTORY_USER;
   const pass = process.env.FACTORY_PASS;
-  if (!user || !pass) return next(); // no credentials configured → open (local only)
-
+  if (!user || !pass) return next();
   const match = /^Basic (.+)$/.exec(req.header("authorization") ?? "");
   if (match) {
     const decoded = Buffer.from(match[1] ?? "", "base64").toString("utf8");
@@ -33,7 +31,7 @@ function basicAuth(req: express.Request, res: express.Response, next: express.Ne
     const p = sep === -1 ? "" : decoded.slice(sep + 1);
     if (timingEqual(u, user) && timingEqual(p, pass)) return next();
   }
-  res.set("WWW-Authenticate", 'Basic realm="XAPPX App Factory", charset="UTF-8"');
+  res.set("WWW-Authenticate", 'Basic realm="XAPPX Factory", charset="UTF-8"');
   res.status(401).type("text/plain").send("Authentication required.");
 }
 
@@ -44,16 +42,13 @@ const TOKENS =
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /**
- * The App Factory console. Server-rendered screens over clients-service's public
- * API. It writes brands and toggles products; it reads nothing from any database
- * directly. Forms POST and redirect (Post/Redirect/Get), so a refresh never
- * repeats an action.
+ * The XAPPX Factory console. Server-rendered screens over the platform's public
+ * API; it holds no database. Forms POST and redirect (Post/Redirect/Get).
  */
 export function createApp() {
   const app = express();
   app.use(express.urlencoded({ extended: false }));
 
-  // Health check stays public so the host can probe it; everything else is gated.
   app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
   app.use(basicAuth);
 
@@ -65,16 +60,40 @@ export function createApp() {
     }
   });
 
+  // ---- dashboard (home) ----
   app.get("/", async (_req, res, next) => {
     try {
-      const apps = await api.listApplications();
-      res.type("html").send(listPage(apps.data?.data ?? []));
+      const [appsR, clientsR, catalog] = await Promise.all([
+        api.listApplications(),
+        api.listClients(),
+        loadCatalog(),
+      ]);
+      const apps = appsR.data?.data ?? [];
+      const stats: FactoryStats = {
+        totalApps: apps.length,
+        published: apps.filter((a) => a.status === "published").length,
+        drafts: apps.filter((a) => a.status === "draft").length,
+        otherStatus: apps.filter((a) => a.status !== "published" && a.status !== "draft").length,
+        clients: (clientsR.data?.data ?? []).length,
+        modules: catalog.length,
+      };
+      res.type("html").send(dashboardPage(stats, apps));
     } catch (e) {
       next(e);
     }
   });
 
-  app.get("/new", async (req, res, next) => {
+  // ---- apps ----
+  app.get("/apps", async (_req, res, next) => {
+    try {
+      const apps = await api.listApplications();
+      res.type("html").send(appsPage(apps.data?.data ?? []));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get("/apps/new", async (req, res, next) => {
     try {
       const clients = await api.listClients();
       const catalog = await loadCatalog();
@@ -84,44 +103,37 @@ export function createApp() {
     }
   });
 
-  app.post("/brands", async (req, res, next) => {
+  app.post("/apps", async (req, res, next) => {
     try {
       const name = String(req.body.name ?? "").trim();
       const slug = String(req.body.slug ?? "").trim();
       const client_id = String(req.body.client_id ?? "");
       const products = toArray(req.body.products);
-      if (!name || !SLUG.test(slug) || !client_id) {
+      const reshow = async (status: number, detail: string) => {
         const clients = await api.listClients();
         const catalog = await loadCatalog();
-        res.status(400).type("html").send(
-          newPage(clients.data?.data ?? [], catalog, { name, slug, client_id },
-            "A client, a name, and a valid slug (lowercase words with hyphens) are all required."),
-        );
-        return;
+        res.status(status).type("html").send(newPage(clients.data?.data ?? [], catalog, { name, slug, client_id }, detail));
+      };
+      if (!name || !SLUG.test(slug) || !client_id) {
+        return reshow(400, "A client, a name, and a valid slug (lowercase words with hyphens) are all required.");
       }
       const created = await api.createApplication({ client_id, name, slug, products });
       if (created.status >= 400) {
-        const clients = await api.listClients();
-        const catalog = await loadCatalog();
-        const detail = (created.data as any)?.detail ?? "Could not create the brand.";
-        res.status(created.status).type("html").send(
-          newPage(clients.data?.data ?? [], catalog, { name, slug, client_id }, detail),
-        );
-        return;
+        return reshow(created.status, (created.data as any)?.detail ?? "Could not create the app.");
       }
-      res.redirect(`/brands/${encodeURIComponent(slug)}`);
+      res.redirect(`/apps/${encodeURIComponent(slug)}`);
     } catch (e) {
       next(e);
     }
   });
 
-  app.get("/brands/:slug", async (req, res, next) => {
+  app.get("/apps/:slug", async (req, res, next) => {
     try {
       const slug = req.params.slug;
       const [apps, products] = await Promise.all([api.listApplications(), api.getProducts(slug)]);
       const appRow = (apps.data?.data ?? []).find((a) => a.slug === slug);
       if (!appRow || products.status === 404) {
-        res.status(404).type("html").send(errorPage(404, `No brand '${slug}'.`));
+        res.status(404).type("html").send(errorPage(404, `No app '${slug}'.`));
         return;
       }
       const f = flash(req);
@@ -131,35 +143,39 @@ export function createApp() {
     }
   });
 
-  app.post("/brands/:slug/toggle", async (req, res, next) => {
+  app.post("/apps/:slug/toggle", async (req, res, next) => {
     try {
       const slug = req.params.slug;
       const code = String(req.body.code ?? "");
       const enabled = String(req.body.enabled ?? "") === "true";
       const r = await api.toggleProduct(slug, code, enabled);
-      if (r.status >= 400) {
-        const detail = (r.data as any)?.detail ?? "The product could not be changed.";
-        res.redirect(`/brands/${encodeURIComponent(slug)}?err=${encodeURIComponent(detail)}`);
-        return;
-      }
-      res.redirect(`/brands/${encodeURIComponent(slug)}?ok=${encodeURIComponent(`${code} switched ${enabled ? "on" : "off"}.`)}`);
+      const q = new URLSearchParams();
+      if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "The module could not be changed.");
+      else q.set("ok", `${code} switched ${enabled ? "on" : "off"}.`);
+      res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }
   });
 
-  app.post("/brands/:slug/publish", async (req, res, next) => {
+  app.post("/apps/:slug/publish", async (req, res, next) => {
     try {
       const slug = req.params.slug;
       const r = await api.publish(slug);
       const q = new URLSearchParams();
       if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Publish failed.");
-      else q.set("ok", "Brand published.");
-      res.redirect(`/brands/${encodeURIComponent(slug)}?${q.toString()}`);
+      else q.set("ok", "App published.");
+      res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }
   });
+
+  // ---- backward-compatible redirects from the old "brand" URLs ----
+  app.get("/new", (_req, res) => res.redirect(301, "/apps/new"));
+  app.get("/brands", (_req, res) => res.redirect(301, "/apps"));
+  app.get("/brands/:slug", (req, res) => res.redirect(301, `/apps/${encodeURIComponent(req.params.slug)}`));
+  app.post("/brands", (_req, res) => res.redirect(307, "/apps")); // 307 preserves the POST body
 
   app.use((_req, res) => res.status(404).type("html").send(errorPage(404, "Page not found.")));
   app.use((err: unknown, _req: express.Request, res: express.Response, _n: express.NextFunction) => {
@@ -170,7 +186,7 @@ export function createApp() {
   return app;
 }
 
-/** The product catalogue, read from any existing brand (there is no bare catalogue endpoint yet). */
+/** The module catalogue, read from any existing app (no bare catalogue endpoint yet). */
 async function loadCatalog() {
   const apps = await api.listApplications();
   const first = (apps.data?.data ?? [])[0];
@@ -188,5 +204,5 @@ const toArray = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : v 
 
 if (process.env.NODE_ENV !== "test") {
   const port = Number(process.env.PORT ?? 8096);
-  createApp().listen(port, () => console.log(`app-factory console on ${port}`));
+  createApp().listen(port, () => console.log(`xappx-factory console on ${port}`));
 }

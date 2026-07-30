@@ -59,31 +59,56 @@ const form = (m: string, p: string, obj: Record<string, string>) =>
     redirect: "manual",
   });
 
-describe("the console renders from the platform API", () => {
-  test("the brands list shows existing brands", async () => {
+describe("the Factory renders from the platform API", () => {
+  test("the dashboard shows real counts and recent apps, with honest zero-states", async () => {
     const html = await (await get("/")).text();
+    assert.match(html, /Factory/);
+    assert.match(html, /Applications/); // a metric card
+    assert.match(html, /not yet tracked/); // zero-state label, not a fake number
+    assert.match(html, /Demo One/); // recent app
+  });
+
+  test("the Apps list shows existing apps", async () => {
+    const html = await (await get("/apps")).text();
+    assert.match(html, />Apps</);
     assert.match(html, /Demo One/);
     assert.match(html, /demo-one/);
   });
 
-  test("the new-brand form offers the client and the product catalogue", async () => {
-    const html = await (await get("/new")).text();
+  test("the New app form offers the client and the module catalogue", async () => {
+    const html = await (await get("/apps/new")).text();
+    assert.match(html, /New app/);
     assert.match(html, /Acme/); // client option
     assert.match(html, /name="products" value="vault"/); // catalogue checkbox
   });
 
-  test("the configure page shows the product toggles and a publish action", async () => {
-    const html = await (await get("/brands/demo-one")).text();
+  test("the configure page shows module toggles and a publish action", async () => {
+    const html = await (await get("/apps/demo-one")).text();
     assert.match(html, /Agents/);
-    assert.match(html, /Publish brand/);
+    assert.match(html, /Publish app/);
   });
 });
 
-describe("the console drives the right API calls", () => {
-  test("creating a brand POSTs to /applications and redirects to its page", async () => {
-    const r = await form("POST", "/brands", { client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community" });
+describe("terminology is Apps, not Brands (brief §1)", () => {
+  test("core UI copy uses App/Apps, not Brand/Brands", async () => {
+    const dash = await (await get("/")).text();
+    const list = await (await get("/apps")).text();
+    assert.doesNotMatch(dash + list, /\bBrand(s)?\b/);
+    assert.match(list, /Every app on the XAPPX Platform/);
+  });
+
+  test("old /brands URLs redirect to /apps", async () => {
+    const r = await fetch(base + "/brands", { redirect: "manual" });
+    assert.equal(r.status, 301);
+    assert.equal(r.headers.get("location"), "/apps");
+  });
+});
+
+describe("the Factory drives the right API calls", () => {
+  test("creating an app POSTs to /applications and redirects to its page", async () => {
+    const r = await form("POST", "/apps", { client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community" });
     assert.equal(r.status, 302);
-    assert.equal(r.headers.get("location"), "/brands/aurora-x");
+    assert.equal(r.headers.get("location"), "/apps/aurora-x");
     const created = calls.find((c) => c.method === "POST" && c.path === "/api/v1/applications");
     assert.ok(created);
     assert.equal(created!.body.slug, "aurora-x");
@@ -92,14 +117,14 @@ describe("the console drives the right API calls", () => {
 
   test("an invalid slug is refused before it reaches the API", async () => {
     const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
-    const r = await form("POST", "/brands", { client_id: "c1", name: "X", slug: "Not A Slug" });
+    const r = await form("POST", "/apps", { client_id: "c1", name: "X", slug: "Not A Slug" });
     assert.equal(r.status, 400);
     const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
     assert.equal(after, before); // never called the API
   });
 
-  test("toggling a product PUTs to the product endpoint", async () => {
-    const r = await form("POST", "/brands/demo-one/toggle", { code: "agents", enabled: "true" });
+  test("toggling a module PUTs to the product endpoint", async () => {
+    const r = await form("POST", "/apps/demo-one/toggle", { code: "agents", enabled: "true" });
     assert.equal(r.status, 302);
     const put = calls.find((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one/products/agents");
     assert.ok(put);
@@ -107,7 +132,7 @@ describe("the console drives the right API calls", () => {
   });
 
   test("publishing POSTs to the publish endpoint", async () => {
-    const r = await form("POST", "/brands/demo-one/publish", {});
+    const r = await form("POST", "/apps/demo-one/publish", {});
     assert.equal(r.status, 302);
     assert.ok(calls.some((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/publish"));
   });
