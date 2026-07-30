@@ -45,6 +45,60 @@ products.get("/products", async (_req, res, next) => {
   }
 });
 
+const MODULE_STATUSES = new Set(["available", "beta", "coming_soon", "retired"]);
+
+/**
+ * Edit a module in the registry (Bill's Phase 2): its lifecycle state, name,
+ * description or sort order. `code` is the primary key referenced by every app,
+ * so it is immutable. Partial — only fields present in the body change.
+ *
+ * No domain event is emitted: a registry edit is platform catalogue metadata
+ * with no cross-service consumer today. When one appears (e.g. a service that
+ * must react when a module is retired), add a module-updated event — that is a
+ * contract change and must be raised first. When role-based auth lands, this
+ * belongs to a platform-admin role, not the shared Factory gate.
+ */
+products.put("/products/:code", async (req, res, next) => {
+  try {
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    const put = (col: string, v: unknown) => { vals.push(v); sets.push(`${col} = $${vals.length}`); };
+
+    if ("status" in b) {
+      const s = String(b.status ?? "");
+      if (!MODULE_STATUSES.has(s)) throw badRequest("status must be available, beta, coming_soon or retired");
+      put("status", s);
+    }
+    if ("name" in b) {
+      const n = String(b.name ?? "").trim();
+      if (!n) throw badRequest("name cannot be empty");
+      put("name", n);
+    }
+    if ("description" in b) put("description", String(b.description ?? "").trim() || null);
+    if ("sort_order" in b) {
+      const n = Number(b.sort_order);
+      if (!Number.isInteger(n)) throw badRequest("sort_order must be a whole number");
+      put("sort_order", n);
+    }
+    if (!sets.length) throw badRequest("no editable fields were provided");
+
+    const row = await withTenant(null, async (c) => {
+      vals.push(req.params.code);
+      const { rows } = await c.query(
+        `update products set ${sets.join(", ")} where code = $${vals.length}
+         returning code, name, description, requires, billable, admin_only, status, sort_order`,
+        vals,
+      );
+      if (!rows[0]) throw notFound(`Module '${req.params.code}'`);
+      return rows[0];
+    });
+    res.json(row);
+  } catch (e) {
+    next(e);
+  }
+});
+
 products.get("/applications/:slug/products", async (req, res, next) => {
   try {
     const rows = await withTenant(null, async (c) => {

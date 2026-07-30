@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, modulesPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, isModuleStatus, type FactoryStats } from "./render.js";
 
 /**
  * A shared-password gate. The console can create and configure applications, so
@@ -105,6 +105,44 @@ export function createApp() {
     try {
       const r = await api.listModules();
       res.type("html").send(modulesPage(r.data?.data ?? []));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.get("/modules/:code", async (req, res, next) => {
+    try {
+      const r = await api.listModules();
+      const mod = (r.data?.data ?? []).find((m) => m.code === req.params.code);
+      if (!mod) {
+        res.status(404).type("html").send(errorPage(404, `No module '${req.params.code}'.`));
+        return;
+      }
+      const f = flash(req);
+      res.type("html").send(moduleEditPage(mod, { ok: f.ok, err: f.err }));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.post("/modules/:code", async (req, res, next) => {
+    try {
+      const code = req.params.code;
+      const status = String(req.body.status ?? "").trim();
+      const q = new URLSearchParams();
+      if (status && !isModuleStatus(status)) {
+        q.set("err", "That is not a valid module state.");
+        return res.redirect(`/modules/${encodeURIComponent(code)}?${q.toString()}`);
+      }
+      const r = await api.updateModule(code, {
+        status,
+        name: String(req.body.name ?? "").trim(),
+        description: String(req.body.description ?? "").trim() || null,
+        sort_order: Number(req.body.sort_order),
+      });
+      if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Could not save the module.");
+      else q.set("ok", "Module saved.");
+      res.redirect(`/modules/${encodeURIComponent(code)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }

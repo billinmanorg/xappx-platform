@@ -39,6 +39,12 @@ before(async () => {
   s.use((req, _res, next) => { calls.push({ method: req.method, path: req.path, body: req.body, query: req.query }); next(); });
   s.get("/api/v1/clients", (_q, r) => r.json({ data: [{ client_id: "c1", name: "Acme", slug: "acme" }] }));
   s.get("/api/v1/products", (_q, r) => r.json({ data: catalog }));
+  s.put("/api/v1/products/:code", (req, r) => {
+    const m = catalog.find((x) => x.code === req.params.code);
+    if (!m) return r.status(404).json({ status: 404 });
+    Object.assign(m, req.body);
+    r.json(m);
+  });
   s.get("/api/v1/applications", (req, r) => {
     let data = apps;
     const f = req.query as Record<string, string>;
@@ -160,6 +166,15 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /apps/); // usage count label
   });
 
+  test("a module's edit page shows its state, name and metadata", async () => {
+    const html = await (await get("/modules/agents")).text();
+    assert.match(html, /Lifecycle state/);
+    assert.match(html, /<option value="retired"/); // full state list
+    assert.match(html, /name="name"/);
+    assert.match(html, /Save module/);
+    assert.match(html, /needs twins/); // read-only capability shown
+  });
+
   test("the configure page shows modules, the lifecycle control, and an editable details form", async () => {
     const html = await (await get("/apps/demo-one")).text();
     assert.match(html, /Agents/); // module toggle
@@ -259,6 +274,23 @@ describe("the Factory drives the right API calls", () => {
     assert.equal(r.status, 302); // redirects back with an error flash
     const after = calls.filter((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one").length;
     assert.equal(after, before); // never reached the API
+  });
+
+  test("editing a module PUTs the new state to /products/:code", async () => {
+    const r = await form("POST", "/modules/agents", { status: "available", name: "Agents", description: "Chat", sort_order: "20" });
+    assert.equal(r.status, 302);
+    const put = calls.find((c) => c.method === "PUT" && c.path === "/api/v1/products/agents");
+    assert.ok(put);
+    assert.equal(put!.body.status, "available");
+    assert.equal(put!.body.name, "Agents");
+  });
+
+  test("an invalid module state is refused before the API is called", async () => {
+    const before = calls.filter((c) => c.method === "PUT" && c.path === "/api/v1/products/agents").length;
+    const r = await form("POST", "/modules/agents", { status: "not-a-state" });
+    assert.equal(r.status, 302);
+    const after = calls.filter((c) => c.method === "PUT" && c.path === "/api/v1/products/agents").length;
+    assert.equal(after, before);
   });
 
   test("a lifecycle transition POSTs to /applications/:slug/status", async () => {

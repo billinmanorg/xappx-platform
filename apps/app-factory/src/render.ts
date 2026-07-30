@@ -86,10 +86,16 @@ export const STATUS_STATES: ReadonlyArray<readonly [string, string]> = [
 const STATUS_SET = new Set(STATUS_STATES.map(([v]) => v));
 export const isStatus = (v: string) => STATUS_SET.has(v);
 
-/** Module lifecycle labels (Phase 2 registry). */
-const MODULE_STATE: Readonly<Record<string, string>> = {
-  available: "Available", beta: "Beta", coming_soon: "Coming soon", retired: "Retired",
-};
+/** Module lifecycle states (Phase 2 registry), in order, with labels. */
+export const MODULE_STATES: ReadonlyArray<readonly [string, string]> = [
+  ["available", "Available"],
+  ["beta", "Beta"],
+  ["coming_soon", "Coming soon"],
+  ["retired", "Retired"],
+];
+const MODULE_STATE: Readonly<Record<string, string>> = Object.fromEntries(MODULE_STATES);
+const MODULE_STATE_SET = new Set(MODULE_STATES.map(([v]) => v));
+export const isModuleStatus = (v: string) => MODULE_STATE_SET.has(v);
 /** A chip for a module's lifecycle state. 'available' is the norm, so it gets no chip. */
 function moduleChip(status?: string): string {
   if (!status || status === "available") return "";
@@ -422,7 +428,8 @@ export function modulesPage(modules: ModuleRow[]): string {
         <div><div class="mn">${esc(m.name)}${moduleChip(m.status)} <span class="mc">${esc(m.code)}</span></div>
           ${m.description ? `<div class="md">${esc(m.description)}</div>` : ""}
           ${tags ? `<div class="tags">${tags}</div>` : ""}</div>
-        <div class="use"><b>${m.app_count}</b>${m.app_count === 1 ? "app" : "apps"}</div>
+        <div class="use"><b>${m.app_count}</b>${m.app_count === 1 ? "app" : "apps"}
+          <div style="margin-top:8px"><a href="/modules/${encodeURIComponent(m.code)}">Edit →</a></div></div>
       </div>`;
     })
     .join("");
@@ -430,6 +437,40 @@ export function modulesPage(modules: ModuleRow[]): string {
       <p class="sub">The platform module catalogue. Switching a module on for an app is done from that app; this is the registry of what exists and where it stands.</p></div></div>
     ${modules.length ? `<div class="panel">${rows}</div>` : `<div class="empty">No modules in the catalogue.</div>`}`;
   return layout("Modules", body, "/modules");
+}
+
+/** Edit one module in the registry: its lifecycle state and catalogue metadata. */
+export function moduleEditPage(m: ModuleRow, flash?: { ok?: string; err?: string }): string {
+  const stateOpts = MODULE_STATES
+    .map(([v, label]) => `<option value="${v}"${v === m.status ? " selected" : ""}>${esc(label)}</option>`)
+    .join("");
+  const tags = [
+    m.requires.length ? `<span class="tag">needs ${esc(m.requires.join(", "))}</span>` : "",
+    m.billable ? `<span class="tag">billable</span>` : "",
+    m.admin_only ? `<span class="tag">admin only</span>` : "",
+    `<span class="tag">${m.app_count} app${m.app_count === 1 ? "" : "s"} using it</span>`,
+  ].join("");
+  const body = `<div class="row"><div class="spacer"><h1>${esc(m.name)}</h1>
+      <p class="sub"><span class="sl">${esc(m.code)}</span> · ${moduleChip(m.status) || '<span class="status st-published">Available</span>'}</p></div>
+      <a class="btn quiet" href="/modules">← All modules</a></div>
+    ${flash?.ok ? `<div class="notice ok">${esc(flash.ok)}</div>` : ""}
+    ${flash?.err ? `<div class="notice err">${esc(flash.err)}</div>` : ""}
+    <form class="panel" method="post" action="/modules/${encodeURIComponent(m.code)}">
+      <div class="field"><label for="status">Lifecycle state</label>
+        <select id="status" name="status" style="max-width:260px">${stateOpts}</select>
+        <span class="hint">How the module reads across the platform. Retiring one does not switch it off in apps that already use it.</span></div>
+      <div class="field"><label for="name">Name</label>
+        <input id="name" name="name" value="${esc(m.name)}" required></div>
+      <div class="field"><label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="What this module does">${esc(m.description ?? "")}</textarea></div>
+      <div class="field"><label for="sort_order">Sort order</label>
+        <input id="sort_order" name="sort_order" type="number" value="${m.sort_order}" style="max-width:140px">
+        <span class="hint">Lower shows first in the registry and module lists.</span></div>
+      <div class="field"><label>Capabilities</label><div class="tags">${tags}</div>
+        <span class="hint">Dependencies and billing are defined in the catalogue, not edited here.</span></div>
+      <div class="row"><button class="btn" type="submit">Save module</button><a class="btn quiet" href="/modules">Cancel</a></div>
+    </form>`;
+  return layout(m.name, body, "/modules");
 }
 
 export interface NewAppValues {

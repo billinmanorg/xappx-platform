@@ -65,6 +65,9 @@ export const listApplications = (filters: AppFilters = {}) => {
 export const getApplication = (slug: string) =>
   call<Application>("GET", `/api/v1/applications/${encodeURIComponent(slug)}`);
 export const listModules = () => call<{ data: ModuleRow[] }>("GET", "/api/v1/products");
+export const updateModule = (code: string, body: {
+  status?: string; name?: string; description?: string | null; sort_order?: number;
+}) => call<ModuleRow>("PUT", `/api/v1/products/${encodeURIComponent(code)}`, body);
 export const getProducts = (slug: string) =>
   call<{ data: ProductRow[] }>("GET", `/api/v1/applications/${encodeURIComponent(slug)}/products`);
 export const createApplication = (body: {

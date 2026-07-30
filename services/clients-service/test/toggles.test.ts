@@ -249,6 +249,25 @@ describe("the module registry (Phase 2)", () => {
     assert.deepEqual(agents.requires, ["twins"]); // dependency metadata carried through
     assert.equal(typeof agents.billable, "boolean");
   });
+
+  test("PUT /products/:code edits a module's lifecycle state", async () => {
+    const r = await send("PUT", "/products/community", { status: "beta" });
+    assert.equal(r.status, 200);
+    assert.equal((await r.json()).status, "beta");
+    const reg = await (await get("/products")).json();
+    assert.equal(reg.data.find((m: { code: string }) => m.code === "community").status, "beta");
+    await send("PUT", "/products/community", { status: "available" }); // restore
+  });
+
+  test("an invalid module state is rejected with 400", async () => {
+    const r = await send("PUT", "/products/community", { status: "nope" });
+    assert.equal(r.status, 400);
+  });
+
+  test("editing an unknown module 404s", async () => {
+    const r = await send("PUT", "/products/no-such-module", { status: "beta" });
+    assert.equal(r.status, 404);
+  });
 });
 
 describe("filtering the app list (brief §6)", () => {
