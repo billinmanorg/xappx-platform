@@ -116,13 +116,18 @@ applications.post("/applications", async (req, res, next) => {
 
 applications.get("/applications", async (req, res, next) => {
   try {
+    // Optional, indexed filters (brief §6). An absent or empty param means "any".
+    const q = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
     const rows = await withTenant(null, async (c) => {
       const { rows } = await c.query(
         `select app_id, client_id, name, slug, primary_domain, application_type, audience_model, status
            from applications
           where ($1::uuid is null or client_id = $1)
+            and ($2::text is null or status = $2)
+            and ($3::text is null or application_type = $3)
+            and ($4::text is null or audience_model = $4)
           order by name`,
-        [req.query.client_id ?? null],
+        [q(req.query.client_id), q(req.query.status), q(req.query.application_type), q(req.query.audience_model)],
       );
       return rows;
     });

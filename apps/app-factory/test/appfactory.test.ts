@@ -5,7 +5,7 @@ import express from "express";
 
 // Records every call the console makes, and serves canned platform data, so the
 // tests assert the console drives the right APIs without a real clients-service.
-interface Call { method: string; path: string; body: any }
+interface Call { method: string; path: string; body: any; query: any }
 const calls: Call[] = [];
 let apps: any[];
 
@@ -14,9 +14,13 @@ let console_: Server;
 let base: string;
 
 before(async () => {
-  apps = [{ app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft",
-            application_type: "small_business", audience_model: "b2c",
-            intake: { roles: ["Members", "Staff"], problem: "Help local shops sell online" } }];
+  apps = [
+    { app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft",
+      application_type: "small_business", audience_model: "b2c",
+      intake: { roles: ["Members", "Staff"], problem: "Help local shops sell online" } },
+    { app_id: "a2", client_id: "c1", name: "Beta Two", slug: "beta-two", status: "published",
+      application_type: "creator", audience_model: "b2b" },
+  ];
   const products = [
     { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null },
     { code: "vault", name: "Vault", requires: [], billable: false, enabled: true, display_name: null },
@@ -26,9 +30,16 @@ before(async () => {
 
   const s = express();
   s.use(express.json());
-  s.use((req, _res, next) => { calls.push({ method: req.method, path: req.path, body: req.body }); next(); });
+  s.use((req, _res, next) => { calls.push({ method: req.method, path: req.path, body: req.body, query: req.query }); next(); });
   s.get("/api/v1/clients", (_q, r) => r.json({ data: [{ client_id: "c1", name: "Acme", slug: "acme" }] }));
-  s.get("/api/v1/applications", (_q, r) => r.json({ data: apps }));
+  s.get("/api/v1/applications", (req, r) => {
+    let data = apps;
+    const f = req.query as Record<string, string>;
+    for (const k of ["client_id", "status", "application_type", "audience_model"]) {
+      if (f[k]) data = data.filter((a) => a[k] === f[k]);
+    }
+    r.json({ data });
+  });
   s.get("/api/v1/applications/:slug/products", (req, r) =>
     apps.some((a) => a.slug === req.params.slug) ? r.json({ data: products }) : r.status(404).json({ status: 404 }));
   s.get("/api/v1/applications/:slug", (req, r) => {
@@ -90,11 +101,25 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /Demo One/); // recent app
   });
 
-  test("the Apps list shows existing apps", async () => {
+  test("the Apps list shows existing apps, the owner, and a filter bar", async () => {
     const html = await (await get("/apps")).text();
     assert.match(html, />Apps</);
     assert.match(html, /Demo One/);
     assert.match(html, /demo-one/);
+    assert.match(html, /Acme/); // owner (client) shown on the card
+    assert.match(html, /All clients/); // filter bar
+    assert.match(html, /Any status/);
+    assert.match(html, /Any type/);
+    assert.match(html, /id="appsearch"/); // client-side search box
+  });
+
+  test("filtering by status forwards the filter to the API and narrows the list", async () => {
+    const html = await (await get("/apps?status=published")).text();
+    const listCall = [...calls].reverse().find((c) => c.method === "GET" && c.path === "/api/v1/applications");
+    assert.equal(listCall!.query.status, "published"); // filter reached the API
+    assert.match(html, /Beta Two/); // the published app
+    assert.doesNotMatch(html, /Demo One/); // the draft app is filtered out
+    assert.match(html, /Clear filters/); // an active filter offers a reset
   });
 
   test("the New app wizard walks build → people → discovery → launch", async () => {

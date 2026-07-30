@@ -84,10 +84,17 @@ export function createApp() {
   });
 
   // ---- apps ----
-  app.get("/apps", async (_req, res, next) => {
+  app.get("/apps", async (req, res, next) => {
     try {
-      const apps = await api.listApplications();
-      res.type("html").send(appsPage(apps.data?.data ?? []));
+      const qstr = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+      const filters = {
+        client_id: qstr(req.query.client_id),
+        status: qstr(req.query.status),
+        application_type: qstr(req.query.application_type),
+        audience_model: qstr(req.query.audience_model),
+      };
+      const [apps, clients] = await Promise.all([api.listApplications(filters), api.listClients()]);
+      res.type("html").send(appsPage(apps.data?.data ?? [], { clients: clients.data?.data ?? [], filters }));
     } catch (e) {
       next(e);
     }

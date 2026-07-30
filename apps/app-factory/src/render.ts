@@ -1,4 +1,4 @@
-import type { Application, Client, ProductRow } from "./api.js";
+import type { Application, Client, ProductRow, AppFilters } from "./api.js";
 
 /**
  * The XAPPX Factory console. This IS an XAPPX platform surface, so it wears the
@@ -236,6 +236,14 @@ const STYLE = `
   .about{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin-top:4px}
   .about dt{color:var(--gray);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
   .about dd{margin:0;color:var(--white)}
+  /* filter bar */
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--line);
+           border-radius:12px;padding:14px 16px;margin:0 0 8px}
+  .filters .ff{display:flex;flex-direction:column;gap:5px}
+  .filters .ff label{font-size:10px} .filters select,.filters input{font-size:13.5px;padding:7px 10px;min-width:150px}
+  .filters .grow{flex:1;min-width:180px} .filters .grow input{min-width:100%}
+  .countline{color:var(--gray);font-size:13px;margin:2px 0 16px} .countline .clear{margin-left:10px}
+  .appcard[hidden]{display:none}
 `;
 
 function layout(title: string, body: string, active = ""): string {
@@ -307,27 +315,71 @@ export function dashboardPage(stats: FactoryStats, recent: Application[]): strin
   return layout("Dashboard", body, "/");
 }
 
-/** The Apps list (brief §6) — cards with logo/placeholder, status, actions. */
-export function appsPage(apps: Application[]): string {
+/** The Apps list (brief §6) — cards with logo/placeholder, status, and filtering. */
+export function appsPage(
+  apps: Application[],
+  opts: { clients?: Client[]; filters?: AppFilters } = {},
+): string {
+  const clients = opts.clients ?? [];
+  const filters = opts.filters ?? {};
+  const clientName = new Map(clients.map((c) => [c.client_id, c.name]));
+
   const cards = apps
     .map((a) => {
       const memberView = `${webBase()}/${encodeURIComponent(a.slug)}`;
-      return `<div class="appcard">
+      const owner = clientName.get(a.client_id);
+      const search = [a.name, a.slug, typeLabel(a.application_type), owner].filter(Boolean).join(" ").toLowerCase();
+      return `<div class="appcard" data-search="${esc(search)}">
         <a href="/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
         <div class="meta">
           <div class="nm">${esc(a.name)}</div><div class="sl">${esc(a.slug)}</div>
           <div class="foot"><span class="status ${statusClass(a.status)}">${esc(a.status)}</span>${taxoLine(a)}${
-            a.primary_domain ? `<span class="modn">${esc(a.primary_domain)}</span>` : ""
-          }</div>
+            owner ? `<span class="modn">${esc(owner)}</span>` : ""
+          }${a.primary_domain ? `<span class="modn">${esc(a.primary_domain)}</span>` : ""}</div>
           <div class="acts"><a href="/apps/${encodeURIComponent(a.slug)}">Configure</a>
             <a href="${esc(memberView)}" target="_blank" rel="noreferrer">Open member view ↗</a></div>
         </div></div>`;
     })
     .join("");
+
+  const sel = (name: keyof AppFilters, current: string | undefined, first: string, options: ReadonlyArray<readonly [string, string]>) =>
+    `<select name="${name}"><option value="">${esc(first)}</option>${options
+      .map(([v, label]) => `<option value="${v}"${v === current ? " selected" : ""}>${esc(label)}</option>`)
+      .join("")}</select>`;
+
+  const clientOpts = clients.map((c) => [c.client_id, c.name] as const);
+  const active = Object.values(filters).some(Boolean);
+  const filterBar = `<form class="filters" method="get" action="/apps">
+      <div class="ff"><label>Client</label>${sel("client_id", filters.client_id, "All clients", clientOpts)}</div>
+      <div class="ff"><label>Status</label>${sel("status", filters.status, "Any status", STATUS_STATES)}</div>
+      <div class="ff"><label>Type</label>${sel("application_type", filters.application_type, "Any type", APPLICATION_TYPES)}</div>
+      <div class="ff"><label>Audience</label>${sel("audience_model", filters.audience_model, "Any audience", AUDIENCE_MODELS)}</div>
+      <div class="ff grow"><label>Search</label><input id="appsearch" type="search" placeholder="Filter by name, slug, type or client…" autocomplete="off"></div>
+      <button class="btn" type="submit">Apply</button>
+    </form>`;
+
+  const count = `<div class="countline"><span id="appcount">${apps.length}</span> app${apps.length === 1 ? "" : "s"}${
+    active ? ` match these filters<a class="clear" href="/apps">Clear filters</a>` : ""}</div>`;
+
   const body = `<div class="row"><div class="spacer"><h1>Apps</h1>
       <p class="sub">Every app on the XAPPX Platform. Launching a new app is configuration first, with custom development available when needed.</p></div>
       <a class="btn" href="/apps/new">New app</a></div>
-    ${apps.length ? `<div class="applist">${cards}</div>` : `<div class="empty">No apps yet. Create the first one.</div>`}`;
+    ${filterBar}
+    ${count}
+    ${apps.length ? `<div class="applist">${cards}</div>` : `<div class="empty">No apps match. <a href="/apps">Clear filters</a> or <a href="/apps/new">create one</a>.</div>`}
+    <script>
+    (function(){
+      var box=document.getElementById('appsearch'), count=document.getElementById('appcount');
+      if(!box) return;
+      box.addEventListener('input',function(){
+        var q=box.value.trim().toLowerCase(), n=0;
+        document.querySelectorAll('.appcard').forEach(function(c){
+          var hit=!q||c.getAttribute('data-search').indexOf(q)>=0; c.hidden=!hit; if(hit)n++;
+        });
+        count.textContent=n;
+      });
+    })();
+    </script>`;
   return layout("Apps", body, "/apps");
 }
 

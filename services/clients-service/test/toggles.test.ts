@@ -237,6 +237,29 @@ describe("application taxonomy (brief §7)", () => {
   });
 });
 
+describe("filtering the app list (brief §6)", () => {
+  test("GET /applications filters by type, audience and status", async () => {
+    const clients = await (await get("/clients")).json();
+    const clientId = clients.data[0].client_id;
+    const slug = `filter-app-${RUN}`;
+    await send("POST", "/applications", {
+      client_id: clientId, name: "Filter App", slug,
+      application_type: "internal_ops", audience_model: "b2b2c",
+    });
+
+    const byType = await (await get("/applications?application_type=internal_ops")).json();
+    assert.ok(byType.data.some((a: { slug: string }) => a.slug === slug)); // ours is present
+    assert.ok(byType.data.every((a: { application_type: string }) => a.application_type === "internal_ops"));
+
+    const byAudience = await (await get("/applications?audience_model=b2b2c")).json();
+    assert.ok(byAudience.data.every((a: { audience_model: string }) => a.audience_model === "b2b2c"));
+
+    // A filter that our app does not match must exclude it.
+    const other = await (await get("/applications?application_type=marketplace")).json();
+    assert.ok(!other.data.some((a: { slug: string }) => a.slug === slug));
+  });
+});
+
 describe("editing and lifecycle (brief §6)", () => {
   async function make(slug: string, body: Record<string, unknown> = {}) {
     const clients = await (await get("/clients")).json();

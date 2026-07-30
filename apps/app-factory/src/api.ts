@@ -49,8 +49,15 @@ export interface Application {
 }
 export interface ProductRow { code: string; name: string; requires: string[]; billable: boolean; enabled: boolean; display_name: string | null }
 
+export interface AppFilters { client_id?: string; status?: string; application_type?: string; audience_model?: string }
+
 export const listClients = () => call<{ data: Client[] }>("GET", "/api/v1/clients");
-export const listApplications = () => call<{ data: Application[] }>("GET", "/api/v1/applications");
+export const listApplications = (filters: AppFilters = {}) => {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(filters)) if (v) p.set(k, v);
+  const qs = p.toString();
+  return call<{ data: Application[] }>("GET", "/api/v1/applications" + (qs ? `?${qs}` : ""));
+};
 export const getApplication = (slug: string) =>
   call<Application>("GET", `/api/v1/applications/${encodeURIComponent(slug)}`);
 export const getProducts = (slug: string) =>
