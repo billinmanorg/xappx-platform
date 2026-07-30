@@ -211,4 +211,28 @@ describe("application taxonomy (brief §7)", () => {
     });
     assert.equal(r.status, 400);
   });
+
+  test("the wizard intake is stored and returned by the detail endpoint", async () => {
+    const clients = await (await get("/clients")).json();
+    const clientId = clients.data[0].client_id;
+    const slug = `intake-app-${RUN}`;
+    const create = await send("POST", "/applications", {
+      client_id: clientId, name: "Intake App", slug, application_type: "education",
+      intake: { roles: ["Students", "Teachers"], problem: "Learn faster", junk: "dropped" },
+    });
+    assert.equal(create.status, 201);
+
+    const detail = await (await get(`/applications/${slug}`)).json();
+    assert.equal(detail.slug, slug);
+    assert.equal(detail.application_type, "education");
+    assert.deepEqual(detail.intake.roles, ["Students", "Teachers"]);
+    assert.equal(detail.intake.problem, "Learn faster");
+    assert.equal(detail.intake.junk, undefined); // unknown keys are not stored
+  });
+
+  test("the detail endpoint 404s for an unknown app", async () => {
+    const r = await get("/applications/no-such-app-xyz");
+    assert.equal(r.status, 404);
+    assert.equal(r.headers.get("content-type")?.split(";")[0], "application/problem+json");
+  });
 });

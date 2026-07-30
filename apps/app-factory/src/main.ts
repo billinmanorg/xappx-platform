@@ -110,12 +110,21 @@ export function createApp() {
       const client_id = String(req.body.client_id ?? "");
       const application_type = String(req.body.application_type ?? "").trim();
       const audience_model = String(req.body.audience_model ?? "").trim();
+      const roles = String(req.body.roles ?? "");
       const products = toArray(req.body.products);
+      const discovery = {
+        problem: String(req.body.problem ?? ""),
+        user_goal: String(req.body.user_goal ?? ""),
+        admin_goal: String(req.body.admin_goal ?? ""),
+        onboarding: String(req.body.onboarding ?? ""),
+        workflows: String(req.body.workflows ?? ""),
+      };
       const reshow = async (status: number, detail: string) => {
         const clients = await api.listClients();
         const catalog = await loadCatalog();
         res.status(status).type("html").send(
-          newPage(clients.data?.data ?? [], catalog, { name, slug, client_id, application_type, audience_model }, detail),
+          newPage(clients.data?.data ?? [], catalog,
+            { name, slug, client_id, application_type, audience_model, roles, ...discovery }, detail),
         );
       };
       if (!name || !SLUG.test(slug) || !client_id) {
@@ -127,10 +136,15 @@ export function createApp() {
       if (audience_model && !isAudienceModel(audience_model)) {
         return reshow(400, "Audience model must be B2C, B2B, or B2B2C.");
       }
+      const intake = {
+        roles: roles.split(/\r?\n/).map((r) => r.trim()).filter(Boolean),
+        ...discovery,
+      };
       const created = await api.createApplication({
         client_id, name, slug, products,
         application_type,
         audience_model: audience_model || null,
+        intake,
       });
       if (created.status >= 400) {
         return reshow(created.status, (created.data as any)?.detail ?? "Could not create the app.");
@@ -144,14 +158,13 @@ export function createApp() {
   app.get("/apps/:slug", async (req, res, next) => {
     try {
       const slug = req.params.slug;
-      const [apps, products] = await Promise.all([api.listApplications(), api.getProducts(slug)]);
-      const appRow = (apps.data?.data ?? []).find((a) => a.slug === slug);
-      if (!appRow || products.status === 404) {
+      const [appR, products] = await Promise.all([api.getApplication(slug), api.getProducts(slug)]);
+      if (appR.status === 404 || !appR.data?.app_id || products.status === 404) {
         res.status(404).type("html").send(errorPage(404, `No app '${slug}'.`));
         return;
       }
       const f = flash(req);
-      res.type("html").send(editPage(appRow, products.data?.data ?? [], { ok: f.ok, err: f.err }));
+      res.type("html").send(editPage(appR.data, products.data?.data ?? [], { ok: f.ok, err: f.err }));
     } catch (e) {
       next(e);
     }

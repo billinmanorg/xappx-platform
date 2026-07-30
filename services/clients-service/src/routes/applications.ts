@@ -32,6 +32,28 @@ function taxonomy(b: Record<string, unknown>): { application_type: string | null
   return { application_type, audience_model };
 }
 
+/**
+ * Normalise the wizard's intake payload to a known, bounded shape so we never
+ * store arbitrary client JSON. Unknown keys are dropped; strings are trimmed and
+ * capped; roles become a short list of non-empty strings. Returns null when
+ * empty so the column keeps its '{}' default.
+ */
+function intakeJson(raw: unknown): string | null {
+  if (raw == null || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const text = (v: unknown) => (v == null ? "" : String(v).trim().slice(0, 2000));
+  const out: Record<string, unknown> = {};
+  for (const k of ["problem", "user_goal", "admin_goal", "onboarding", "workflows"]) {
+    const v = text(r[k]);
+    if (v) out[k] = v;
+  }
+  if (Array.isArray(r.roles)) {
+    const roles = r.roles.map((x) => String(x).trim()).filter(Boolean).slice(0, 40);
+    if (roles.length) out.roles = roles;
+  }
+  return Object.keys(out).length ? JSON.stringify(out) : null;
+}
+
 /** Launch an application. Configuration only - no code is written to add one. */
 applications.post("/applications", async (req, res, next) => {
   try {
@@ -48,11 +70,11 @@ applications.post("/applications", async (req, res, next) => {
 
       const { rows } = await c.query(
         `insert into applications
-           (client_id, name, slug, primary_domain, application_type, audience_model, theme, copy, taxonomy)
-         values ($1,$2,$3,$4,$5,$6,coalesce($7,'{}'::jsonb),coalesce($8,'{}'::jsonb),coalesce($9,'{}'::jsonb))
-         returning app_id, client_id, name, slug, primary_domain, application_type, audience_model, status, manifest_version`,
+           (client_id, name, slug, primary_domain, application_type, audience_model, theme, copy, taxonomy, intake)
+         values ($1,$2,$3,$4,$5,$6,coalesce($7,'{}'::jsonb),coalesce($8,'{}'::jsonb),coalesce($9,'{}'::jsonb),coalesce($10,'{}'::jsonb))
+         returning app_id, client_id, name, slug, primary_domain, application_type, audience_model, status, intake, manifest_version`,
         [b.client_id, b.name, b.slug, b.primary_domain ?? null, tax.application_type, tax.audience_model,
-         b.theme ?? null, b.copy ?? null, b.taxonomy ?? null],
+         b.theme ?? null, b.copy ?? null, b.taxonomy ?? null, intakeJson(b.intake)],
       );
       const app = rows[0];
 
@@ -99,6 +121,24 @@ applications.get("/applications", async (req, res, next) => {
       return rows;
     });
     res.json({ data: rows });
+  } catch (e) {
+    next(e);
+  }
+});
+
+applications.get("/applications/:slug", async (req, res, next) => {
+  try {
+    const app = await withTenant(null, async (c) => {
+      const { rows } = await c.query(
+        `select app_id, client_id, name, slug, primary_domain,
+                application_type, audience_model, status, intake, manifest_version, published_at
+           from applications where slug = $1`,
+        [req.params.slug],
+      );
+      return rows[0];
+    });
+    if (!app) throw notFound(`Application '${req.params.slug}'`);
+    res.json(app);
   } catch (e) {
     next(e);
   }

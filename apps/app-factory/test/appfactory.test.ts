@@ -15,7 +15,8 @@ let base: string;
 
 before(async () => {
   apps = [{ app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft",
-            application_type: "small_business", audience_model: "b2c" }];
+            application_type: "small_business", audience_model: "b2c",
+            intake: { roles: ["Members", "Staff"], problem: "Help local shops sell online" } }];
   const products = [
     { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null },
     { code: "vault", name: "Vault", requires: [], billable: false, enabled: true, display_name: null },
@@ -30,10 +31,15 @@ before(async () => {
   s.get("/api/v1/applications", (_q, r) => r.json({ data: apps }));
   s.get("/api/v1/applications/:slug/products", (req, r) =>
     apps.some((a) => a.slug === req.params.slug) ? r.json({ data: products }) : r.status(404).json({ status: 404 }));
+  s.get("/api/v1/applications/:slug", (req, r) => {
+    const a = apps.find((x) => x.slug === req.params.slug);
+    return a ? r.json(a) : r.status(404).json({ status: 404 });
+  });
   s.post("/api/v1/applications", (req, r) => {
     const a = {
       app_id: "new", client_id: req.body.client_id, name: req.body.name, slug: req.body.slug, status: "draft",
       application_type: req.body.application_type ?? null, audience_model: req.body.audience_model ?? null,
+      intake: req.body.intake ?? {},
     };
     apps.push(a);
     r.status(201).json(a);
@@ -79,14 +85,19 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /demo-one/);
   });
 
-  test("the New app form asks type + audience, and offers the client and module catalogue", async () => {
+  test("the New app wizard walks build → people → discovery → launch", async () => {
     const html = await (await get("/apps/new")).text();
-    assert.match(html, /New app/);
-    assert.match(html, /What are you building\?/); // application type
+    assert.match(html, /Create new app/);
+    assert.match(html, /What are you building\?/); // step 1: type
     assert.match(html, /value="small_business"/); // a catalogue type
-    assert.match(html, /name="audience_model" value="b2b2c"/); // audience model
-    assert.match(html, /Acme/); // client option
-    assert.match(html, /name="products" value="vault"/); // catalogue checkbox
+    assert.match(html, /name="audience_model" value="b2b2c"/); // step 1: audience
+    assert.match(html, /Who uses this app\?/); // step 2: roles
+    assert.match(html, /name="roles"/);
+    assert.match(html, /What problem does the application solve\?/); // step 3: discovery
+    assert.match(html, /name="problem"/);
+    assert.match(html, /Acme/); // step 4: client option
+    assert.match(html, /name="products" value="vault"/); // step 4: module checkbox
+    assert.match(html, /RECOMMENDED|small_business/); // type→module recommendations wired in the script
   });
 
   test("the Apps list shows an app's type and audience", async () => {
@@ -95,10 +106,14 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /B2C/); // audience model
   });
 
-  test("the configure page shows module toggles and a publish action", async () => {
+  test("the configure page shows module toggles, a publish action, and the About panel", async () => {
     const html = await (await get("/apps/demo-one")).text();
     assert.match(html, /Agents/);
     assert.match(html, /Publish app/);
+    assert.match(html, /About this app/);
+    assert.match(html, /Small business/); // type read back
+    assert.match(html, /Help local shops sell online/); // intake problem read back
+    assert.match(html, /Members/); // a role read back
   });
 });
 
@@ -122,6 +137,7 @@ describe("the Factory drives the right API calls", () => {
     const r = await form("POST", "/apps", {
       client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community",
       application_type: "marketplace", audience_model: "b2b",
+      roles: "Buyers\nSellers\n", problem: "Match buyers and sellers",
     });
     assert.equal(r.status, 302);
     assert.equal(r.headers.get("location"), "/apps/aurora-x");
@@ -131,6 +147,8 @@ describe("the Factory drives the right API calls", () => {
     assert.equal(created!.body.application_type, "marketplace");
     assert.equal(created!.body.audience_model, "b2b");
     assert.deepEqual(created!.body.products, ["community"]);
+    assert.deepEqual(created!.body.intake.roles, ["Buyers", "Sellers"]); // textarea → list
+    assert.equal(created!.body.intake.problem, "Match buyers and sellers");
   });
 
   test("an invalid slug is refused before it reaches the API", async () => {

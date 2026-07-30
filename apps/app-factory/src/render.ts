@@ -69,6 +69,49 @@ export const AUDIENCE_MODELS: ReadonlyArray<readonly [string, string]> = [
   ["b2b", "B2B"],
   ["b2b2c", "B2B2C"],
 ];
+/**
+ * Sensible module pre-selections per application type (brief §7: "the type
+ * affects recommended modules"). Only codes that actually exist in the live
+ * catalogue are applied, so this can name modules a given install may not have.
+ */
+export const RECOMMENDED_MODULES: Readonly<Record<string, readonly string[]>> = {
+  individual: ["twins", "vault"],
+  creator: ["twins", "community", "video_plan"],
+  small_business: ["agents", "vault", "community"],
+  professional_services: ["agents", "vault"],
+  organization: ["community", "vault"],
+  enterprise: ["agents", "vault", "vault_premium"],
+  community: ["community", "twins"],
+  social_network: ["community", "twins"],
+  event: ["community"],
+  education: ["community", "twins", "vault"],
+  membership: ["community", "vault"],
+  client_portal: ["vault", "agents"],
+  ai_twin: ["twins", "vault", "video_plan"],
+  media: ["video_plan", "community"],
+  marketplace: ["agents", "community"],
+  rewards: ["community"],
+  token_ecosystem: ["community"],
+  internal_ops: ["agents", "vault"],
+  custom: [],
+};
+
+/** Suggested user roles per audience model (brief §7 defaults). */
+export const ROLE_DEFAULTS: Readonly<Record<string, readonly string[]>> = {
+  b2c: ["Consumers", "Members", "Personal profiles"],
+  b2b: ["Organizations", "Accounts", "Contacts", "Client administrators", "Staff users"],
+  b2b2c: ["Parent organizations", "Delegated organization administrators", "End users"],
+};
+
+/** The business & workflow discovery questions (brief §7 wizard step 3). */
+export const DISCOVERY_QUESTIONS: ReadonlyArray<{ key: string; label: string; placeholder: string }> = [
+  { key: "problem", label: "What problem does the application solve?", placeholder: "The core need it addresses…" },
+  { key: "user_goal", label: "What should a user accomplish?", placeholder: "The main thing a member comes to do…" },
+  { key: "admin_goal", label: "What should an administrator accomplish?", placeholder: "What the owner runs day to day…" },
+  { key: "onboarding", label: "What happens during onboarding?", placeholder: "First steps for a new member…" },
+  { key: "workflows", label: "What are the main workflows?", placeholder: "The repeating flows the app supports…" },
+];
+
 const TYPE_LABEL = new Map(APPLICATION_TYPES);
 const AUDIENCE_LABEL = new Map(AUDIENCE_MODELS);
 export const isKnownType = (v: string) => TYPE_LABEL.has(v);
@@ -86,7 +129,8 @@ const STYLE = `
     --line:#1E2836; --white:#fff; --gray:#8A9BB5; --dim:#5C6B83; --pass:#3DDC97; --amber:#F5C451; --red:#FF6B84;
     --grad:linear-gradient(90deg,#00C2FF,#0066FF 50%,#7B5EFF);
     --sans:system-ui,"Segoe UI",Roboto,sans-serif; --mono:"Cascadia Code",ui-monospace,Consolas,monospace; }
-  *{box-sizing:border-box} body{margin:0;background:var(--navy);color:var(--white);font-family:var(--sans);line-height:1.55}
+  *{box-sizing:border-box} [hidden]{display:none!important}
+  body{margin:0;background:var(--navy);color:var(--white);font-family:var(--sans);line-height:1.55}
   a{color:var(--cyan);text-decoration:none} a:hover{text-decoration:underline}
   .top{display:flex;align-items:center;gap:16px;padding:16px 26px;border-bottom:1px solid var(--line);background:var(--panel)}
   .wm{font-family:var(--mono);font-weight:700;letter-spacing:.28em;font-size:14px}
@@ -157,6 +201,25 @@ const STYLE = `
   .notice.ok{border-left-color:var(--pass);background:rgba(61,220,151,.08)}
   footer{max-width:980px;margin:0 auto;padding:0 24px 48px;color:var(--dim);font-size:12.5px}
   .empty{border:1px dashed var(--line);border-radius:12px;padding:34px;text-align:center;color:var(--gray)}
+  textarea{background:var(--navy);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--white);
+           font-family:inherit;font-size:15px;min-height:64px;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--cyan)}
+  /* wizard */
+  .stepper{display:flex;gap:8px;margin:0 0 20px;flex-wrap:wrap}
+  .stepper .s{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim);padding:6px 12px;
+              border:1px solid var(--line);border-radius:999px}
+  .stepper .s .num{font-family:var(--mono);font-size:11px;width:18px;height:18px;border-radius:50%;
+                   display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line)}
+  .stepper .s.on{color:var(--white);border-color:var(--cyan)} .stepper .s.on .num{background:var(--cyan);color:#001018;border-color:transparent}
+  .stepper .s.done{color:var(--gray)} .stepper .s.done .num{background:var(--panel2);color:var(--pass);border-color:transparent}
+  .step[hidden]{display:none}
+  .wnav{display:flex;gap:12px;align-items:center;margin-top:8px}
+  .summary{font-size:14px;color:var(--gray)} .summary b{color:var(--white);font-weight:600}
+  .rolechips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .rolechips .rc{font-size:12.5px;color:var(--gray);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  .about{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin-top:4px}
+  .about dt{color:var(--gray);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+  .about dd{margin:0;color:var(--white)}
 `;
 
 function layout(title: string, body: string, active = ""): string {
@@ -252,50 +315,137 @@ export function appsPage(apps: Application[]): string {
   return layout("Apps", body, "/apps");
 }
 
-export function newPage(
-  clients: Client[],
-  catalog: ProductRow[],
-  values: { name?: string; slug?: string; client_id?: string; application_type?: string; audience_model?: string } = {},
-  error?: string,
-): string {
+export interface NewAppValues {
+  name?: string; slug?: string; client_id?: string; application_type?: string; audience_model?: string;
+  roles?: string; problem?: string; user_goal?: string; admin_goal?: string; onboarding?: string; workflows?: string;
+}
+
+/** The guided "Create New App" wizard (brief §7): build → people → discovery → launch. */
+export function newPage(clients: Client[], catalog: ProductRow[], values: NewAppValues = {}, error?: string): string {
+  const v = (k: keyof NewAppValues) => esc(values[k] ?? "");
   const clientOpts = clients
     .map((c) => `<option value="${esc(c.client_id)}"${c.client_id === values.client_id ? " selected" : ""}>${esc(c.name)}</option>`)
     .join("");
   const typeOpts = APPLICATION_TYPES
-    .map(([v, label]) => `<option value="${v}"${v === values.application_type ? " selected" : ""}>${esc(label)}</option>`)
+    .map(([val, label]) => `<option value="${val}"${val === values.application_type ? " selected" : ""}>${esc(label)}</option>`)
     .join("");
   const audienceChoices = AUDIENCE_MODELS
-    .map(([v, label]) =>
-      `<label class="check"><input type="radio" name="audience_model" value="${v}"${
-        v === values.audience_model ? " checked" : ""}>${esc(label)}</label>`)
+    .map(([val, label]) =>
+      `<label class="check"><input type="radio" name="audience_model" value="${val}"${
+        val === values.audience_model ? " checked" : ""}>${esc(label)}</label>`)
     .join("");
   const checks = catalog
-    .map((p) => `<label class="check"><input type="checkbox" name="products" value="${esc(p.code)}">${esc(p.name)}</label>`)
+    .map((p) => `<label class="check"><input type="checkbox" name="products" value="${esc(p.code)}" data-code="${esc(p.code)}">${esc(p.name)}</label>`)
     .join("");
-  const body = `<h1>New app</h1><p class="sub">Start with what you're building — the type and audience shape the defaults — then name it and switch on its launch modules.</p>
+  const discovery = DISCOVERY_QUESTIONS
+    .map((q) => `<div class="field"><label for="${q.key}">${esc(q.label)}</label>
+      <textarea id="${q.key}" name="${q.key}" placeholder="${esc(q.placeholder)}">${v(q.key as keyof NewAppValues)}</textarea></div>`)
+    .join("");
+
+  const stepper = ["Build", "People", "Discovery", "Launch"]
+    .map((t, i) => `<div class="s" data-dot="${i}"><span class="num">${i + 1}</span>${t}</div>`)
+    .join("");
+
+  // Only recommend/seed with modules that actually exist in this catalogue.
+  const catalogCodes = JSON.stringify(catalog.map((p) => p.code));
+
+  const body = `<h1>Create new app</h1>
+  <p class="sub">Start with what you're building — the type and audience shape the defaults — then name it and launch.</p>
   ${error ? `<div class="notice err">${esc(error)}</div>` : ""}
-  <form class="panel" method="post" action="/apps">
-    <div class="field"><label for="application_type">What are you building?</label>
-      <select id="application_type" name="application_type" required>
-        <option value="" disabled${values.application_type ? "" : " selected"}>Choose an application type…</option>
-        ${typeOpts}</select>
-      <span class="hint">Sets recommended modules, navigation and defaults. You can change everything later.</span></div>
-    <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div>
-      <span class="hint">B2C serves members directly · B2B serves organizations · B2B2C serves organizations who serve their own users.</span></div>
-    <div class="field"><label for="client_id">Client</label>
-      <select id="client_id" name="client_id" required>${clientOpts || `<option value="">No clients yet</option>`}</select></div>
-    <div class="field"><label for="name">App name</label>
-      <input id="name" name="name" value="${esc(values.name ?? "")}" placeholder="Aurora" required></div>
-    <div class="field"><label for="slug">Slug</label>
-      <input id="slug" name="slug" value="${esc(values.slug ?? "")}" placeholder="aurora" pattern="[a-z0-9]+(-[a-z0-9]+)*" required>
-      <span class="hint">Lowercase words with hyphens. Used in the URL: <code>/&lt;slug&gt;</code></span></div>
-    ${catalog.length ? `<div class="field"><label>Modules to launch with</label><div class="checks">${checks}</div></div>` : ""}
-    <div class="row"><button class="btn" type="submit">Create app</button><a class="btn quiet" href="/apps">Cancel</a></div>
+  <div class="stepper">${stepper}</div>
+  <form class="panel" method="post" action="/apps" id="wizard">
+
+    <section class="step" data-step="0">
+      <div class="field"><label for="application_type">What are you building?</label>
+        <select id="application_type" name="application_type" required>
+          <option value="" disabled${values.application_type ? "" : " selected"}>Choose an application type…</option>
+          ${typeOpts}</select>
+        <span class="hint">Sets recommended modules, navigation and defaults. You can change everything later.</span></div>
+      <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div>
+        <span class="hint">B2C serves members directly · B2B serves organizations · B2B2C serves organizations who serve their own users.</span></div>
+    </section>
+
+    <section class="step" data-step="1" hidden>
+      <div class="field"><label for="roles">Who uses this app?</label>
+        <textarea id="roles" name="roles" placeholder="One role per line — e.g. Members">${v("roles")}</textarea>
+        <span class="hint">Suggested from your audience model. Add or remove any; one per line.</span>
+        <div class="rolechips" id="rolehints"></div></div>
+    </section>
+
+    <section class="step" data-step="2" hidden>
+      <p class="hint" style="margin:-4px 0 14px">A few questions to shape templates and onboarding. All optional — skip any.</p>
+      ${discovery}
+    </section>
+
+    <section class="step" data-step="3" hidden>
+      <div class="summary" id="review" style="margin-bottom:16px"></div>
+      <div class="field"><label for="client_id">Client</label>
+        <select id="client_id" name="client_id" required>${clientOpts || `<option value="">No clients yet</option>`}</select></div>
+      <div class="field"><label for="name">App name</label>
+        <input id="name" name="name" value="${v("name")}" placeholder="Aurora" required></div>
+      <div class="field"><label for="slug">Slug</label>
+        <input id="slug" name="slug" value="${v("slug")}" placeholder="aurora" pattern="[a-z0-9]+(-[a-z0-9]+)*" required>
+        <span class="hint">Lowercase words with hyphens. Used in the URL: <code>/&lt;slug&gt;</code></span></div>
+      ${catalog.length ? `<div class="field"><label>Modules to launch with</label><div class="checks">${checks}</div>
+        <span class="hint">Pre-selected for your application type — adjust freely.</span></div>` : ""}
+    </section>
+
+    <div class="wnav">
+      <button class="btn quiet" type="button" id="back" hidden>← Back</button>
+      <button class="btn" type="button" id="next">Continue →</button>
+      <button class="btn" type="submit" id="create" hidden>Create app</button>
+      <a class="btn quiet" href="/apps">Cancel</a>
+    </div>
   </form>
   <script>
-    (function(){var n=document.getElementById('name'),s=document.getElementById('slug'),t=false;
-     s.addEventListener('input',function(){t=true});
-     n.addEventListener('input',function(){if(!t)s.value=n.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')});})();
+  (function(){
+    var RECO=${JSON.stringify(RECOMMENDED_MODULES)}, ROLES=${JSON.stringify(ROLE_DEFAULTS)}, CODES=${catalogCodes};
+    var TYPES=${JSON.stringify(Object.fromEntries(APPLICATION_TYPES))}, AUD=${JSON.stringify(Object.fromEntries(AUDIENCE_MODELS))};
+    var form=document.getElementById('wizard'), steps=form.querySelectorAll('.step'), dots=document.querySelectorAll('.stepper .s');
+    var back=document.getElementById('back'), next=document.getElementById('next'), create=document.getElementById('create');
+    var typeSel=document.getElementById('application_type'), roles=document.getElementById('roles');
+    var name=document.getElementById('name'), slug=document.getElementById('slug'), slugTouched=false, modTouched=false, rolesTouched=false;
+    var i=0;
+    function audience(){var r=form.querySelector('input[name=audience_model]:checked');return r?r.value:'';}
+    function show(){
+      for(var k=0;k<steps.length;k++) steps[k].hidden = (k!==i);
+      for(var d=0;d<dots.length;d++){dots[d].className='s'+(d===i?' on':(d<i?' done':''));}
+      back.hidden=(i===0); next.hidden=(i===steps.length-1); create.hidden=(i!==steps.length-1);
+      if(i===1) fillRoles();
+      if(i===steps.length-1) review();
+      window.scrollTo(0,0);
+    }
+    function valid(){
+      if(i===0 && !typeSel.value){typeSel.reportValidity();return false;}
+      return true;
+    }
+    next.addEventListener('click',function(){if(valid()&&i<steps.length-1){i++;show();}});
+    back.addEventListener('click',function(){if(i>0){i--;show();}});
+    // slug auto-fill
+    slug.addEventListener('input',function(){slugTouched=true;});
+    name.addEventListener('input',function(){if(!slugTouched)slug.value=name.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');});
+    // recommended modules on type change (until user edits them)
+    form.querySelectorAll('input[name=products]').forEach(function(cb){cb.addEventListener('change',function(){modTouched=true;});});
+    function applyReco(){
+      if(modTouched) return; var rec=RECO[typeSel.value]||[];
+      form.querySelectorAll('input[name=products]').forEach(function(cb){cb.checked=rec.indexOf(cb.getAttribute('data-code'))>=0;});
+    }
+    typeSel.addEventListener('change',applyReco);
+    // role suggestions from audience (until user edits the box)
+    roles.addEventListener('input',function(){rolesTouched=true;});
+    function fillRoles(){
+      var def=ROLES[audience()]||[]; var hint=document.getElementById('rolehints');
+      hint.innerHTML=def.map(function(r){return '<span class="rc">'+r+'</span>';}).join('');
+      if(!rolesTouched && !roles.value.trim() && def.length) roles.value=def.join('\\n');
+    }
+    function review(){
+      var mods=[]; form.querySelectorAll('input[name=products]:checked').forEach(function(cb){mods.push(cb.getAttribute('data-code'));});
+      document.getElementById('review').innerHTML='Creating a <b>'+(TYPES[typeSel.value]||'—')+'</b>'+
+        (audience()?' · <b>'+AUD[audience()]+'</b>':'')+' app'+
+        (mods.length?' with <b>'+mods.length+'</b> module'+(mods.length>1?'s':''):'')+'.';
+    }
+    show();
+  })();
   </script>`;
   return layout("New app", body, "/apps/new");
 }
@@ -321,6 +471,7 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
       <a class="btn quiet" href="${esc(memberView)}" target="_blank" rel="noreferrer">Open member view ↗</a></div>
     ${flash?.ok ? `<div class="notice ok">${esc(flash.ok)}</div>` : ""}
     ${flash?.err ? `<div class="notice err">${esc(flash.err)}</div>` : ""}
+    ${aboutPanel(app)}
     <div class="panel"><label style="display:block;margin-bottom:6px">Modules</label>
       <p class="hint" style="margin-bottom:8px">Switch a module on and it appears in this app — nav, onboarding and API — with no deploy. Off is non-destructive.</p>
       ${rows || `<p class="hint">No modules in the catalogue.</p>`}</div>
@@ -329,6 +480,24 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
     </form>
     <p class="hint" style="margin-top:20px"><a href="/apps">← All apps</a></p>`;
   return layout(app.name, body, "/apps");
+}
+
+/** "About this app": the type/audience and the wizard intake, read back (brief §7). */
+function aboutPanel(app: Application): string {
+  const intake = app.intake ?? {};
+  const rows: string[] = [];
+  if (app.application_type) rows.push(`<dt>Type</dt><dd>${esc(typeLabel(app.application_type))}</dd>`);
+  if (app.audience_model) rows.push(`<dt>Audience</dt><dd>${esc(audienceLabel(app.audience_model))}</dd>`);
+  if (intake.roles?.length)
+    rows.push(`<dt>Roles</dt><dd><div class="rolechips">${
+      intake.roles.map((r) => `<span class="rc">${esc(r)}</span>`).join("")}</div></dd>`);
+  for (const q of DISCOVERY_QUESTIONS) {
+    const val = intake[q.key as keyof typeof intake];
+    if (typeof val === "string" && val) rows.push(`<dt>${esc(q.label.replace(/\?$/, ""))}</dt><dd>${esc(val)}</dd>`);
+  }
+  if (!rows.length) return "";
+  return `<div class="panel"><label style="display:block;margin-bottom:8px">About this app</label>
+    <dl class="about">${rows.join("")}</dl></div>`;
 }
 
 export function errorPage(status: number, message: string): string {

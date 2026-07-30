@@ -1,0 +1,11 @@
+-- clients-service · additive: application intake (Bill's brief §7 wizard)
+--
+-- The "Create New App" wizard captures who the app is for (roles) and the
+-- business/workflow discovery answers that later inform templates, onboarding
+-- and admin defaults. This is Factory-side profile data — it is NOT part of the
+-- member-facing manifest. One nullable-by-default jsonb column; existing rows
+-- get '{}'. Shape (all optional):
+--   { "roles": ["Members", ...],
+--     "problem": "...", "user_goal": "...", "admin_goal": "...",
+--     "onboarding": "...", "workflows": "..." }
+alter table applications add column if not exists intake jsonb not null default '{}'::jsonb;
