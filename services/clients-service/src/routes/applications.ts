@@ -10,6 +10,12 @@ export const applications = Router();
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TYPE = /^[a-z0-9]+(_[a-z0-9]+)*$/; // canonical type slug, e.g. small_business
 const AUDIENCES = new Set(["b2c", "b2b", "b2b2c"]);
+// The application lifecycle (brief §6). Kept in sync with the DB CHECK constraint
+// in migration 0002; the DB is the final authority, this gives a friendly 400.
+const STATUSES = new Set([
+  "discovery", "draft", "configuring", "in_development", "testing", "pending_approval",
+  "published", "paused", "archived", "exporting", "independent",
+]);
 
 /**
  * Normalise the optional taxonomy inputs. audience_model is a closed set (the DB
@@ -173,6 +179,100 @@ applications.post("/applications/:slug/publish", async (req, res, next) => {
         appId: rows[0].app_id,
         correlationId: req.correlationId,
         data: { app_id: rows[0].app_id, slug: rows[0].slug },
+      });
+      return rows[0];
+    });
+    res.json(app);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * Edit an application's attributes. Partial: only fields present in the body are
+ * changed, so a caller can update one thing without resending the rest. The slug
+ * is immutable (URLs and manifests depend on it) and status has its own endpoint.
+ * Publishes application.updated with the list of fields that changed.
+ */
+applications.put("/applications/:slug", async (req, res, next) => {
+  try {
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    const changed: string[] = [];
+    const put = (col: string, val: unknown) => { vals.push(val); sets.push(`${col} = $${vals.length}`); changed.push(col); };
+
+    if ("name" in b) {
+      const name = String(b.name ?? "").trim();
+      if (!name) throw badRequest("name cannot be empty");
+      put("name", name);
+    }
+    if ("primary_domain" in b) {
+      const d = String(b.primary_domain ?? "").trim();
+      put("primary_domain", d || null);
+    }
+    if ("application_type" in b || "audience_model" in b) {
+      const tax = taxonomy(b);
+      if ("application_type" in b) put("application_type", tax.application_type);
+      if ("audience_model" in b) put("audience_model", tax.audience_model);
+    }
+    if ("intake" in b) put("intake", intakeJson(b.intake) ?? "{}");
+    if ("theme" in b) put("theme", JSON.stringify(b.theme ?? {}));
+    if ("copy" in b) put("copy", JSON.stringify(b.copy ?? {}));
+    if (!sets.length) throw badRequest("no editable fields were provided");
+
+    const app = await withTenant(null, async (c) => {
+      vals.push(req.params.slug);
+      const { rows } = await c.query(
+        `update applications set ${sets.join(", ")} where slug = $${vals.length}
+         returning app_id, client_id, name, slug, primary_domain, application_type, audience_model, status, intake, manifest_version`,
+        vals,
+      );
+      if (!rows[0]) throw notFound(`Application '${req.params.slug}'`);
+      await emit(c, {
+        aggregate: "application",
+        type: "com.xappx.application.updated",
+        subject: `application:${rows[0].app_id}`,
+        appId: rows[0].app_id,
+        correlationId: req.correlationId,
+        data: { app_id: rows[0].app_id, slug: rows[0].slug, changed },
+      });
+      return rows[0];
+    });
+    res.json(app);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * Move an application through its lifecycle (brief §6). Any of the eleven states
+ * is accepted; the DB CHECK is the final authority. Transitioning to 'published'
+ * stamps published_at and emits application.published (same as the publish
+ * endpoint); every other transition emits application.updated.
+ */
+applications.post("/applications/:slug/status", async (req, res, next) => {
+  try {
+    const status = String((req.body ?? {}).status ?? "").trim();
+    if (!STATUSES.has(status)) throw badRequest("status must be one of the eleven lifecycle states");
+
+    const app = await withTenant(null, async (c) => {
+      const { rows } = await c.query(
+        `update applications
+            set status = $1,
+                published_at = case when $1 = 'published' then now() else published_at end
+          where slug = $2
+        returning app_id, slug, status`,
+        [status, req.params.slug],
+      );
+      if (!rows[0]) throw notFound(`Application '${req.params.slug}'`);
+      await emit(c, {
+        aggregate: "application",
+        type: status === "published" ? "com.xappx.application.published" : "com.xappx.application.updated",
+        subject: `application:${rows[0].app_id}`,
+        appId: rows[0].app_id,
+        correlationId: req.correlationId,
+        data: { app_id: rows[0].app_id, slug: rows[0].slug, status },
       });
       return rows[0];
     });

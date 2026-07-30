@@ -9,6 +9,7 @@ external_ids: none
 publishes:
 - com.xappx.client.created
 - com.xappx.application.created
+- com.xappx.application.updated
 - com.xappx.application.published
 - com.xappx.application.product.enabled
 - com.xappx.application.product.disabled

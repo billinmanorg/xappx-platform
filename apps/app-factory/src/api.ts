@@ -64,3 +64,9 @@ export const toggleProduct = (slug: string, code: string, enabled: boolean) =>
   call<any>("PUT", `/api/v1/applications/${encodeURIComponent(slug)}/products/${encodeURIComponent(code)}`, { enabled });
 export const publish = (slug: string) =>
   call<any>("POST", `/api/v1/applications/${encodeURIComponent(slug)}/publish`, {});
+export const updateApplication = (slug: string, body: {
+  name?: string; primary_domain?: string | null;
+  application_type?: string | null; audience_model?: string | null; intake?: AppIntake;
+}) => call<Application>("PUT", `/api/v1/applications/${encodeURIComponent(slug)}`, body);
+export const setStatus = (slug: string, status: string) =>
+  call<any>("POST", `/api/v1/applications/${encodeURIComponent(slug)}/status`, { status });

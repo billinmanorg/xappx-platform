@@ -69,6 +69,22 @@ export const AUDIENCE_MODELS: ReadonlyArray<readonly [string, string]> = [
   ["b2b", "B2B"],
   ["b2b2c", "B2B2C"],
 ];
+/** The eleven lifecycle states (brief §6), in lifecycle order, with UI labels. */
+export const STATUS_STATES: ReadonlyArray<readonly [string, string]> = [
+  ["discovery", "Discovery"],
+  ["draft", "Draft"],
+  ["configuring", "Configuring"],
+  ["in_development", "In development"],
+  ["testing", "Testing"],
+  ["pending_approval", "Pending approval"],
+  ["published", "Published"],
+  ["paused", "Paused"],
+  ["archived", "Archived"],
+  ["exporting", "Exporting"],
+  ["independent", "Independent"],
+];
+const STATUS_SET = new Set(STATUS_STATES.map(([v]) => v));
+export const isStatus = (v: string) => STATUS_SET.has(v);
 /**
  * Sensible module pre-selections per application type (brief §7: "the type
  * affects recommended modules"). Only codes that actually exist in the live
@@ -471,33 +487,56 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
       <a class="btn quiet" href="${esc(memberView)}" target="_blank" rel="noreferrer">Open member view ↗</a></div>
     ${flash?.ok ? `<div class="notice ok">${esc(flash.ok)}</div>` : ""}
     ${flash?.err ? `<div class="notice err">${esc(flash.err)}</div>` : ""}
-    ${aboutPanel(app)}
+    ${statusPanel(app)}
+    ${detailsPanel(app)}
     <div class="panel"><label style="display:block;margin-bottom:6px">Modules</label>
       <p class="hint" style="margin-bottom:8px">Switch a module on and it appears in this app — nav, onboarding and API — with no deploy. Off is non-destructive.</p>
       ${rows || `<p class="hint">No modules in the catalogue.</p>`}</div>
-    <form method="post" action="/apps/${encodeURIComponent(app.slug)}/publish">
-      <button class="btn" type="submit"${app.status === "published" ? " disabled" : ""}>${app.status === "published" ? "Published" : "Publish app"}</button>
-    </form>
     <p class="hint" style="margin-top:20px"><a href="/apps">← All apps</a></p>`;
   return layout(app.name, body, "/apps");
 }
 
-/** "About this app": the type/audience and the wizard intake, read back (brief §7). */
-function aboutPanel(app: Application): string {
+/** Lifecycle control: move the app through its eleven states (brief §6). */
+function statusPanel(app: Application): string {
+  const opts = STATUS_STATES
+    .map(([v, label]) => `<option value="${v}"${v === app.status ? " selected" : ""}>${esc(label)}</option>`)
+    .join("");
+  return `<div class="panel"><label for="status">Lifecycle status</label>
+    <form class="row" method="post" action="/apps/${encodeURIComponent(app.slug)}/status" style="margin-top:8px;gap:10px">
+      <select id="status" name="status" style="max-width:260px">${opts}</select>
+      <button class="btn" type="submit">Update status</button>
+    </form>
+    <p class="hint" style="margin-top:8px">Setting it to <b>Published</b> takes the app live to members.</p></div>`;
+}
+
+/** Editable details: name, domain, type, audience, roles and the intake answers. */
+function detailsPanel(app: Application): string {
   const intake = app.intake ?? {};
-  const rows: string[] = [];
-  if (app.application_type) rows.push(`<dt>Type</dt><dd>${esc(typeLabel(app.application_type))}</dd>`);
-  if (app.audience_model) rows.push(`<dt>Audience</dt><dd>${esc(audienceLabel(app.audience_model))}</dd>`);
-  if (intake.roles?.length)
-    rows.push(`<dt>Roles</dt><dd><div class="rolechips">${
-      intake.roles.map((r) => `<span class="rc">${esc(r)}</span>`).join("")}</div></dd>`);
-  for (const q of DISCOVERY_QUESTIONS) {
+  const typeOpts = `<option value="">—</option>` + APPLICATION_TYPES
+    .map(([v, label]) => `<option value="${v}"${v === app.application_type ? " selected" : ""}>${esc(label)}</option>`).join("");
+  const audienceChoices = AUDIENCE_MODELS
+    .map(([v, label]) => `<label class="check"><input type="radio" name="audience_model" value="${v}"${
+      v === app.audience_model ? " checked" : ""}>${esc(label)}</label>`).join("");
+  const rolesVal = esc((intake.roles ?? []).join("\n"));
+  const discovery = DISCOVERY_QUESTIONS.map((q) => {
     const val = intake[q.key as keyof typeof intake];
-    if (typeof val === "string" && val) rows.push(`<dt>${esc(q.label.replace(/\?$/, ""))}</dt><dd>${esc(val)}</dd>`);
-  }
-  if (!rows.length) return "";
-  return `<div class="panel"><label style="display:block;margin-bottom:8px">About this app</label>
-    <dl class="about">${rows.join("")}</dl></div>`;
+    return `<div class="field"><label for="e_${q.key}">${esc(q.label)}</label>
+      <textarea id="e_${q.key}" name="${q.key}" placeholder="${esc(q.placeholder)}">${esc(typeof val === "string" ? val : "")}</textarea></div>`;
+  }).join("");
+  return `<form class="panel" method="post" action="/apps/${encodeURIComponent(app.slug)}/edit">
+    <label style="display:block;margin-bottom:10px">Details</label>
+    <div class="field"><label for="e_name">App name</label>
+      <input id="e_name" name="name" value="${esc(app.name)}" required></div>
+    <div class="field"><label for="e_domain">Primary domain</label>
+      <input id="e_domain" name="primary_domain" value="${esc(app.primary_domain ?? "")}" placeholder="app.example.com"></div>
+    <div class="field"><label for="e_type">Application type</label>
+      <select id="e_type" name="application_type">${typeOpts}</select></div>
+    <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div></div>
+    <div class="field"><label for="e_roles">Roles</label>
+      <textarea id="e_roles" name="roles" placeholder="One role per line">${rolesVal}</textarea></div>
+    ${discovery}
+    <div class="row"><button class="btn" type="submit">Save details</button></div>
+  </form>`;
 }
 
 export function errorPage(status: number, message: string): string {

@@ -40,6 +40,8 @@ channels:
         $ref: '#/components/messages/ClientCreated'
       ApplicationCreated:
         $ref: '#/components/messages/ApplicationCreated'
+      ApplicationUpdated:
+        $ref: '#/components/messages/ApplicationUpdated'
       ApplicationPublished:
         $ref: '#/components/messages/ApplicationPublished'
       ApplicationProductEnabled:
@@ -268,6 +270,10 @@ components:
         $ref: ../schemas/cloudevent.schema.json
     ApplicationCreated:
       name: com.xappx.application.created
+      payload:
+        $ref: ../schemas/cloudevent.schema.json
+    ApplicationUpdated:
+      name: com.xappx.application.updated
       payload:
         $ref: ../schemas/cloudevent.schema.json
     ApplicationPublished:

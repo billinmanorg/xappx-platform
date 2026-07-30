@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, type FactoryStats } from "./render.js";
 
 /**
  * A shared-password gate. The console can create and configure applications, so
@@ -192,6 +192,62 @@ export function createApp() {
       const q = new URLSearchParams();
       if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Publish failed.");
       else q.set("ok", "App published.");
+      res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.post("/apps/:slug/edit", async (req, res, next) => {
+    try {
+      const slug = req.params.slug;
+      const application_type = String(req.body.application_type ?? "").trim();
+      const audience_model = String(req.body.audience_model ?? "").trim();
+      const back = (q: URLSearchParams) => res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+      if (application_type && !isKnownType(application_type)) {
+        const q = new URLSearchParams(); q.set("err", "That application type is not recognised.");
+        return back(q);
+      }
+      if (audience_model && !isAudienceModel(audience_model)) {
+        const q = new URLSearchParams(); q.set("err", "Audience model must be B2C, B2B, or B2B2C.");
+        return back(q);
+      }
+      const intake = {
+        roles: String(req.body.roles ?? "").split(/\r?\n/).map((r) => r.trim()).filter(Boolean),
+        problem: String(req.body.problem ?? ""),
+        user_goal: String(req.body.user_goal ?? ""),
+        admin_goal: String(req.body.admin_goal ?? ""),
+        onboarding: String(req.body.onboarding ?? ""),
+        workflows: String(req.body.workflows ?? ""),
+      };
+      const r = await api.updateApplication(slug, {
+        name: String(req.body.name ?? "").trim(),
+        primary_domain: String(req.body.primary_domain ?? "").trim() || null,
+        application_type: application_type || null,
+        audience_model: audience_model || null,
+        intake,
+      });
+      const q = new URLSearchParams();
+      if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Could not save the details.");
+      else q.set("ok", "Details saved.");
+      back(q);
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  app.post("/apps/:slug/status", async (req, res, next) => {
+    try {
+      const slug = req.params.slug;
+      const status = String(req.body.status ?? "").trim();
+      const q = new URLSearchParams();
+      if (!isStatus(status)) {
+        q.set("err", "That is not a valid lifecycle status.");
+        return res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+      }
+      const r = await api.setStatus(slug, status);
+      if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Could not change the status.");
+      else q.set("ok", status === "published" ? "App published." : `Status set to ${status.replace(/_/g, " ")}.`);
       res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
     } catch (e) {
       next(e);

@@ -46,6 +46,18 @@ before(async () => {
   });
   s.put("/api/v1/applications/:slug/products/:code", (req, r) =>
     r.json({ product_code: req.params.code, enabled: req.body.enabled }));
+  s.put("/api/v1/applications/:slug", (req, r) => {
+    const a = apps.find((x) => x.slug === req.params.slug);
+    if (!a) return r.status(404).json({ status: 404 });
+    Object.assign(a, req.body);
+    r.json(a);
+  });
+  s.post("/api/v1/applications/:slug/status", (req, r) => {
+    const a = apps.find((x) => x.slug === req.params.slug);
+    if (!a) return r.status(404).json({ status: 404 });
+    a.status = req.body.status;
+    r.json({ slug: req.params.slug, status: req.body.status });
+  });
   s.post("/api/v1/applications/:slug/publish", (req, r) => {
     const a = apps.find((x) => x.slug === req.params.slug); if (a) a.status = "published";
     r.json({ slug: req.params.slug, status: "published" });
@@ -106,14 +118,15 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /B2C/); // audience model
   });
 
-  test("the configure page shows module toggles, a publish action, and the About panel", async () => {
+  test("the configure page shows modules, the lifecycle control, and an editable details form", async () => {
     const html = await (await get("/apps/demo-one")).text();
-    assert.match(html, /Agents/);
-    assert.match(html, /Publish app/);
-    assert.match(html, /About this app/);
-    assert.match(html, /Small business/); // type read back
-    assert.match(html, /Help local shops sell online/); // intake problem read back
-    assert.match(html, /Members/); // a role read back
+    assert.match(html, /Agents/); // module toggle
+    assert.match(html, /Lifecycle status/); // status control
+    assert.match(html, /<option value="published"/); // publishing is now a lifecycle transition
+    assert.match(html, /Save details/); // details form
+    assert.match(html, /value="small_business" selected/); // type read back into the select
+    assert.match(html, /Help local shops sell online/); // intake problem read back into a textarea
+    assert.match(html, /Members/); // a role read back into the roles textarea
   });
 });
 
@@ -179,6 +192,46 @@ describe("the Factory drives the right API calls", () => {
     const r = await form("POST", "/apps/demo-one/publish", {});
     assert.equal(r.status, 302);
     assert.ok(calls.some((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/publish"));
+  });
+
+  test("saving details PUTs the edited fields to /applications/:slug", async () => {
+    const r = await form("POST", "/apps/demo-one/edit", {
+      name: "Demo One Renamed", primary_domain: "demo.example.com",
+      application_type: "marketplace", audience_model: "b2b",
+      roles: "Buyers\nSellers", problem: "Match supply and demand",
+    });
+    assert.equal(r.status, 302);
+    const put = calls.find((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one");
+    assert.ok(put);
+    assert.equal(put!.body.name, "Demo One Renamed");
+    assert.equal(put!.body.application_type, "marketplace");
+    assert.equal(put!.body.audience_model, "b2b");
+    assert.deepEqual(put!.body.intake.roles, ["Buyers", "Sellers"]);
+    assert.equal(put!.body.intake.problem, "Match supply and demand");
+  });
+
+  test("an unrecognised application type is refused before the API is called", async () => {
+    const before = calls.filter((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one").length;
+    const r = await form("POST", "/apps/demo-one/edit", { name: "X", application_type: "not-a-type" });
+    assert.equal(r.status, 302); // redirects back with an error flash
+    const after = calls.filter((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one").length;
+    assert.equal(after, before); // never reached the API
+  });
+
+  test("a lifecycle transition POSTs to /applications/:slug/status", async () => {
+    const r = await form("POST", "/apps/demo-one/status", { status: "configuring" });
+    assert.equal(r.status, 302);
+    const post = calls.find((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/status");
+    assert.ok(post);
+    assert.equal(post!.body.status, "configuring");
+  });
+
+  test("an invalid status is refused before the API is called", async () => {
+    const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/status").length;
+    const r = await form("POST", "/apps/demo-one/status", { status: "not-a-status" });
+    assert.equal(r.status, 302);
+    const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/status").length;
+    assert.equal(after, before);
   });
 });
 

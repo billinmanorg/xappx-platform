@@ -236,3 +236,70 @@ describe("application taxonomy (brief §7)", () => {
     assert.equal(r.headers.get("content-type")?.split(";")[0], "application/problem+json");
   });
 });
+
+describe("editing and lifecycle (brief §6)", () => {
+  async function make(slug: string, body: Record<string, unknown> = {}) {
+    const clients = await (await get("/clients")).json();
+    const create = await send("POST", "/applications", { client_id: clients.data[0].client_id, name: "Edit Me", slug, ...body });
+    return (await create.json()).app_id as string;
+  }
+  const eventCount = async (appId: string, type: string) =>
+    Number((await pool.query(
+      `select count(*)::int as n from outbox where payload->>'type' = $1 and payload->'data'->>'app_id' = $2`,
+      [type, appId],
+    )).rows[0].n);
+
+  test("PUT edits attributes and publishes application.updated", async () => {
+    const slug = `edit-app-${RUN}`;
+    const appId = await make(slug, { application_type: "individual" });
+    const r = await send("PUT", `/applications/${slug}`, {
+      name: "Renamed", application_type: "marketplace", audience_model: "b2b",
+      intake: { roles: ["Buyers"], problem: "Trade" },
+    });
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.name, "Renamed");
+    assert.equal(body.application_type, "marketplace");
+    assert.equal(body.audience_model, "b2b");
+    assert.deepEqual(body.intake.roles, ["Buyers"]);
+    assert.equal(await eventCount(appId, "com.xappx.application.updated"), 1);
+  });
+
+  test("PUT is partial — omitted fields are left unchanged", async () => {
+    const slug = `partial-app-${RUN}`;
+    await make(slug, { application_type: "education", audience_model: "b2c" });
+    await send("PUT", `/applications/${slug}`, { name: "Only The Name" });
+    const detail = await (await get(`/applications/${slug}`)).json();
+    assert.equal(detail.name, "Only The Name");
+    assert.equal(detail.application_type, "education"); // untouched
+    assert.equal(detail.audience_model, "b2c"); // untouched
+  });
+
+  test("PUT with no editable fields is a 400", async () => {
+    const slug = `nofields-app-${RUN}`;
+    await make(slug);
+    const r = await send("PUT", `/applications/${slug}`, { unknown_field: "x" });
+    assert.equal(r.status, 400);
+  });
+
+  test("POST /status moves through the lifecycle and publishing stamps published_at", async () => {
+    const slug = `status-app-${RUN}`;
+    const appId = await make(slug);
+    const toConfig = await send("POST", `/applications/${slug}/status`, { status: "configuring" });
+    assert.equal((await toConfig.json()).status, "configuring");
+    assert.equal(await eventCount(appId, "com.xappx.application.updated"), 1);
+
+    const toPub = await send("POST", `/applications/${slug}/status`, { status: "published" });
+    assert.equal((await toPub.json()).status, "published");
+    const detail = await (await get(`/applications/${slug}`)).json();
+    assert.ok(detail.published_at); // publishing stamped it
+    assert.equal(await eventCount(appId, "com.xappx.application.published"), 1);
+  });
+
+  test("an invalid status is rejected with 400", async () => {
+    const slug = `badstatus-app-${RUN}`;
+    await make(slug);
+    const r = await send("POST", `/applications/${slug}/status`, { status: "not-real" });
+    assert.equal(r.status, 400);
+  });
+});
