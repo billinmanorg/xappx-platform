@@ -23,17 +23,13 @@ databases:
     plan: free
 
 services:
-  # The public XAPPX marketing site (single-page, revision 072926). Static, so
-  # it is CDN-served with no cold start — unlike the free web services below.
-  # Point a custom domain (xappx.com) at this service in the Render dashboard.
-  - type: web
-    name: xappx-site
-    runtime: static
-    rootDir: site
-    buildCommand: "echo no build step"
-    staticPublishPath: .
-    pullRequestPreviewsEnabled: false
-
+  # NOTE: the public XAPPX marketing site is deployed as a MANUAL Render static
+  # site (New + -> Static Site, repo billinmanorg/xappx-platform, publish dir
+  # `site`). It is intentionally NOT in this blueprint: a full blueprint sync
+  # currently fails because identity-service needs a second free-tier database
+  # (xappx-identity-db) and Render allows only one free DB per account. Keeping
+  # the static site out of the blueprint lets it deploy independently. The source
+  # lives at site/index.html.
   - type: web
     name: clients-service
     runtime: node
