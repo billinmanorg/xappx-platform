@@ -23,6 +23,17 @@ databases:
     plan: free
 
 services:
+  # The public XAPPX marketing site (single-page, revision 072926). Static, so
+  # it is CDN-served with no cold start — unlike the free web services below.
+  # Point a custom domain (xappx.com) at this service in the Render dashboard.
+  - type: web
+    name: xappx-site
+    runtime: static
+    rootDir: site
+    buildCommand: "echo no build step"
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
+
   - type: web
     name: clients-service
     runtime: node
