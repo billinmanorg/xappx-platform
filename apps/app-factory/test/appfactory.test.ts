@@ -114,6 +114,12 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /Demo One/); // recent app
   });
 
+  test("every console page links back to the public website", async () => {
+    const html = await (await get("/")).text();
+    assert.match(html, /Website/);
+    assert.match(html, /href="https:\/\/xappx-site\.onrender\.com"/); // default SITE_URL
+  });
+
   test("the Apps list shows existing apps, the owner, and a filter bar", async () => {
     const html = await (await get("/apps")).text();
     assert.match(html, />Apps</);

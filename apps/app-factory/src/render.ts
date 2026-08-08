@@ -19,6 +19,14 @@ const webBase = () => {
   return b;
 };
 
+/** The public marketing site — a way back out of the internal console. Override
+ *  with SITE_URL when the custom domain (xappx.com) is attached. */
+const siteBase = () => {
+  let b = (process.env.SITE_URL ?? "https://xappx-site.onrender.com").trim().replace(/\/$/, "");
+  if (!/^https?:\/\//.test(b)) b = "https://" + b;
+  return b;
+};
+
 /** A polished initials placeholder when an app has no uploaded logo (brief §6/§9). */
 function initials(name: string): string {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -174,6 +182,7 @@ const STYLE = `
   .top nav{margin-left:auto;display:flex;gap:6px}
   .top nav a{color:var(--gray);padding:6px 12px;border-radius:8px}
   .top nav a:hover,.top nav a.on{background:var(--panel2);color:var(--white);text-decoration:none}
+  .top nav a.ext{color:var(--cyan);border-left:1px solid var(--line);margin-left:6px;padding-left:14px;border-radius:0 8px 8px 0}
   main{max-width:980px;margin:0 auto;padding:32px 24px 72px}
   h1{font-size:26px;letter-spacing:-.02em;margin:0 0 4px} .sub{color:var(--gray);margin:0 0 26px}
   .row{display:flex;align-items:center;gap:12px} .spacer{flex:1}
@@ -288,7 +297,7 @@ function layout(title: string, body: string, active = ""): string {
 <header class="top">
   <span class="wm">X<b>APP</b>X</span><span class="sep">/</span><span class="app">Factory</span>
   <span class="badge">internal</span>
-  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}</nav>
+  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}<a class="ext" href="${siteBase()}">Website ↗</a></nav>
 </header>
 <main>${body}</main>
 <footer>XAPPX Factory — a pure API client over the platform services. This build uses a shared-password
