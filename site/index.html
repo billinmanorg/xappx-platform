@@ -130,9 +130,10 @@
 
   /* card grids */
   .cards{display:grid;gap:18px}
-  .c4{grid-template-columns:repeat(4,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c2{grid-template-columns:repeat(2,1fr)}
+  .c5{grid-template-columns:repeat(5,1fr)} .c4{grid-template-columns:repeat(4,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c2{grid-template-columns:repeat(2,1fr)}
+  @media (max-width:1000px){.c5{grid-template-columns:repeat(3,1fr)}}
   @media (max-width:960px){.c4{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr}}
-  @media (max-width:620px){.c4{grid-template-columns:1fr}.c2{grid-template-columns:1fr}}
+  @media (max-width:620px){.c5{grid-template-columns:1fr 1fr}.c4{grid-template-columns:1fr}.c2{grid-template-columns:1fr}}
   .card{border-radius:var(--r);padding:26px;border:1px solid var(--paperline);background:#fff;position:relative;overflow:hidden}
   .dark .card{background:var(--ink2);border-color:var(--line)}
   .card .ic{width:46px;height:46px;border-radius:13px;background:var(--grad);margin-bottom:16px;display:flex;align-items:center;justify-content:center;color:#00131f;font-weight:800;font-size:20px}
@@ -250,7 +251,7 @@
       <div class="xy" aria-label="Talk to XAPPY">
         <div class="xy-top">
           <svg class="xav" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="xg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00C2FF"/><stop offset="1" stop-color="#8A73FF"/></linearGradient></defs><rect x="4" y="4" width="56" height="56" rx="18" fill="#0C1119" stroke="#28344a"/><path d="M20 44c0-9 5-15 12-15s12 6 12 15" fill="none" stroke="url(#xg)" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="24" r="11" fill="url(#xg)"/><circle cx="28" cy="23" r="2.4" fill="#00131f"/><circle cx="36" cy="23" r="2.4" fill="#00131f"/><path d="M28 28q4 3 8 0" stroke="#00131f" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
-          <div class="who">XAPPY<span>Your AI guide to XAPPX</span></div>
+          <div class="who">XAPPY<span>(pronounced zappy)</span></div>
         </div>
         <div class="xy-log" id="log" role="log" aria-live="polite"></div>
         <div class="chips" id="chips"></div>
@@ -268,12 +269,13 @@
 <!-- BENEFITS -->
 <section class="light">
   <div class="wrap">
-    <div class="head"><h2>What Could AI Do for Your Business?</h2></div>
-    <div class="cards c4">
-      <div class="card"><div class="ic">↑</div><h3>Grow</h3><p>Reach, serve, and follow up with more customers without doing everything manually.</p></div>
-      <div class="card"><div class="ic">✦</div><h3>Build</h3><p>Turn an idea into your own app, agent, service, platform, or intelligent experience.</p></div>
-      <div class="card"><div class="ic">⏱</div><h3>Save Time</h3><p>Let intelligence handle repetitive work so your people can focus on customers and growth.</p></div>
-      <div class="card"><div class="ic">◆</div><h3>Own More</h3><p>Control your data, relationships, and digital value instead of giving it to another platform.</p></div>
+    <div class="head"><h2>What XAPPX Can Do for You</h2></div>
+    <div class="cards c5">
+      <div class="card"><div class="ic">↗</div><h3>Grow Your Business</h3><p>Reach more customers, follow up faster, and never miss an opportunity.</p></div>
+      <div class="card"><div class="ic">▦</div><h3>Build What You Need</h3><p>Custom apps, agents, and intelligent systems built around your business.</p></div>
+      <div class="card"><div class="ic">⏱</div><h3>Save Time</h3><p>Automate repetitive work so you and your team can focus on what matters.</p></div>
+      <div class="card"><div class="ic">◆</div><h3>Own Your Data</h3><p>Secure and decentralized vaults keep your data safe and under your control.</p></div>
+      <div class="card"><div class="ic">✦</div><h3>Create New Value</h3><p>Add tokenized access, rewards, ownership, and new revenue opportunities.</p></div>
     </div>
   </div>
 </section>
@@ -409,7 +411,7 @@
     make:  {q:"Exciting — who is it for?", opts:["Customers","A community","Creators & fans"], t:"Your New Product", items:["Custom app","Community space","Tokenized access & rewards","Data vault"]},
     unsure:{q:"No problem. Tell me a little about your business and I'll suggest a starting point.", opts:[], t:"Your Starting Build", items:["Custom app","Customer AI agent","Data vault"]}
   };
-  var START = [["I want an app","app"],["I need an AI agent","agent"],["I want to grow my business","grow"],["I want to create something new","make"],["I'm not sure yet","unsure"]];
+  var START = [["I want an app","app"],["I need an AI agent","agent"],["I want to grow my business","grow"],["Create something new","make"],["I'm not sure yet","unsure"]];
   var log=document.getElementById('log'), chips=document.getElementById('chips'), form=document.getElementById('form'),
       input=document.getElementById('tx'), reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   var state='start', pending=null;
@@ -450,7 +452,7 @@
   });
   document.getElementById('mic').addEventListener('click',function(){ input.focus(); bot("Voice input is coming soon — type your idea for now and I'll take it from there."); });
 
-  function boot(){ state='start'; bot("Hi. What are you thinking about building?", function(){ setChips(START); }); }
+  function boot(){ state='start'; bot("Hi! What would you like to build?", function(){ setChips(START); }); }
 
   // Talk to XAPPY controls -> scroll to hero + focus
   function focusXappy(pref){ document.getElementById('top').scrollIntoView({behavior:reduce?'auto':'smooth'});
