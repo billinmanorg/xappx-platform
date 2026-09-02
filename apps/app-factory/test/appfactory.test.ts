@@ -114,6 +114,14 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /Demo One/); // recent app
   });
 
+  test("a brand-new account gets a welcome, not a wall of 0's", async () => {
+    const { dashboardPage } = await import("../src/render.js");
+    const html = dashboardPage({ totalApps: 0, published: 0, drafts: 0, otherStatus: 0, clients: 1, modules: 5 }, []);
+    assert.match(html, /Let's build your first app/);
+    assert.match(html, /Create your first app/);
+    assert.doesNotMatch(html, /not yet tracked/); // no grid of muted zeros for a new user
+  });
+
   test("every console page links back to the public website", async () => {
     const html = await (await get("/")).text();
     assert.match(html, /Website/);
@@ -151,7 +159,10 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /name="roles"/);
     assert.match(html, /What problem does the application solve\?/); // step 3: discovery
     assert.match(html, /name="problem"/);
-    assert.match(html, /Acme/); // step 4: client option
+    assert.match(html, /Acme/); // the single client is shown as the owner
+    assert.match(html, /Owner/); // single client -> read-only owner, not a dropdown
+    assert.doesNotMatch(html, /No clients yet/); // never dead-end on the old blocker
+    assert.match(html, />Users</); // stepper step renamed People -> Users
     assert.match(html, /name="products" value="vault"/); // step 4: module checkbox
     assert.match(html, /RECOMMENDED|small_business/); // type→module recommendations wired in the script
   });

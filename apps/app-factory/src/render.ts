@@ -243,6 +243,10 @@ const STYLE = `
   .notice.ok{border-left-color:var(--pass);background:rgba(61,220,151,.08)}
   footer{max-width:980px;margin:0 auto;padding:0 24px 48px;color:var(--dim);font-size:12.5px}
   .empty{border:1px dashed var(--line);border-radius:12px;padding:34px;text-align:center;color:var(--gray)}
+  .welcome{text-align:center;max-width:660px;margin:44px auto;padding:48px 34px;border:1px solid var(--line);border-radius:18px;
+           background:radial-gradient(90% 130% at 50% 0%,rgba(0,194,255,.09),transparent 62%),var(--panel)}
+  .welcome .sub{margin-left:auto;margin-right:auto}
+  .ownerline{font-size:15px;color:var(--white)}
   textarea{background:var(--navy);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--white);
            font-family:inherit;font-size:15px;min-height:64px;resize:vertical}
   textarea:focus{outline:none;border-color:var(--cyan)}
@@ -330,8 +334,17 @@ export function dashboardPage(stats: FactoryStats, recent: Application[]): strin
       ).join("")
     : `<div class="empty">No applications yet. Create your first one.</div>`;
 
-  const body = `<div class="row"><div class="spacer"><h1>Factory</h1>
-      <p class="sub">The XAPPX application-building platform. Launch a new app by configuration; add custom development when needed.</p></div>
+  // Zero apps: don't greet a new user with a wall of 0's — invite them to start.
+  const welcome = `<div class="welcome">
+      <div class="eyebrow" style="margin:0 0 12px">The XAPPX Factory</div>
+      <h1 style="font-size:30px;margin-bottom:12px">Let's build your first app</h1>
+      <p class="sub" style="max-width:54ch;margin:0 auto 22px">This is where apps are built — no code to start. Pick what you're building, name it, switch on the modules it needs, and publish. It takes a couple of minutes.</p>
+      <a class="btn" href="/apps/new">Create your first app</a>
+      <p class="hint" style="margin-top:16px">${stats.modules} module${stats.modules === 1 ? "" : "s"} ready to switch on · ${stats.clients} client${stats.clients === 1 ? "" : "s"}</p>
+    </div>`;
+
+  const full = `<div class="row"><div class="spacer"><h1>Factory</h1>
+      <p class="sub">The XAPPX application-building platform. An <b>app</b> is a product you launch for members; <b>modules</b> are the capabilities (like Agents or Vault) you switch on inside it.</p></div>
       <a class="btn" href="/apps/new">Create New App</a></div>
 
     <div class="eyebrow">Platform</div>
@@ -353,7 +366,8 @@ export function dashboardPage(stats: FactoryStats, recent: Application[]): strin
     <div class="eyebrow">Recent applications</div>
     <div class="applist">${recentRows}</div>
     <p class="hint" style="margin-top:18px"><a href="/apps">View all apps →</a></p>`;
-  return layout("Dashboard", body, "/");
+
+  return layout("Dashboard", stats.totalApps === 0 ? welcome : full, "/");
 }
 
 /** The Apps list (brief §6) — cards with logo/placeholder, status, and filtering. */
@@ -403,7 +417,7 @@ export function appsPage(
     active ? ` match these filters<a class="clear" href="/apps">Clear filters</a>` : ""}</div>`;
 
   const body = `<div class="row"><div class="spacer"><h1>Apps</h1>
-      <p class="sub">Every app on the XAPPX Platform. Launching a new app is configuration first, with custom development available when needed.</p></div>
+      <p class="sub">Every app on the XAPPX Platform — a product you launch for members. Inside each app you switch on <b>modules</b> (the capabilities). Launching one is configuration first, with custom development available when needed.</p></div>
       <a class="btn" href="/apps/new">New app</a></div>
     ${filterBar}
     ${count}
@@ -443,7 +457,7 @@ export function modulesPage(modules: ModuleRow[]): string {
     })
     .join("");
   const body = `<div class="row"><div class="spacer"><h1>Modules</h1>
-      <p class="sub">The platform module catalogue. Switching a module on for an app is done from that app; this is the registry of what exists and where it stands.</p></div></div>
+      <p class="sub">A <b>module</b> is a capability (like Agents or Vault) you switch on inside an <b>app</b>. This is the platform catalogue of what exists and where it stands; you turn modules on from an app's own page.</p></div></div>
     ${modules.length ? `<div class="panel">${rows}</div>` : `<div class="empty">No modules in the catalogue.</div>`}`;
   return layout("Modules", body, "/modules");
 }
@@ -509,12 +523,32 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       <textarea id="${q.key}" name="${q.key}" placeholder="${esc(q.placeholder)}">${v(q.key as keyof NewAppValues)}</textarea></div>`)
     .join("");
 
-  const stepper = ["Build", "People", "Discovery", "Launch"]
+  const stepper = ["Build", "Users", "Discovery", "Launch"]
     .map((t, i) => `<div class="s" data-dot="${i}"><span class="num">${i + 1}</span>${t}</div>`)
     .join("");
 
   // Only recommend/seed with modules that actually exist in this catalogue.
   const catalogCodes = JSON.stringify(catalog.map((p) => p.code));
+
+  // The client/owner field. One client (the common case) is used automatically
+  // and shown read-only — no confusing dropdown a user can't change. Zero clients
+  // means the platform couldn't be reached (usually a cold start): say so and
+  // offer a refresh, instead of dead-ending on a "No clients yet" option.
+  let clientField: string;
+  if (clients.length === 0) {
+    clientField = `<div class="notice err">Couldn't reach the platform to load your account — it may be waking up.
+      <a href="/apps/new">Refresh</a> in a few seconds and try again.</div>
+      <input type="hidden" name="client_id" value="">`;
+  } else if (clients.length === 1) {
+    const only = clients[0]!;
+    clientField = `<input type="hidden" name="client_id" value="${esc(only.client_id)}">
+      <div class="field"><label>Owner</label><div class="ownerline">${esc(only.name)}</div></div>`;
+  } else {
+    clientField = `<div class="field"><label for="client_id">Client</label>
+      <select id="client_id" name="client_id" required>
+        <option value="" disabled${values.client_id ? "" : " selected"}>Choose a client…</option>
+        ${clientOpts}</select></div>`;
+  }
 
   const body = `<h1>Create new app</h1>
   <p class="sub">Start with what you're building — the type and audience shape the defaults — then name it and launch.</p>
@@ -533,9 +567,9 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
     </section>
 
     <section class="step" data-step="1" hidden>
-      <div class="field"><label for="roles">Who uses this app?</label>
-        <textarea id="roles" name="roles" placeholder="One role per line — e.g. Members">${v("roles")}</textarea>
-        <span class="hint">Suggested from your audience model. Add or remove any; one per line.</span>
+      <div class="field"><label for="roles">Users — Who uses this app?</label>
+        <textarea id="roles" name="roles" style="min-height:132px" placeholder="One user type per line — e.g. Members, Staff, Customers">${v("roles")}</textarea>
+        <span class="hint">These are your user types. Suggested from your audience model — add or remove any, one per line.</span>
         <div class="rolechips" id="rolehints"></div></div>
     </section>
 
@@ -546,8 +580,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
 
     <section class="step" data-step="3" hidden>
       <div class="summary" id="review" style="margin-bottom:16px"></div>
-      <div class="field"><label for="client_id">Client</label>
-        <select id="client_id" name="client_id" required>${clientOpts || `<option value="">No clients yet</option>`}</select></div>
+      ${clientField}
       <div class="field"><label for="name">App name</label>
         <input id="name" name="name" value="${v("name")}" placeholder="Aurora" required></div>
       <div class="field"><label for="slug">Slug</label>
