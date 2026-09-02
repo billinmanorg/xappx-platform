@@ -1,0 +1,39 @@
+name: keep-alive
+
+# Pings the free-tier Render services on a schedule so they don't fall asleep
+# after ~15 minutes idle. The cold starts were causing real problems — e.g. the
+# Factory "No Client Yet" blocker and repeated login prompts (Narinder's report).
+# This repo is public, so Actions minutes are free.
+#
+# Notes:
+# - GitHub may delay scheduled runs a few minutes under load; every 5 min leaves
+#   comfortable margin under the 15-minute sleep window.
+# - GitHub auto-disables scheduled workflows if a repo gets no commits for 60
+#   days. This repo is active, so that isn't a concern.
+# - The static marketing site (xappx-site) never sleeps, so it isn't pinged.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes
+  workflow_dispatch: {}      # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoints
+        run: |
+          urls=(
+            "https://app-factory-3jf3.onrender.com/healthz"
+            "https://clients-service-84j5.onrender.com/healthz"
+            "https://web-runtime.onrender.com/healthz"
+          )
+          for url in "${urls[@]}"; do
+            # --max-time 90 lets a sleeping service finish waking (~30-60s) and
+            # still count as reached, instead of timing out mid-cold-start.
+            code=$(curl -sSL -o /dev/null -w "%{http_code}" --max-time 90 "$url" || echo "ERR")
+            echo "$url -> $code"
+          done
