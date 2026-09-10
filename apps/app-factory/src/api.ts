@@ -39,6 +39,10 @@ export interface Client { client_id: string; name: string; slug: string }
 export interface AppIntake {
   roles?: string[];
   problem?: string; user_goal?: string; admin_goal?: string; onboarding?: string; workflows?: string;
+  /** How the problem was captured: an AI suggestion, the client's own words, or the static list. */
+  problem_source?: string;
+  /** Answers to the AI follow-up questions (Narinder's funnel), if any. */
+  discovery_answers?: Array<{ question: string; answer: string }>;
 }
 export interface Application {
   app_id: string; client_id: string; name: string; slug: string; status: string;

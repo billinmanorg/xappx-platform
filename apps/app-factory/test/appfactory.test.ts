@@ -104,6 +104,8 @@ const form = (m: string, p: string, obj: Record<string, string>) =>
     body: new URLSearchParams(obj).toString(),
     redirect: "manual",
   });
+const postJson = (p: string, obj: unknown) =>
+  fetch(base + p, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(obj) });
 
 describe("the Factory renders from the platform API", () => {
   test("the dashboard shows real counts and recent apps, with honest zero-states", async () => {
@@ -202,7 +204,7 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /<option value="published"/); // publishing is now a lifecycle transition
     assert.match(html, /Save details/); // details form
     assert.match(html, /value="retail" selected/); // industry read back into the select
-    assert.match(html, /value="leads" selected/); // intake problem read back into the problem select
+    assert.match(html, /name="problem" value="leads"/); // intake problem read back into the free-text field
     assert.match(html, /Members/); // a role read back into the roles textarea
   });
 });
@@ -334,6 +336,49 @@ describe("the Factory drives the right API calls", () => {
     assert.equal(r.status, 302);
     const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications/demo-one/status").length;
     assert.equal(after, before);
+  });
+});
+
+describe("the guided discovery funnel (Narinder's industry -> problem flow)", () => {
+  // No ANTHROPIC_API_KEY is set in tests, so both endpoints must fall back to the
+  // static question set and still return a usable 200 — the wizard never breaks.
+  test("problem suggestions fall back to the static list without an AI key", async () => {
+    const r = await postJson("/api/discovery/problems", { industry: "retail" });
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.source, "static");
+    assert.ok(Array.isArray(body.problems) && body.problems.length > 0);
+    assert.ok(body.problems.some((p: { label: string }) => /leads/i.test(p.label))); // a static problem label
+  });
+
+  test("an unknown industry still returns a usable static list, never an error", async () => {
+    const r = await postJson("/api/discovery/problems", { industry: "not-an-industry" });
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.source, "static");
+    assert.ok(body.problems.length > 0);
+  });
+
+  test("follow-up questions return empty (no AI) rather than failing", async () => {
+    const r = await postJson("/api/discovery/followups", { industry: "retail", problem: "Get more leads" });
+    assert.equal(r.status, 200);
+    const body = await r.json();
+    assert.equal(body.source, "static");
+    assert.deepEqual(body.questions, []);
+  });
+
+  test("an app can be created with a free-text (custom) problem", async () => {
+    const r = await form("POST", "/apps", {
+      client_id: "c1", name: "Custom Prob", slug: "custom-prob",
+      application_type: "healthcare", problem: "Cut no-shows for clinic appointments",
+      problem_source: "custom",
+      discovery_answers: JSON.stringify([{ question: "Booking channel?", answer: "SMS" }]),
+    });
+    assert.equal(r.status, 302);
+    const created = [...calls].reverse().find((c) => c.method === "POST" && c.path === "/api/v1/applications");
+    assert.equal(created!.body.intake.problem, "Cut no-shows for clinic appointments"); // free text stored verbatim
+    assert.equal(created!.body.intake.problem_source, "custom");
+    assert.deepEqual(created!.body.intake.discovery_answers, [{ question: "Booking channel?", answer: "SMS" }]);
   });
 });
 

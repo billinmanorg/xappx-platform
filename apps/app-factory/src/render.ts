@@ -204,7 +204,6 @@ export const isKnownType = (v: string) => INDUSTRY_LABEL.has(v);
 export const isKnownProblem = (v: string) => PROBLEM_LABEL.has(v);
 export const isAudienceModel = (v: string) => AUDIENCE_LABEL.has(v);
 const industryLabel = (v?: string | null) => (v ? (INDUSTRY_LABEL.get(v) ?? v) : "");
-const problemLabel = (v?: string | null) => (v ? (PROBLEM_LABEL.get(v) ?? v) : "");
 const audienceLabel = (v?: string | null) => (v ? (AUDIENCE_LABEL.get(v) ?? String(v).toUpperCase()) : "");
 /** The muted "industry · audience" line a card shows, or "" when neither is set. */
 function taxoLine(a: Application): string {
@@ -573,7 +572,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       <textarea id="${q.key}" name="${q.key}" placeholder="${esc(q.placeholder)}">${v(q.key as keyof NewAppValues)}</textarea></div>`)
     .join("");
 
-  const stepper = ["Build", "Users", "Discovery", "Launch"]
+  const stepper = ["Industry", "Problem", "Users", "Discovery", "Launch"]
     .map((t, i) => `<div class="s" data-dot="${i}"><span class="num">${i + 1}</span>${t}</div>`)
     .join("");
 
@@ -612,28 +611,36 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
           <option value="" disabled${values.application_type ? "" : " selected"}>Choose an industry…</option>
           ${industryOpts}</select>
         <span class="hint">Pick the closest fit — choose Other if none match.</span></div>
-      <div class="field"><label for="problem">What problem do you want to solve?</label>
-        <select id="problem" name="problem" required>
-          <option value="" disabled${values.problem ? "" : " selected"}>Choose a problem…</option>
-          ${problemOpts}</select>
-        <span class="hint">This shapes the recommended modules and defaults. You can change everything later.</span></div>
       <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div>
         <span class="hint">B2C serves members directly · B2B serves organizations · B2B2C serves organizations who serve their own users.</span></div>
     </section>
 
     <section class="step" data-step="1" hidden>
+      <div class="field"><label for="problem">What problem do you want to solve?</label>
+        <select id="problem" name="problem" required>
+          <option value="" disabled${values.problem ? "" : " selected"}>Choose a problem…</option>
+          ${problemOpts}</select>
+        <span class="hint" id="probstatus">This shapes the recommended modules and defaults. You can change everything later.</span></div>
+      <div class="field" id="problem_other_wrap" hidden><label for="problem_other">Describe the problem</label>
+        <textarea id="problem_other" placeholder="In a sentence or two, what should this app solve?"></textarea></div>
+      <div id="followups"></div>
+      <input type="hidden" id="problem_source" name="problem_source" value="">
+      <input type="hidden" id="discovery_answers" name="discovery_answers" value="">
+    </section>
+
+    <section class="step" data-step="2" hidden>
       <div class="field"><label for="roles">Users — Who uses this app?</label>
         <textarea id="roles" name="roles" style="min-height:132px" placeholder="One user type per line — e.g. Members, Staff, Customers">${v("roles")}</textarea>
         <span class="hint">These are your user types. Suggested from your audience model — add or remove any, one per line.</span>
         <div class="rolechips" id="rolehints"></div></div>
     </section>
 
-    <section class="step" data-step="2" hidden>
+    <section class="step" data-step="3" hidden>
       <p class="hint" style="margin:-4px 0 14px">A few questions to shape templates and onboarding. All optional — skip any.</p>
       ${discovery}
     </section>
 
-    <section class="step" data-step="3" hidden>
+    <section class="step" data-step="4" hidden>
       <div class="summary" id="review" style="margin-bottom:16px"></div>
       ${clientField}
       <div class="field"><label for="name">App name</label>
@@ -655,27 +662,42 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
   <script>
   (function(){
     var RECO=${JSON.stringify(RECOMMENDED_MODULES)}, ROLES=${JSON.stringify(ROLE_DEFAULTS)}, CODES=${catalogCodes};
-    var INDUSTRIES=${JSON.stringify(Object.fromEntries(INDUSTRIES))}, PROBLEMS=${JSON.stringify(Object.fromEntries(PROBLEMS))}, AUD=${JSON.stringify(Object.fromEntries(AUDIENCE_MODELS))};
+    var INDUSTRIES=${JSON.stringify(Object.fromEntries(INDUSTRIES))}, AUD=${JSON.stringify(Object.fromEntries(AUDIENCE_MODELS))};
     var form=document.getElementById('wizard'), steps=form.querySelectorAll('.step'), dots=document.querySelectorAll('.stepper .s');
     var back=document.getElementById('back'), next=document.getElementById('next'), create=document.getElementById('create');
     var industrySel=document.getElementById('application_type'), problemSel=document.getElementById('problem'), roles=document.getElementById('roles');
-    var name=document.getElementById('name'), slug=document.getElementById('slug'), slugTouched=false, modTouched=false, rolesTouched=false;
+    var otherWrap=document.getElementById('problem_other_wrap'), otherBox=document.getElementById('problem_other');
+    var fups=document.getElementById('followups'), status=document.getElementById('probstatus');
+    var srcField=document.getElementById('problem_source'), ansField=document.getElementById('discovery_answers');
+    var name=document.getElementById('name'), slug=document.getElementById('slug');
+    var slugTouched=false, modTouched=false, rolesTouched=false, problemStep=1, launchStep=steps.length-1;
+    var loadedFor='', source='static';
     var i=0;
     function audience(){var r=form.querySelector('input[name=audience_model]:checked');return r?r.value:'';}
     function show(){
       for(var k=0;k<steps.length;k++) steps[k].hidden = (k!==i);
       for(var d=0;d<dots.length;d++){dots[d].className='s'+(d===i?' on':(d<i?' done':''));}
-      back.hidden=(i===0); next.hidden=(i===steps.length-1); create.hidden=(i!==steps.length-1);
-      if(i===1) fillRoles();
-      if(i===steps.length-1) review();
+      back.hidden=(i===0); next.hidden=(i===launchStep); create.hidden=(i!==launchStep);
+      if(i===problemStep) loadProblems();
+      if(i===2) fillRoles();
+      if(i===launchStep) review();
       window.scrollTo(0,0);
+    }
+    function isOther(){return problemSel.value==='__other__';}
+    function problemText(){
+      if(isOther()) return otherBox.value.trim();
+      var o=problemSel.options[problemSel.selectedIndex];
+      return o&&o.value?o.text:'';
     }
     function valid(){
       if(i===0 && !industrySel.value){industrySel.reportValidity();return false;}
-      if(i===0 && !problemSel.value){problemSel.reportValidity();return false;}
+      if(i===problemStep){
+        if(!problemSel.value){problemSel.reportValidity();return false;}
+        if(isOther() && !otherBox.value.trim()){otherBox.focus();return false;}
+      }
       return true;
     }
-    next.addEventListener('click',function(){if(valid()&&i<steps.length-1){i++;show();}});
+    next.addEventListener('click',function(){if(valid()&&i<launchStep){i++;show();}});
     back.addEventListener('click',function(){if(i>0){i--;show();}});
     // slug auto-fill
     slug.addEventListener('input',function(){slugTouched=true;});
@@ -686,7 +708,64 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       if(modTouched) return; var rec=RECO[problemSel.value]||[];
       form.querySelectorAll('input[name=products]').forEach(function(cb){cb.checked=rec.indexOf(cb.getAttribute('data-code'))>=0;});
     }
-    problemSel.addEventListener('change',applyReco);
+    // --- guided funnel: AI-tailored problems for the chosen industry ---
+    function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function post(url,payload){return fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
+    function loadProblems(){
+      var ind=industrySel.value; if(!ind || loadedFor===ind) return; loadedFor=ind;
+      fups.innerHTML=''; ansField.value='';
+      status.textContent='Finding the top problems in '+(INDUSTRIES[ind]||'your industry')+'…';
+      post('/api/discovery/problems',{industry:ind}).then(function(d){
+        source=d.source||'static';
+        if(source==='ai' && d.problems && d.problems.length){
+          var keep=problemSel.value; problemSel.innerHTML='<option value="" disabled selected>Choose a problem…</option>';
+          d.problems.forEach(function(p){var o=document.createElement('option');o.value=p.label;o.text=p.label;problemSel.add(o);});
+          var oo=document.createElement('option');oo.value='__other__';oo.text='Something else — let me describe it';problemSel.add(oo);
+          status.textContent='Tailored to '+(INDUSTRIES[ind]||'your industry')+'. Not listed? Choose “Something else”.';
+        } else {
+          ensureOther();
+          status.textContent='Pick the closest problem, or choose “Something else” to describe your own.';
+        }
+        srcField.value=source;
+      }).catch(function(){ensureOther();status.textContent='Pick the closest problem, or choose “Something else” to describe your own.';});
+    }
+    function ensureOther(){ // guarantee an "other" escape hatch on the static list too
+      if(!problemSel.querySelector('option[value="__other__"]')){
+        var oo=document.createElement('option');oo.value='__other__';oo.text='Something else — let me describe it';problemSel.add(oo);
+      }
+    }
+    problemSel.addEventListener('change',function(){
+      otherWrap.hidden=!isOther();
+      if(isOther()){fups.innerHTML='';ansField.value='';otherBox.focus();}
+      else{applyReco();loadFollowups();}
+    });
+    otherBox.addEventListener('change',function(){if(isOther()&&otherBox.value.trim())loadFollowups();});
+    function loadFollowups(){
+      var p=problemText(); if(!p || source!=='ai'){fups.innerHTML='';return;}
+      fups.innerHTML='<p class="hint">A couple more questions…</p>';
+      post('/api/discovery/followups',{industry:industrySel.value,problem:p}).then(function(d){
+        if(!d.questions||!d.questions.length){fups.innerHTML='';return;}
+        var html='<p class="hint" style="margin-bottom:8px">A couple more questions to sharpen the build:</p>';
+        d.questions.forEach(function(q,j){
+          html+='<div class="field"><label>'+esc(q.question)+'</label><select class="fu" data-q="'+esc(q.question)+'"><option value="">Choose…</option>';
+          q.options.forEach(function(op){html+='<option value="'+esc(op)+'">'+esc(op)+'</option>';});
+          html+='<option value="__other__">Other…</option></select>'+
+                '<input class="fuo" data-q="'+esc(q.question)+'" placeholder="Your answer" hidden></div>';
+        });
+        fups.innerHTML=html;
+        fups.querySelectorAll('.fu').forEach(function(sel){sel.addEventListener('change',function(){
+          var box=sel.parentNode.querySelector('.fuo'); box.hidden=(sel.value!=='__other__'); collectAnswers();});});
+        fups.querySelectorAll('.fuo').forEach(function(b){b.addEventListener('input',collectAnswers);});
+      }).catch(function(){fups.innerHTML='';});
+    }
+    function collectAnswers(){
+      var out=[]; fups.querySelectorAll('.fu').forEach(function(sel){
+        var q=sel.getAttribute('data-q'); var a=sel.value;
+        if(a==='__other__'){var box=sel.parentNode.querySelector('.fuo');a=box?box.value.trim():'';}
+        if(a) out.push({question:q,answer:a});
+      });
+      ansField.value=out.length?JSON.stringify(out):'';
+    }
     // role suggestions from audience (until user edits the box)
     roles.addEventListener('input',function(){rolesTouched=true;});
     function fillRoles(){
@@ -696,11 +775,20 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
     }
     function review(){
       var mods=[]; form.querySelectorAll('input[name=products]:checked').forEach(function(cb){mods.push(cb.getAttribute('data-code'));});
-      document.getElementById('review').innerHTML='An app to <b>'+(PROBLEMS[problemSel.value]||'—')+'</b>'+
+      document.getElementById('review').innerHTML='An app to <b>'+(esc(problemText())||'—')+'</b>'+
         ' for <b>'+(INDUSTRIES[industrySel.value]||'—')+'</b>'+
         (audience()?' · <b>'+AUD[audience()]+'</b>':'')+
         (mods.length?', with <b>'+mods.length+'</b> module'+(mods.length>1?'s':''):'')+'.';
     }
+    // on submit, make sure "Something else" text is what gets saved as the problem
+    form.addEventListener('submit',function(){
+      collectAnswers();
+      if(isOther()){
+        problemSel.removeAttribute('name');
+        var h=document.createElement('input');h.type='hidden';h.name='problem';h.value=otherBox.value.trim();form.appendChild(h);
+        if(!srcField.value)srcField.value='custom';
+      }
+    });
     show();
   })();
   </script>`;
@@ -755,8 +843,11 @@ function detailsPanel(app: Application): string {
   const intake = app.intake ?? {};
   const industryOpts = `<option value="">—</option>` + INDUSTRIES
     .map(([v, label]) => `<option value="${v}"${v === app.application_type ? " selected" : ""}>${esc(label)}</option>`).join("");
-  const problemOpts = `<option value="">—</option>` + PROBLEMS
-    .map(([v, label]) => `<option value="${v}"${v === intake.problem ? " selected" : ""}>${esc(label)}</option>`).join("");
+  const answers = Array.isArray(intake.discovery_answers) ? intake.discovery_answers : [];
+  const answersBlock = answers.length
+    ? `<div class="field"><label>Discovery answers</label><dl class="about">${answers
+        .map((a) => `<dt>${esc(a.question)}</dt><dd>${esc(a.answer)}</dd>`).join("")}</dl></div>`
+    : "";
   const audienceChoices = AUDIENCE_MODELS
     .map(([v, label]) => `<label class="check"><input type="radio" name="audience_model" value="${v}"${
       v === app.audience_model ? " checked" : ""}>${esc(label)}</label>`).join("");
@@ -775,7 +866,8 @@ function detailsPanel(app: Application): string {
     <div class="field"><label for="e_type">Industry</label>
       <select id="e_type" name="application_type">${industryOpts}</select></div>
     <div class="field"><label for="e_problem">Problem to solve</label>
-      <select id="e_problem" name="problem">${problemOpts}</select></div>
+      <input id="e_problem" name="problem" value="${esc(intake.problem ?? "")}" placeholder="The problem this app solves"></div>
+    ${answersBlock}
     <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div></div>
     <div class="field"><label for="e_roles">Roles</label>
       <textarea id="e_roles" name="roles" placeholder="One role per line">${rolesVal}</textarea></div>

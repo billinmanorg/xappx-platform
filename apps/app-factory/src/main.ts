@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, isKnownType, isKnownProblem, isAudienceModel, isStatus, isModuleStatus, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, isModuleStatus, PROBLEMS, type FactoryStats } from "./render.js";
+import { llmEnabled, suggestProblems, followUpQuestions } from "./llm.js";
 
 /**
  * A shared-password gate. The console can create and configure applications, so
@@ -48,6 +49,7 @@ const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export function createApp() {
   const app = express();
   app.use(express.urlencoded({ extended: false }));
+  app.use(express.json());
 
   app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
   app.use(basicAuth);
@@ -158,6 +160,40 @@ export function createApp() {
     }
   });
 
+  // ---- guided discovery (Narinder's funnel): industry -> AI problems -> follow-ups ----
+  // JSON endpoints the wizard calls to enhance the static question set. Both ALWAYS
+  // return 200 with a usable payload — on a missing key or any AI error they fall
+  // back to the static list, so the wizard never breaks. See llm.ts / open-questions B3.
+  const staticProblems = () => PROBLEMS.map(([, label]) => ({ label }));
+
+  app.post("/api/discovery/problems", async (req, res) => {
+    const industry = String(req.body?.industry ?? "").trim();
+    if (!isKnownType(industry)) {
+      return res.json({ source: "static", problems: staticProblems() });
+    }
+    if (!llmEnabled()) return res.json({ source: "static", problems: staticProblems() });
+    try {
+      const problems = await suggestProblems(industry);
+      res.json({ source: "ai", problems });
+    } catch {
+      res.json({ source: "static", problems: staticProblems() });
+    }
+  });
+
+  app.post("/api/discovery/followups", async (req, res) => {
+    const industry = String(req.body?.industry ?? "").trim();
+    const problem = String(req.body?.problem ?? "").trim();
+    if (!isKnownType(industry) || !problem || !llmEnabled()) {
+      return res.json({ source: "static", questions: [] });
+    }
+    try {
+      const questions = await followUpQuestions(industry, problem);
+      res.json({ source: "ai", questions });
+    } catch {
+      res.json({ source: "static", questions: [] });
+    }
+  });
+
   app.post("/apps", async (req, res, next) => {
     try {
       const name = String(req.body.name ?? "").trim();
@@ -167,8 +203,9 @@ export function createApp() {
       const audience_model = String(req.body.audience_model ?? "").trim();
       const roles = String(req.body.roles ?? "");
       const products = toArray(req.body.products);
+      const problem_source = String(req.body.problem_source ?? "").trim();
       const discovery = {
-        problem: String(req.body.problem ?? ""),
+        problem: String(req.body.problem ?? "").trim(),
         user_goal: String(req.body.user_goal ?? ""),
         admin_goal: String(req.body.admin_goal ?? ""),
         onboarding: String(req.body.onboarding ?? ""),
@@ -188,8 +225,10 @@ export function createApp() {
       if (!application_type || !isKnownType(application_type)) {
         return reshow(400, "Choose the industry this app is for.");
       }
-      if (!discovery.problem || !isKnownProblem(discovery.problem)) {
-        return reshow(400, "Choose the problem you want to solve.");
+      // The problem is now free text — an AI-suggested option or the client's own
+      // words (Narinder's funnel) — so we require it but no longer gate on a fixed set.
+      if (!discovery.problem) {
+        return reshow(400, "Choose or describe the problem you want to solve.");
       }
       if (audience_model && !isAudienceModel(audience_model)) {
         return reshow(400, "Audience model must be B2C, B2B, or B2B2C.");
@@ -197,6 +236,10 @@ export function createApp() {
       const intake = {
         roles: roles.split(/\r?\n/).map((r) => r.trim()).filter(Boolean),
         ...discovery,
+        ...(problem_source ? { problem_source } : {}),
+        ...(parseDiscoveryAnswers(req.body.discovery_answers).length
+          ? { discovery_answers: parseDiscoveryAnswers(req.body.discovery_answers) }
+          : {}),
       };
       const created = await api.createApplication({
         client_id, name, slug, products,
@@ -261,23 +304,19 @@ export function createApp() {
       const slug = req.params.slug;
       const application_type = String(req.body.application_type ?? "").trim();
       const audience_model = String(req.body.audience_model ?? "").trim();
-      const problem = String(req.body.problem ?? "").trim();
       const back = (q: URLSearchParams) => res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
       if (application_type && !isKnownType(application_type)) {
         const q = new URLSearchParams(); q.set("err", "That industry is not recognised.");
-        return back(q);
-      }
-      if (problem && !isKnownProblem(problem)) {
-        const q = new URLSearchParams(); q.set("err", "That problem is not recognised.");
         return back(q);
       }
       if (audience_model && !isAudienceModel(audience_model)) {
         const q = new URLSearchParams(); q.set("err", "Audience model must be B2C, B2B, or B2B2C.");
         return back(q);
       }
+      // problem is free text (AI-suggested or the client's own words) — no fixed-set gate.
       const intake = {
         roles: String(req.body.roles ?? "").split(/\r?\n/).map((r) => r.trim()).filter(Boolean),
-        problem: String(req.body.problem ?? ""),
+        problem: String(req.body.problem ?? "").trim(),
         user_goal: String(req.body.user_goal ?? ""),
         admin_goal: String(req.body.admin_goal ?? ""),
         onboarding: String(req.body.onboarding ?? ""),
@@ -344,6 +383,27 @@ const flash = (req: express.Request) => ({
 });
 
 const toArray = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : v ? [String(v)] : []);
+
+/**
+ * The wizard submits the AI follow-up answers as a JSON string in a hidden field.
+ * Parse it defensively — bad input just yields no answers, never an error.
+ */
+function parseDiscoveryAnswers(v: unknown): Array<{ question: string; answer: string }> {
+  if (typeof v !== "string" || !v.trim()) return [];
+  try {
+    const parsed = JSON.parse(v);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((x) => ({
+        question: String((x as any)?.question ?? "").trim().slice(0, 200),
+        answer: String((x as any)?.answer ?? "").trim().slice(0, 200),
+      }))
+      .filter((x) => x.question && x.answer)
+      .slice(0, 6);
+  } catch {
+    return [];
+  }
+}
 
 if (process.env.NODE_ENV !== "test") {
   const port = Number(process.env.PORT ?? 8096);
