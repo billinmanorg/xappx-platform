@@ -8,7 +8,7 @@
     greeting: 'Hi! What would you like to build?',
     chips: ['I want an app', 'I need an AI agent', "I'm not sure yet"],
     notice: 'XAPPY uses AI. Please do not enter passwords, payment details, or sensitive information.',
-    avatarUrl: '' /* URL of the approved XAPPY artwork. Leave empty to use the built-in mark. */
+    avatarUrl: '/xappy-face.png' /* URL of the approved XAPPY artwork. Leave empty to use the built-in mark. */
   };
   if (document.getElementById('xappy-root')) return;
   /* Session id so the conversation keeps context across messages on this visit */
