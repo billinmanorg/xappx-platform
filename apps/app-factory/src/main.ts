@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, isModuleStatus, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, isKnownType, isKnownProblem, isAudienceModel, isStatus, isModuleStatus, type FactoryStats } from "./render.js";
 
 /**
  * A shared-password gate. The console can create and configure applications, so
@@ -186,7 +186,10 @@ export function createApp() {
         return reshow(400, "A client, a name, and a valid slug (lowercase words with hyphens) are all required.");
       }
       if (!application_type || !isKnownType(application_type)) {
-        return reshow(400, "Choose what kind of application you are building.");
+        return reshow(400, "Choose the industry this app is for.");
+      }
+      if (!discovery.problem || !isKnownProblem(discovery.problem)) {
+        return reshow(400, "Choose the problem you want to solve.");
       }
       if (audience_model && !isAudienceModel(audience_model)) {
         return reshow(400, "Audience model must be B2C, B2B, or B2B2C.");
@@ -258,9 +261,14 @@ export function createApp() {
       const slug = req.params.slug;
       const application_type = String(req.body.application_type ?? "").trim();
       const audience_model = String(req.body.audience_model ?? "").trim();
+      const problem = String(req.body.problem ?? "").trim();
       const back = (q: URLSearchParams) => res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
       if (application_type && !isKnownType(application_type)) {
-        const q = new URLSearchParams(); q.set("err", "That application type is not recognised.");
+        const q = new URLSearchParams(); q.set("err", "That industry is not recognised.");
+        return back(q);
+      }
+      if (problem && !isKnownProblem(problem)) {
+        const q = new URLSearchParams(); q.set("err", "That problem is not recognised.");
         return back(q);
       }
       if (audience_model && !isAudienceModel(audience_model)) {

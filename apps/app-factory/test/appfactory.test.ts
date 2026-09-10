@@ -16,10 +16,10 @@ let base: string;
 before(async () => {
   apps = [
     { app_id: "a1", client_id: "c1", name: "Demo One", slug: "demo-one", status: "draft",
-      application_type: "small_business", audience_model: "b2c",
-      intake: { roles: ["Members", "Staff"], problem: "Help local shops sell online" } },
+      application_type: "retail", audience_model: "b2c",
+      intake: { roles: ["Members", "Staff"], problem: "leads" } },
     { app_id: "a2", client_id: "c1", name: "Beta Two", slug: "beta-two", status: "published",
-      application_type: "creator", audience_model: "b2b" },
+      application_type: "it_bpm", audience_model: "b2b" },
   ];
   const products = [
     { code: "twins", name: "Twins", requires: [], billable: false, enabled: true, display_name: null, status: "available" },
@@ -136,7 +136,7 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /Acme/); // owner (client) shown on the card
     assert.match(html, /All clients/); // filter bar
     assert.match(html, /Any status/);
-    assert.match(html, /Any type/);
+    assert.match(html, /Any industry/);
     assert.match(html, /id="appsearch"/); // client-side search box
   });
 
@@ -152,24 +152,26 @@ describe("the Factory renders from the platform API", () => {
   test("the New app wizard walks build → people → discovery → launch", async () => {
     const html = await (await get("/apps/new")).text();
     assert.match(html, /Create new app/);
-    assert.match(html, /What are you building\?/); // step 1: type
-    assert.match(html, /value="small_business"/); // a catalogue type
+    assert.match(html, /What industry is this for\?/); // step 1: industry
+    assert.match(html, /value="retail"/); // an IBEF industry option
+    assert.match(html, /What problem do you want to solve\?/); // step 1: problem
+    assert.match(html, /name="problem"/);
+    assert.match(html, /value="leads"/); // a problem option
     assert.match(html, /name="audience_model" value="b2b2c"/); // step 1: audience
     assert.match(html, /Who uses this app\?/); // step 2: roles
     assert.match(html, /name="roles"/);
-    assert.match(html, /What problem does the application solve\?/); // step 3: discovery
-    assert.match(html, /name="problem"/);
+    assert.match(html, /What should a user accomplish\?/); // step 3: discovery
     assert.match(html, /Acme/); // the single client is shown as the owner
     assert.match(html, /Owner/); // single client -> read-only owner, not a dropdown
     assert.doesNotMatch(html, /No clients yet/); // never dead-end on the old blocker
     assert.match(html, />Users</); // stepper step renamed People -> Users
     assert.match(html, /name="products" value="vault"/); // step 4: module checkbox
-    assert.match(html, /RECOMMENDED|small_business/); // type→module recommendations wired in the script
+    assert.match(html, /RECO=.*leads/); // problem→module recommendations wired in the script
   });
 
-  test("the Apps list shows an app's type and audience", async () => {
+  test("the Apps list shows an app's industry and audience", async () => {
     const html = await (await get("/apps")).text();
-    assert.match(html, /Small business/); // humanised application_type
+    assert.match(html, /Retail/); // humanised industry (application_type)
     assert.match(html, /B2C/); // audience model
   });
 
@@ -199,8 +201,8 @@ describe("the Factory renders from the platform API", () => {
     assert.match(html, /Lifecycle status/); // status control
     assert.match(html, /<option value="published"/); // publishing is now a lifecycle transition
     assert.match(html, /Save details/); // details form
-    assert.match(html, /value="small_business" selected/); // type read back into the select
-    assert.match(html, /Help local shops sell online/); // intake problem read back into a textarea
+    assert.match(html, /value="retail" selected/); // industry read back into the select
+    assert.match(html, /value="leads" selected/); // intake problem read back into the problem select
     assert.match(html, /Members/); // a role read back into the roles textarea
   });
 });
@@ -224,32 +226,40 @@ describe("the Factory drives the right API calls", () => {
   test("creating an app POSTs to /applications with type + audience and redirects to its page", async () => {
     const r = await form("POST", "/apps", {
       client_id: "c1", name: "Aurora", slug: "aurora-x", products: "community",
-      application_type: "marketplace", audience_model: "b2b",
-      roles: "Buyers\nSellers\n", problem: "Match buyers and sellers",
+      application_type: "retail", problem: "leads", audience_model: "b2b",
+      roles: "Buyers\nSellers\n",
     });
     assert.equal(r.status, 302);
     assert.equal(r.headers.get("location"), "/apps/aurora-x");
     const created = calls.find((c) => c.method === "POST" && c.path === "/api/v1/applications");
     assert.ok(created);
     assert.equal(created!.body.slug, "aurora-x");
-    assert.equal(created!.body.application_type, "marketplace");
+    assert.equal(created!.body.application_type, "retail"); // industry
     assert.equal(created!.body.audience_model, "b2b");
     assert.deepEqual(created!.body.products, ["community"]);
     assert.deepEqual(created!.body.intake.roles, ["Buyers", "Sellers"]); // textarea → list
-    assert.equal(created!.body.intake.problem, "Match buyers and sellers");
+    assert.equal(created!.body.intake.problem, "leads"); // the chosen problem
   });
 
   test("an invalid slug is refused before it reaches the API", async () => {
     const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
-    const r = await form("POST", "/apps", { client_id: "c1", name: "X", slug: "Not A Slug", application_type: "individual" });
+    const r = await form("POST", "/apps", { client_id: "c1", name: "X", slug: "Not A Slug", application_type: "retail", problem: "leads" });
     assert.equal(r.status, 400);
     const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
     assert.equal(after, before); // never called the API
   });
 
-  test("creating an app without a type is refused before it reaches the API", async () => {
+  test("creating an app without an industry is refused before it reaches the API", async () => {
     const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
-    const r = await form("POST", "/apps", { client_id: "c1", name: "No Type", slug: "no-type" });
+    const r = await form("POST", "/apps", { client_id: "c1", name: "No Industry", slug: "no-industry", problem: "leads" });
+    assert.equal(r.status, 400);
+    const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
+    assert.equal(after, before); // never called the API
+  });
+
+  test("creating an app without a problem is refused before it reaches the API", async () => {
+    const before = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
+    const r = await form("POST", "/apps", { client_id: "c1", name: "No Problem", slug: "no-problem", application_type: "retail" });
     assert.equal(r.status, 400);
     const after = calls.filter((c) => c.method === "POST" && c.path === "/api/v1/applications").length;
     assert.equal(after, before); // never called the API
@@ -272,20 +282,20 @@ describe("the Factory drives the right API calls", () => {
   test("saving details PUTs the edited fields to /applications/:slug", async () => {
     const r = await form("POST", "/apps/demo-one/edit", {
       name: "Demo One Renamed", primary_domain: "demo.example.com",
-      application_type: "marketplace", audience_model: "b2b",
-      roles: "Buyers\nSellers", problem: "Match supply and demand",
+      application_type: "manufacturing", audience_model: "b2b",
+      roles: "Buyers\nSellers", problem: "automate",
     });
     assert.equal(r.status, 302);
     const put = calls.find((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one");
     assert.ok(put);
     assert.equal(put!.body.name, "Demo One Renamed");
-    assert.equal(put!.body.application_type, "marketplace");
+    assert.equal(put!.body.application_type, "manufacturing"); // industry
     assert.equal(put!.body.audience_model, "b2b");
     assert.deepEqual(put!.body.intake.roles, ["Buyers", "Sellers"]);
-    assert.equal(put!.body.intake.problem, "Match supply and demand");
+    assert.equal(put!.body.intake.problem, "automate"); // the chosen problem
   });
 
-  test("an unrecognised application type is refused before the API is called", async () => {
+  test("an unrecognised industry is refused before the API is called", async () => {
     const before = calls.filter((c) => c.method === "PUT" && c.path === "/api/v1/applications/demo-one").length;
     const r = await form("POST", "/apps/demo-one/edit", { name: "X", application_type: "not-a-type" });
     assert.equal(r.status, 302); // redirects back with an error flash

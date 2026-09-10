@@ -47,30 +47,80 @@ function monogram(name: string, slug: string, size = 40): string {
 const statusClass = (s: string) => "st-" + String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
 /**
- * The application taxonomy from the brief (§7). Types are open-ended — the brief
- * lists "at least these" and ends with "Custom" — so the API stores free text
- * and this is the Factory's curated pick-list. Audience is a closed set.
+ * The application taxonomy. Narinder's review found the old single "application
+ * type" list overlapping and confusing (Small Business vs Enterprise vs
+ * Professional Services are segments, not kinds of app). His fix: ask two clear,
+ * orthogonal questions instead — first the client's *industry*, then the
+ * *problem* they want to solve. The problem is what actually shapes the app, so
+ * it drives the recommended modules (see RECOMMENDED_MODULES, keyed by problem).
+ *
+ * INDUSTRY is stored free-text in the application_type column (no migration);
+ * the list is the IBEF industry taxonomy Narinder pointed to
+ * (ibef.org/industry). PROBLEM is stored in intake.problem. Audience is a
+ * closed set.
  */
-export const APPLICATION_TYPES: ReadonlyArray<readonly [string, string]> = [
-  ["individual", "Individual"],
-  ["creator", "Creator or influencer"],
-  ["small_business", "Small business"],
-  ["professional_services", "Professional services"],
-  ["organization", "Organization"],
-  ["enterprise", "Enterprise"],
-  ["community", "Community"],
-  ["social_network", "Social network"],
-  ["event", "Event or conference"],
-  ["education", "Education or learning"],
-  ["membership", "Membership organization"],
-  ["client_portal", "Client portal"],
-  ["ai_twin", "AI twin application"],
-  ["media", "Media application"],
-  ["marketplace", "Marketplace"],
-  ["rewards", "Rewards or loyalty"],
-  ["token_ecosystem", "Token education or ecosystem"],
-  ["internal_ops", "Internal operations"],
-  ["custom", "Custom application"],
+export const INDUSTRIES: ReadonlyArray<readonly [string, string]> = [
+  ["agriculture", "Agriculture & Allied"],
+  ["auto_components", "Auto Components"],
+  ["automobiles", "Automobiles"],
+  ["aviation", "Aviation"],
+  ["banking", "Banking"],
+  ["biotechnology", "Biotechnology"],
+  ["cement", "Cement"],
+  ["chemicals", "Chemicals"],
+  ["consumer_durables", "Consumer Durables"],
+  ["defence", "Defence Manufacturing"],
+  ["ecommerce", "E-Commerce"],
+  ["education", "Education & Training"],
+  ["electric_vehicle", "Electric Vehicle"],
+  ["esdm", "Electronics System Design & Manufacturing"],
+  ["engineering", "Engineering & Capital Goods"],
+  ["financial_services", "Financial Services"],
+  ["fmcg", "FMCG"],
+  ["food_processing", "Food Processing"],
+  ["gems_jewellery", "Gems & Jewellery"],
+  ["healthcare", "Healthcare"],
+  ["infrastructure", "Infrastructure"],
+  ["insurance", "Insurance"],
+  ["it_bpm", "IT & BPM"],
+  ["manufacturing", "Manufacturing"],
+  ["media", "Media & Entertainment"],
+  ["medical_devices", "Medical Devices"],
+  ["metals_mining", "Metals & Mining"],
+  ["msme", "MSME"],
+  ["oil_gas", "Oil & Gas"],
+  ["paper_packaging", "Paper & Packaging"],
+  ["pharmaceuticals", "Pharmaceuticals"],
+  ["ports", "Ports"],
+  ["power", "Power"],
+  ["railways", "Railways"],
+  ["real_estate", "Real Estate"],
+  ["renewable_energy", "Renewable Energy"],
+  ["retail", "Retail"],
+  ["roads", "Roads"],
+  ["science_technology", "Science & Technology"],
+  ["services", "Services"],
+  ["steel", "Steel"],
+  ["telecommunications", "Telecommunications"],
+  ["textiles", "Textiles"],
+  ["tourism_hospitality", "Tourism & Hospitality"],
+  ["other", "Other"],
+];
+/**
+ * The problem the client wants to solve. Deliberately short and non-overlapping
+ * — this is the field that shapes the app, so every option maps to a clear set
+ * of recommended modules. Stored in intake.problem.
+ */
+export const PROBLEMS: ReadonlyArray<readonly [string, string]> = [
+  ["leads", "Get more leads & sell online"],
+  ["support", "Answer customers 24/7"],
+  ["automate", "Automate follow-up & scheduling"],
+  ["knowledge", "Organize knowledge & documents"],
+  ["onboard", "Onboard customers or members"],
+  ["community", "Run a community or membership"],
+  ["twin", "Create an AI twin or persona"],
+  ["internal", "Streamline internal operations"],
+  ["other", "Something else"],
 ];
 export const AUDIENCE_MODELS: ReadonlyArray<readonly [string, string]> = [
   ["b2c", "B2C"],
@@ -111,30 +161,21 @@ function moduleChip(status?: string): string {
   return `<span class="mchip m-${esc(status)}">${esc(label)}</span>`;
 }
 /**
- * Sensible module pre-selections per application type (brief §7: "the type
- * affects recommended modules"). Only codes that actually exist in the live
- * catalogue are applied, so this can name modules a given install may not have.
+ * Sensible module pre-selections per problem. The problem — not the industry —
+ * is what shapes an app, so the recommendations key off it. Only codes that
+ * actually exist in the live catalogue are applied, so this can name modules a
+ * given install may not have.
  */
 export const RECOMMENDED_MODULES: Readonly<Record<string, readonly string[]>> = {
-  individual: ["twins", "vault"],
-  creator: ["twins", "community", "video_plan"],
-  small_business: ["agents", "vault", "community"],
-  professional_services: ["agents", "vault"],
-  organization: ["community", "vault"],
-  enterprise: ["agents", "vault", "vault_premium"],
+  leads: ["agents", "community"],
+  support: ["agents", "twins"],
+  automate: ["agents", "vault"],
+  knowledge: ["vault", "agents"],
+  onboard: ["vault", "community"],
   community: ["community", "twins"],
-  social_network: ["community", "twins"],
-  event: ["community"],
-  education: ["community", "twins", "vault"],
-  membership: ["community", "vault"],
-  client_portal: ["vault", "agents"],
-  ai_twin: ["twins", "vault", "video_plan"],
-  media: ["video_plan", "community"],
-  marketplace: ["agents", "community"],
-  rewards: ["community"],
-  token_ecosystem: ["community"],
-  internal_ops: ["agents", "vault"],
-  custom: [],
+  twin: ["twins", "vault", "video_plan"],
+  internal: ["agents", "vault"],
+  other: [],
 };
 
 /** Suggested user roles per audience model (brief §7 defaults). */
@@ -144,24 +185,30 @@ export const ROLE_DEFAULTS: Readonly<Record<string, readonly string[]>> = {
   b2b2c: ["Parent organizations", "Delegated organization administrators", "End users"],
 };
 
-/** The business & workflow discovery questions (brief §7 wizard step 3). */
+/**
+ * The business & workflow discovery questions (wizard discovery step). The
+ * core "what problem does it solve?" is now the Problem pick-list in step 1, so
+ * these cover the remaining detail.
+ */
 export const DISCOVERY_QUESTIONS: ReadonlyArray<{ key: string; label: string; placeholder: string }> = [
-  { key: "problem", label: "What problem does the application solve?", placeholder: "The core need it addresses…" },
   { key: "user_goal", label: "What should a user accomplish?", placeholder: "The main thing a member comes to do…" },
   { key: "admin_goal", label: "What should an administrator accomplish?", placeholder: "What the owner runs day to day…" },
   { key: "onboarding", label: "What happens during onboarding?", placeholder: "First steps for a new member…" },
   { key: "workflows", label: "What are the main workflows?", placeholder: "The repeating flows the app supports…" },
 ];
 
-const TYPE_LABEL = new Map(APPLICATION_TYPES);
+const INDUSTRY_LABEL = new Map(INDUSTRIES);
+const PROBLEM_LABEL = new Map(PROBLEMS);
 const AUDIENCE_LABEL = new Map(AUDIENCE_MODELS);
-export const isKnownType = (v: string) => TYPE_LABEL.has(v);
+export const isKnownType = (v: string) => INDUSTRY_LABEL.has(v);
+export const isKnownProblem = (v: string) => PROBLEM_LABEL.has(v);
 export const isAudienceModel = (v: string) => AUDIENCE_LABEL.has(v);
-const typeLabel = (v?: string | null) => (v ? (TYPE_LABEL.get(v) ?? v) : "");
+const industryLabel = (v?: string | null) => (v ? (INDUSTRY_LABEL.get(v) ?? v) : "");
+const problemLabel = (v?: string | null) => (v ? (PROBLEM_LABEL.get(v) ?? v) : "");
 const audienceLabel = (v?: string | null) => (v ? (AUDIENCE_LABEL.get(v) ?? String(v).toUpperCase()) : "");
-/** The muted "type · audience" line a card shows, or "" when neither is set. */
+/** The muted "industry · audience" line a card shows, or "" when neither is set. */
 function taxoLine(a: Application): string {
-  const bits = [typeLabel(a.application_type), audienceLabel(a.audience_model)].filter(Boolean);
+  const bits = [industryLabel(a.application_type), audienceLabel(a.audience_model)].filter(Boolean);
   return bits.length ? `<span class="modn">${esc(bits.join(" · "))}</span>` : "";
 }
 
@@ -383,7 +430,7 @@ export function appsPage(
     .map((a) => {
       const memberView = `${webBase()}/${encodeURIComponent(a.slug)}`;
       const owner = clientName.get(a.client_id);
-      const search = [a.name, a.slug, typeLabel(a.application_type), owner].filter(Boolean).join(" ").toLowerCase();
+      const search = [a.name, a.slug, industryLabel(a.application_type), owner].filter(Boolean).join(" ").toLowerCase();
       return `<div class="appcard" data-search="${esc(search)}">
         <a href="/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
         <div class="meta">
@@ -407,9 +454,9 @@ export function appsPage(
   const filterBar = `<form class="filters" method="get" action="/apps">
       <div class="ff"><label>Client</label>${sel("client_id", filters.client_id, "All clients", clientOpts)}</div>
       <div class="ff"><label>Status</label>${sel("status", filters.status, "Any status", STATUS_STATES)}</div>
-      <div class="ff"><label>Type</label>${sel("application_type", filters.application_type, "Any type", APPLICATION_TYPES)}</div>
+      <div class="ff"><label>Industry</label>${sel("application_type", filters.application_type, "Any industry", INDUSTRIES)}</div>
       <div class="ff"><label>Audience</label>${sel("audience_model", filters.audience_model, "Any audience", AUDIENCE_MODELS)}</div>
-      <div class="ff grow"><label>Search</label><input id="appsearch" type="search" placeholder="Filter by name, slug, type or client…" autocomplete="off"></div>
+      <div class="ff grow"><label>Search</label><input id="appsearch" type="search" placeholder="Filter by name, slug, industry or client…" autocomplete="off"></div>
       <button class="btn" type="submit">Apply</button>
     </form>`;
 
@@ -507,8 +554,11 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
   const clientOpts = clients
     .map((c) => `<option value="${esc(c.client_id)}"${c.client_id === values.client_id ? " selected" : ""}>${esc(c.name)}</option>`)
     .join("");
-  const typeOpts = APPLICATION_TYPES
+  const industryOpts = INDUSTRIES
     .map(([val, label]) => `<option value="${val}"${val === values.application_type ? " selected" : ""}>${esc(label)}</option>`)
+    .join("");
+  const problemOpts = PROBLEMS
+    .map(([val, label]) => `<option value="${val}"${val === values.problem ? " selected" : ""}>${esc(label)}</option>`)
     .join("");
   const audienceChoices = AUDIENCE_MODELS
     .map(([val, label]) =>
@@ -551,17 +601,22 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
   }
 
   const body = `<h1>Create new app</h1>
-  <p class="sub">Start with what you're building — the type and audience shape the defaults — then name it and launch.</p>
+  <p class="sub">Start with the industry and the problem to solve — they shape the defaults — then name it and launch.</p>
   ${error ? `<div class="notice err">${esc(error)}</div>` : ""}
   <div class="stepper">${stepper}</div>
   <form class="panel" method="post" action="/apps" id="wizard">
 
     <section class="step" data-step="0">
-      <div class="field"><label for="application_type">What are you building?</label>
+      <div class="field"><label for="application_type">What industry is this for?</label>
         <select id="application_type" name="application_type" required>
-          <option value="" disabled${values.application_type ? "" : " selected"}>Choose an application type…</option>
-          ${typeOpts}</select>
-        <span class="hint">Sets recommended modules, navigation and defaults. You can change everything later.</span></div>
+          <option value="" disabled${values.application_type ? "" : " selected"}>Choose an industry…</option>
+          ${industryOpts}</select>
+        <span class="hint">Pick the closest fit — choose Other if none match.</span></div>
+      <div class="field"><label for="problem">What problem do you want to solve?</label>
+        <select id="problem" name="problem" required>
+          <option value="" disabled${values.problem ? "" : " selected"}>Choose a problem…</option>
+          ${problemOpts}</select>
+        <span class="hint">This shapes the recommended modules and defaults. You can change everything later.</span></div>
       <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div>
         <span class="hint">B2C serves members directly · B2B serves organizations · B2B2C serves organizations who serve their own users.</span></div>
     </section>
@@ -587,7 +642,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
         <input id="slug" name="slug" value="${v("slug")}" placeholder="aurora" pattern="[a-z0-9]+(-[a-z0-9]+)*" required>
         <span class="hint">Lowercase words with hyphens. Used in the URL: <code>/&lt;slug&gt;</code></span></div>
       ${catalog.length ? `<div class="field"><label>Modules to launch with</label><div class="checks">${checks}</div>
-        <span class="hint">Pre-selected for your application type — adjust freely.</span></div>` : ""}
+        <span class="hint">Pre-selected for the problem you chose — adjust freely.</span></div>` : ""}
     </section>
 
     <div class="wnav">
@@ -600,10 +655,10 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
   <script>
   (function(){
     var RECO=${JSON.stringify(RECOMMENDED_MODULES)}, ROLES=${JSON.stringify(ROLE_DEFAULTS)}, CODES=${catalogCodes};
-    var TYPES=${JSON.stringify(Object.fromEntries(APPLICATION_TYPES))}, AUD=${JSON.stringify(Object.fromEntries(AUDIENCE_MODELS))};
+    var INDUSTRIES=${JSON.stringify(Object.fromEntries(INDUSTRIES))}, PROBLEMS=${JSON.stringify(Object.fromEntries(PROBLEMS))}, AUD=${JSON.stringify(Object.fromEntries(AUDIENCE_MODELS))};
     var form=document.getElementById('wizard'), steps=form.querySelectorAll('.step'), dots=document.querySelectorAll('.stepper .s');
     var back=document.getElementById('back'), next=document.getElementById('next'), create=document.getElementById('create');
-    var typeSel=document.getElementById('application_type'), roles=document.getElementById('roles');
+    var industrySel=document.getElementById('application_type'), problemSel=document.getElementById('problem'), roles=document.getElementById('roles');
     var name=document.getElementById('name'), slug=document.getElementById('slug'), slugTouched=false, modTouched=false, rolesTouched=false;
     var i=0;
     function audience(){var r=form.querySelector('input[name=audience_model]:checked');return r?r.value:'';}
@@ -616,7 +671,8 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       window.scrollTo(0,0);
     }
     function valid(){
-      if(i===0 && !typeSel.value){typeSel.reportValidity();return false;}
+      if(i===0 && !industrySel.value){industrySel.reportValidity();return false;}
+      if(i===0 && !problemSel.value){problemSel.reportValidity();return false;}
       return true;
     }
     next.addEventListener('click',function(){if(valid()&&i<steps.length-1){i++;show();}});
@@ -624,13 +680,13 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
     // slug auto-fill
     slug.addEventListener('input',function(){slugTouched=true;});
     name.addEventListener('input',function(){if(!slugTouched)slug.value=name.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');});
-    // recommended modules on type change (until user edits them)
+    // recommended modules follow the chosen problem (until the user edits them)
     form.querySelectorAll('input[name=products]').forEach(function(cb){cb.addEventListener('change',function(){modTouched=true;});});
     function applyReco(){
-      if(modTouched) return; var rec=RECO[typeSel.value]||[];
+      if(modTouched) return; var rec=RECO[problemSel.value]||[];
       form.querySelectorAll('input[name=products]').forEach(function(cb){cb.checked=rec.indexOf(cb.getAttribute('data-code'))>=0;});
     }
-    typeSel.addEventListener('change',applyReco);
+    problemSel.addEventListener('change',applyReco);
     // role suggestions from audience (until user edits the box)
     roles.addEventListener('input',function(){rolesTouched=true;});
     function fillRoles(){
@@ -640,9 +696,10 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
     }
     function review(){
       var mods=[]; form.querySelectorAll('input[name=products]:checked').forEach(function(cb){mods.push(cb.getAttribute('data-code'));});
-      document.getElementById('review').innerHTML='Creating a <b>'+(TYPES[typeSel.value]||'—')+'</b>'+
-        (audience()?' · <b>'+AUD[audience()]+'</b>':'')+' app'+
-        (mods.length?' with <b>'+mods.length+'</b> module'+(mods.length>1?'s':''):'')+'.';
+      document.getElementById('review').innerHTML='An app to <b>'+(PROBLEMS[problemSel.value]||'—')+'</b>'+
+        ' for <b>'+(INDUSTRIES[industrySel.value]||'—')+'</b>'+
+        (audience()?' · <b>'+AUD[audience()]+'</b>':'')+
+        (mods.length?', with <b>'+mods.length+'</b> module'+(mods.length>1?'s':''):'')+'.';
     }
     show();
   })();
@@ -693,11 +750,13 @@ function statusPanel(app: Application): string {
     <p class="hint" style="margin-top:8px">Setting it to <b>Published</b> takes the app live to members.</p></div>`;
 }
 
-/** Editable details: name, domain, type, audience, roles and the intake answers. */
+/** Editable details: name, domain, industry, problem, audience, roles and the intake answers. */
 function detailsPanel(app: Application): string {
   const intake = app.intake ?? {};
-  const typeOpts = `<option value="">—</option>` + APPLICATION_TYPES
+  const industryOpts = `<option value="">—</option>` + INDUSTRIES
     .map(([v, label]) => `<option value="${v}"${v === app.application_type ? " selected" : ""}>${esc(label)}</option>`).join("");
+  const problemOpts = `<option value="">—</option>` + PROBLEMS
+    .map(([v, label]) => `<option value="${v}"${v === intake.problem ? " selected" : ""}>${esc(label)}</option>`).join("");
   const audienceChoices = AUDIENCE_MODELS
     .map(([v, label]) => `<label class="check"><input type="radio" name="audience_model" value="${v}"${
       v === app.audience_model ? " checked" : ""}>${esc(label)}</label>`).join("");
@@ -713,8 +772,10 @@ function detailsPanel(app: Application): string {
       <input id="e_name" name="name" value="${esc(app.name)}" required></div>
     <div class="field"><label for="e_domain">Primary domain</label>
       <input id="e_domain" name="primary_domain" value="${esc(app.primary_domain ?? "")}" placeholder="app.example.com"></div>
-    <div class="field"><label for="e_type">Application type</label>
-      <select id="e_type" name="application_type">${typeOpts}</select></div>
+    <div class="field"><label for="e_type">Industry</label>
+      <select id="e_type" name="application_type">${industryOpts}</select></div>
+    <div class="field"><label for="e_problem">Problem to solve</label>
+      <select id="e_problem" name="problem">${problemOpts}</select></div>
     <div class="field"><label>Audience model</label><div class="checks">${audienceChoices}</div></div>
     <div class="field"><label for="e_roles">Roles</label>
       <textarea id="e_roles" name="roles" placeholder="One role per line">${rolesVal}</textarea></div>
