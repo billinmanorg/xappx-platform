@@ -461,66 +461,65 @@
 <script>
 (function(){
   "use strict";
-  // XAPPY app-builder DEMO. Canned, front-end only (no model/backend/lead storage
-  // yet). Walks a short conversational flow and generates a "Your XAPPX Build"
-  // card. Real XAPPY (live model + saved builds + accounts) is a backend phase.
-  var FLOWS = {
-    app:   {q:"Nice — who should use it?", opts:["Customers","My team","Both"], t:"Your Custom App", items:["Custom web & mobile app","Customer AI agent","Secure data vault","Analytics"]},
-    agent: {q:"Great — what should the AI be able to do?", opts:["Answer customers","Research & follow up","Both"], t:"Your AI Agent", items:["Always‑on AI agent","Knowledge vault","Automated follow‑up","Handoff to your team"]},
-    grow:  {q:"Love it — what matters most right now?", opts:["More leads","Faster follow‑up","Better support"], t:"Your Growth System", items:["Lead capture","Customer AI agent","Automated follow‑up","Customer data vault"]},
-    make:  {q:"Exciting — who is it for?", opts:["Customers","A community","Creators & fans"], t:"Your New Product", items:["Custom app","Community space","Tokenized access & rewards","Data vault"]},
-    unsure:{q:"No problem. Tell me a little about your business and I'll suggest a starting point.", opts:[], t:"Your Starting Build", items:["Custom app","Customer AI agent","Data vault"]}
-  };
-  var START = [["I want an app","app"],["I need an AI agent","agent"],["I want to grow my business","grow"],["Create something new","make"],["I'm not sure yet","unsure"]];
+  // Hero XAPPY chat. Real, not scripted: each visitor message is one call to the
+  // live chat server (the same endpoint the bubble widget uses), reply comes back
+  // in the response. The endpoint + access key live only in xappy-widget.js; we
+  // read them from that file at runtime so the key isn't duplicated here. Hero and
+  // bubble share the same senderId (sessionStorage xappy-sid) = one conversation.
+  var CHIPS = ["I want an app", "I need an AI agent", "I'm not sure yet"];
   var log=document.getElementById('log'), chips=document.getElementById('chips'), form=document.getElementById('form'),
       input=document.getElementById('tx'), reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var state='start', pending=null;
+  var busy=false, greeted=false;
 
-  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-  function bubble(t,who){var d=document.createElement('div');d.className='msg '+who;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;}
-  function bot(t,after){ if(reduce){bubble(t,'bot');after&&after();return;}
-    var d=document.createElement('div');d.className='msg bot';d.textContent='…';log.appendChild(d);log.scrollTop=log.scrollHeight;
-    setTimeout(function(){d.textContent=t;log.scrollTop=log.scrollHeight;after&&after();},360); }
-  function setChips(list){ chips.innerHTML=''; list.forEach(function(c){var b=document.createElement('button');b.className='chip';b.type='button';b.textContent=c[0];b.addEventListener('click',function(){pick(c[0],c[1]);});chips.appendChild(b);}); }
-  function buildCard(f){
-    var el=document.createElement('div');el.className='build';
-    el.innerHTML='<div class="bh"><div class="t">Your XAPPX Build</div><div class="n">'+esc(f.t)+'</div></div><ul>'+
-      f.items.map(function(i){return '<li><span class="ck">✓</span> '+esc(i)+'</li>';}).join('')+
-      '</ul><div class="ba"><button class="btn primary" type="button">Continue Building</button></div>';
-    log.appendChild(el); log.scrollTop=log.scrollHeight;
-    el.querySelector('button').addEventListener('click',function(){
-      bot("To save this build and keep going, you'll create a free XAPPX account and I'll gather the rest. (Accounts + live build workspace are coming soon.)");
-      setChips([["Start over","restart"]]);
-    });
-  }
-  function pick(label,key){
-    bubble(label,'user');
-    if(key==='restart'){ log.innerHTML=''; state='start'; boot(); return; }
-    if(state==='start'){
-      var f=FLOWS[key]; pending=f; state='followup';
-      bot(f.q, function(){ if(f.opts.length) setChips(f.opts.map(function(o){return [o,'opt'];})); else { chips.innerHTML=''; input.focus(); } });
-    } else if(state==='followup'){
-      chips.innerHTML='';
-      bot("I have enough to start your build plan.", function(){ buildCard(pending); state='done'; setChips([["Start over","restart"]]); });
-    }
-  }
-  form.addEventListener('submit',function(e){
-    e.preventDefault(); var q=input.value.trim(); if(!q) return; input.value='';
-    bubble(q,'user');
-    if(state==='start' || state==='done'){ pending=FLOWS.unsure; state='followup'; }
-    if(state==='followup'){ chips.innerHTML=''; bot("Got it — I have enough to sketch a starting plan.",function(){ buildCard(pending||FLOWS.unsure); state='done'; setChips([["Start over","restart"]]); }); }
+  var senderId;
+  try { senderId=sessionStorage.getItem('xappy-sid');
+    if(!senderId){ senderId='v-'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); sessionStorage.setItem('xappy-sid',senderId); } }
+  catch(e){ senderId='v-'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+  // Endpoint + key read from the deployed widget file (single source of truth).
+  var cfgReady = fetch('/xappy-widget.js').then(function(r){return r.text();}).then(function(src){
+    var ep=(src.match(/endpoint:\s*'([^']+)'/)||[])[1];
+    var key=(src.match(/accessKey:\s*'([^']+)'/)||[])[1];
+    if(!ep||!key||key==='PASTE_THE_ACCESS_KEY_HERE') throw new Error('config');
+    return {endpoint:ep, key:key};
   });
-  document.getElementById('mic').addEventListener('click',function(){ input.focus(); bot("Voice input is coming soon — type your idea for now and I'll take it from there."); });
 
-  function boot(){ state='start'; bot("Hi! What would you like to build?", function(){ setChips(START); }); }
+  function bubble(t,who){var d=document.createElement('div');d.className='msg '+who;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
+  function setChips(list){ chips.innerHTML=''; list.forEach(function(label){var b=document.createElement('button');b.className='chip';b.type='button';b.textContent=label;b.addEventListener('click',function(){ send(label); });chips.appendChild(b);}); }
+  function fail(msg){ var e=bubble(msg||'Something went wrong sending that. Please try again in a moment.','bot'); e.style.color='#ffb4b4'; }
+  function send(text){
+    text=String(text||'').trim(); if(!text||busy) return;
+    chips.innerHTML=''; bubble(text,'user'); input.value=''; input.style.height='auto';
+    busy=true; input.disabled=true;
+    var typing=bubble('…','bot');
+    cfgReady.then(function(cfg){
+      return fetch(cfg.endpoint,{ method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},
+        body:JSON.stringify({ senderId:senderId, text:text, page:location.pathname,
+          device:(window.matchMedia&&window.matchMedia('(max-width:480px)').matches)?'mobile':'desktop', source:'hero' })
+      }).then(function(r){ return r.json().then(function(d){ return {status:r.status, d:d}; }); });
+    }).then(function(res){
+      typing.remove();
+      if(res.d && res.d.ok && typeof res.d.reply==='string' && res.d.reply.trim()){ bubble(res.d.reply.trim(),'bot'); }
+      else if(res.status===429){ fail('Please wait a moment and try again.'); }
+      else { fail(); }
+    }).catch(function(){ typing.remove(); fail(); })
+    .then(function(){ busy=false; input.disabled=false; input.focus(); });
+  }
 
-  // Talk to XAPPY controls -> scroll to hero + focus
+  form.addEventListener('submit',function(e){ e.preventDefault(); send(input.value); });
+  document.getElementById('mic').addEventListener('click',function(){ input.focus(); bubble("Voice input is coming soon — type your idea and I'll take it from there.",'bot'); });
+
+  function boot(){ if(greeted) return; greeted=true; bubble("Hi! What would you like to build?",'bot'); setChips(CHIPS); }
+  boot();
+
+  // Talk to XAPPY controls -> scroll to hero + focus (optionally prefill)
   function focusXappy(pref){ document.getElementById('top').scrollIntoView({behavior:reduce?'auto':'smooth'});
     setTimeout(function(){ input.focus({preventScroll:true}); if(pref){input.value=pref;} },reduce?0:420); }
   document.querySelectorAll('[data-talk]').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();focusXappy();});});
   var finform=document.getElementById('finform');
   finform.addEventListener('submit',function(e){e.preventDefault();var v=document.getElementById('fintx').value.trim();document.getElementById('fintx').value='';focusXappy(v);
-    if(v){ setTimeout(function(){ form.dispatchEvent(new Event('submit')); },reduce?0:500); }});
+    if(v){ setTimeout(function(){ send(v); },reduce?0:500); }});
 
   // announcement + mobile menu
   document.getElementById('ax').addEventListener('click',function(){document.getElementById('announce').classList.add('hide');});
