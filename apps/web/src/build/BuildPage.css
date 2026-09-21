@@ -25,6 +25,7 @@
 /* main panel */
 .build__main { padding: 40px var(--gutter) 80px; }
 .build__panel { max-width: 640px; }
+.build__panel--wide { max-width: none; }
 .build__q { font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem); }
 .build__sub { color: var(--text-dim); margin: 12px 0 24px; font-size: var(--fs-body); }
 .build__search { width: 100%; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); padding: 13px 16px; color: var(--text); font: inherit; margin-bottom: 18px; }

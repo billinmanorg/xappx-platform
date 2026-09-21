@@ -1,4 +1,4 @@
-import type { Blueprint, Challenge, DiscoveryAIService, Industry, SolutionDiscovery } from "./types";
+import type { Blueprint, Challenge, DiscoveryAIService, Industry, PrototypeSpec, SolutionDiscovery } from "./types";
 
 /* Curated stand-in for the AI layer (brief §38). Structured industry knowledge
    with simulated latency so the "AI is working" UX is real. A live adapter can
@@ -97,6 +97,16 @@ const GENERIC: Ind = {
   ],
 };
 
+const ITEM: Record<string, string> = {
+  financial_services: "Loan application",
+  healthcare: "Patient case",
+  retail: "Order",
+  manufacturing: "Work order",
+  logistics: "Shipment",
+  services: "Client request",
+};
+const itemNoun = (slug: string) => ITEM[slug] ?? "Request";
+
 const ind = (slug: string): Ind => DATA[slug] ?? GENERIC;
 const delay = <T,>(v: T, ms = 700): Promise<T> => new Promise((r) => setTimeout(() => r(v), ms));
 
@@ -129,6 +139,50 @@ export const mockService: DiscoveryAIService = {
       ],
     };
     return delay(bp, 1100);
+  },
+
+  generatePrototype: (d: SolutionDiscovery) => {
+    const slug = d.industry?.slug ?? "";
+    const industryLabel = d.industry?.label ?? "Your";
+    const noun = itemNoun(slug);
+    const plural = `${noun}s`;
+    const roles = d.stakeholders.length ? d.stakeholders : ind(slug).stakeholders.slice(0, 3);
+    const statuses = ["New", "AI-reviewed", "Needs review", "In progress", "Approved"];
+    const prios: Array<"High" | "Normal" | "Low"> = ["High", "Normal", "Normal", "Low", "Normal", "High"];
+    const items = Array.from({ length: 6 }, (_, i) => ({
+      id: `IT-${1040 + i}`,
+      title: `${noun} #${1040 + i}`,
+      assignee: roles[i % roles.length]!,
+      status: statuses[i % statuses.length]!,
+      priority: prios[i % prios.length]!,
+    }));
+    const firstOutcome = (d.outcomes[0] ?? "resolve it faster").toLowerCase();
+    const spec: PrototypeSpec = {
+      appName: `${industryLabel} Workspace`,
+      workflowLabel: plural,
+      nav: [
+        { id: "dashboard", label: "Dashboard", locked: false },
+        { id: "queue", label: plural, locked: false },
+        { id: "reports", label: "Reports", locked: true },
+        { id: "integrations", label: "Integrations", locked: true },
+        { id: "automation", label: "Automation", locked: true },
+        { id: "settings", label: "Settings", locked: true },
+      ],
+      stats: [
+        { label: `Open ${plural.toLowerCase()}`, value: "42" },
+        { label: "Auto-handled by AI", value: "68%", hint: "this week" },
+        { label: "Avg. handling time", value: "2.4h", hint: "↓ from 3.1 days" },
+        { label: "Needs your review", value: "7" },
+      ],
+      items,
+      aiActionLabel: "Run AI review",
+      aiResult: {
+        summary: `XAPPY read this ${noun.toLowerCase()}, extracted the key details, and checked it against your rules.`,
+        recommendation: `Recommended next step: fast-track to a human decision — this helps ${firstOutcome}.`,
+        flags: ["1 document missing a signature", "Eligibility looks strong", "No fraud signals detected"],
+      },
+    };
+    return delay(spec, 1200);
   },
 };
 

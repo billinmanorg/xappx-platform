@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { getDiscoveryService } from "./discoveryService";
-import type { Challenge, Industry, SolutionDiscovery } from "./types";
+import type { Challenge, Industry, PrototypeSpec, SolutionDiscovery } from "./types";
 import { emptyDiscovery } from "./types";
+import { PrototypeShell } from "./PrototypeShell";
 import "./BuildPage.css";
 
-type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint";
+type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype";
 const svc = getDiscoveryService();
 const KEY = "xappx_discovery";
 const PROC = ["Understanding your challenge", "Mapping the workflow", "Identifying automation", "Designing the solution", "Creating your blueprint"];
+const PROTO_PROC = ["Reading your blueprint", "Assembling the interface", "Wiring the sample workflow", "Loading representative data", "Preparing your prototype"];
 
 function load(): SolutionDiscovery {
   try { const s = sessionStorage.getItem(KEY); if (s) return { ...emptyDiscovery, ...JSON.parse(s) }; } catch { /* ignore */ }
@@ -33,6 +35,8 @@ export function BuildPage() {
   const [custom, setCustom] = useState("");
   const [customOn, setCustomOn] = useState(false);
   const [proc, setProc] = useState(0);
+  const [procLabels, setProcLabels] = useState<readonly string[]>(PROC);
+  const [proto, setProto] = useState<PrototypeSpec | null>(null);
   const started = useRef(false);
 
   useEffect(() => { try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch { /* ignore */ } }, [d]);
@@ -73,7 +77,7 @@ export function BuildPage() {
     void run(svc.getOutcomes(d.industry!.slug, d.challenge!), setOutcomeOpts);
   }
   function confirmOutcomes() {
-    setStage("processing"); setProc(0);
+    setProcLabels(PROC); setStage("processing"); setProc(0);
     const iv = window.setInterval(() => setProc((n) => Math.min(n + 1, PROC.length - 1)), reduce ? 200 : 850);
     svc.generateBlueprint({ ...d }).then((bp) => {
       window.clearInterval(iv);
@@ -81,16 +85,24 @@ export function BuildPage() {
       window.setTimeout(() => setStage("blueprint"), reduce ? 0 : 400);
     }).catch(() => { window.clearInterval(iv); setErr("Generation failed. Please try again."); setStage("outcomes"); });
   }
+  function generatePrototype() {
+    setProcLabels(PROTO_PROC); setStage("processing"); setProc(0);
+    const iv = window.setInterval(() => setProc((n) => Math.min(n + 1, PROTO_PROC.length - 1)), reduce ? 200 : 850);
+    svc.generatePrototype({ ...d }).then((sp) => {
+      window.clearInterval(iv); setProto(sp);
+      window.setTimeout(() => setStage("prototype"), reduce ? 0 : 400);
+    }).catch(() => { window.clearInterval(iv); setErr("Prototype generation failed."); setStage("blueprint"); });
+  }
   function restart() {
     setD(emptyDiscovery); setStage("industry"); setSearch(""); setCustom(""); setCustomOn(false);
-    setChallenges(null); setRoles(null); setOutcomeOpts(null); setErr(null);
+    setChallenges(null); setRoles(null); setOutcomeOpts(null); setErr(null); setProto(null);
   }
 
   const filtered = useMemo(
     () => industries.filter((i) => i.label.toLowerCase().includes(search.trim().toLowerCase())),
     [industries, search],
   );
-  const stepNo = { industry: 1, challenge: 2, stakeholders: 3, outcomes: 4, processing: 4, blueprint: 5 }[stage];
+  const stepNo = { industry: 1, challenge: 2, stakeholders: 3, outcomes: 4, processing: 4, blueprint: 5, prototype: 5 }[stage];
 
   return (
     <div className="build">
@@ -107,7 +119,7 @@ export function BuildPage() {
           <CtxRow n="02" label="Challenge" value={d.challenge} onEdit={d.industry ? () => setStage("challenge") : undefined} active={stage === "challenge"} />
           <CtxRow n="03" label="Users" value={d.stakeholders.join(", ")} onEdit={d.challenge ? () => setStage("stakeholders") : undefined} active={stage === "stakeholders"} />
           <CtxRow n="04" label="Outcomes" value={d.outcomes.join(", ")} onEdit={d.stakeholders.length ? () => setStage("outcomes") : undefined} active={stage === "outcomes"} />
-          <CtxRow n="05" label="Blueprint" value={d.blueprint ? "Ready" : undefined} active={stage === "blueprint" || stage === "processing"} />
+          <CtxRow n="05" label="Blueprint" value={proto ? "Prototype ready" : d.blueprint ? "Ready" : undefined} active={stage === "blueprint" || stage === "processing" || stage === "prototype"} />
         </aside>
 
         <main className="build__main">
@@ -116,7 +128,7 @@ export function BuildPage() {
               key={stage}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               transition={{ duration: reduce ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="build__panel"
+              className={"build__panel" + (stage === "prototype" ? " build__panel--wide" : "")}
             >
               {stage === "industry" && (
                 <>
@@ -206,7 +218,7 @@ export function BuildPage() {
                 <div className="build__proc" role="status" aria-live="polite">
                   <div className="build__spinner" aria-hidden="true"><span /><span /><span /></div>
                   <ol className="build__proclist">
-                    {PROC.map((s, i) => (
+                    {procLabels.map((s, i) => (
                       <li key={s} className={i === proc ? "on" : i < proc ? "done" : ""}><span className="build__pdot" />{s}</li>
                     ))}
                   </ol>
@@ -214,7 +226,11 @@ export function BuildPage() {
               )}
 
               {stage === "blueprint" && d.blueprint && (
-                <Blueprint d={d} onRestart={restart} />
+                <Blueprint d={d} onRestart={restart} onGenerate={generatePrototype} />
+              )}
+
+              {stage === "prototype" && proto && (
+                <PrototypeShell spec={proto} onBack={() => setStage("blueprint")} onRestart={restart} />
               )}
             </motion.section>
           </AnimatePresence>
@@ -255,7 +271,7 @@ function Retry({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   );
 }
 
-function Blueprint({ d, onRestart }: { d: SolutionDiscovery; onRestart: () => void }) {
+function Blueprint({ d, onRestart, onGenerate }: { d: SolutionDiscovery; onRestart: () => void; onGenerate: () => void }) {
   const bp = d.blueprint!;
   return (
     <div className="bp">
@@ -286,10 +302,10 @@ function Blueprint({ d, onRestart }: { d: SolutionDiscovery; onRestart: () => vo
       )}
 
       <div className="bp__cta">
-        <a className="btn btn-primary" href="#prototype" onClick={(e) => e.preventDefault()}>Generate my prototype →</a>
+        <button className="btn btn-primary" onClick={onGenerate}>Generate my prototype →</button>
         <button className="btn btn-ghost" onClick={onRestart}>Start over</button>
       </div>
-      <p className="bp__note">Next: XAPPX generates an interactive prototype from this blueprint, and our experts take it to production. (Prototype generation is coming online — this blueprint is saved.)</p>
+      <p className="bp__note">Next: XAPPX generates an interactive prototype from this blueprint — a working preview you can click through. Our experts then take it to production.</p>
     </div>
   );
 }

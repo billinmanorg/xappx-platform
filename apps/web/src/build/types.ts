@@ -22,6 +22,22 @@ export interface SolutionDiscovery {
   blueprint?: Blueprint;
 }
 
+// A basic, interactive prototype generated from the blueprint (brief §25-27).
+// Deliberately a demo shell: enough to prove understanding, not a production app.
+export interface PrototypeNav { id: string; label: string; locked: boolean }
+export interface PrototypeStat { label: string; value: string; hint?: string }
+export interface PrototypeItem { id: string; title: string; assignee: string; status: string; priority: "High" | "Normal" | "Low" }
+export interface PrototypeAIResult { summary: string; recommendation: string; flags: string[] }
+export interface PrototypeSpec {
+  appName: string;
+  workflowLabel: string;
+  nav: PrototypeNav[];
+  stats: PrototypeStat[];
+  items: PrototypeItem[];
+  aiActionLabel: string;
+  aiResult: PrototypeAIResult;
+}
+
 export const emptyDiscovery: SolutionDiscovery = {
   industry: null,
   challenge: null,
@@ -41,4 +57,5 @@ export interface DiscoveryAIService {
   getStakeholders(industrySlug: string, challenge: string): Promise<string[]>;
   getOutcomes(industrySlug: string, challenge: string): Promise<string[]>;
   generateBlueprint(d: SolutionDiscovery): Promise<Blueprint>;
+  generatePrototype(d: SolutionDiscovery): Promise<PrototypeSpec>;
 }
