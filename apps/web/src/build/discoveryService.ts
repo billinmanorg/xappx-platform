@@ -185,8 +185,3 @@ export const mockService: DiscoveryAIService = {
     return delay(spec, 1200);
   },
 };
-
-export function getDiscoveryService(): DiscoveryAIService {
-  // Swap here for a live adapter when the AI endpoint is ready.
-  return mockService;
-}

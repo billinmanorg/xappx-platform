@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { getDiscoveryService } from "./discoveryService";
+import { getDiscoveryService } from "./liveService";
 import type { Challenge, Industry, PrototypeSpec, SolutionDiscovery } from "./types";
 import { emptyDiscovery } from "./types";
 import { PrototypeShell } from "./PrototypeShell";

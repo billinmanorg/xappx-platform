@@ -1,0 +1,17 @@
+# Netlify config for the XAPPX front-end (apps/web is the deploy base).
+# Only used by Netlify; Render deploys are unaffected (render.yaml).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Server-side discovery proxy (holds ANTHROPIC_API_KEY; never exposed to the browser).
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# SPA routing so /build (and any client route) resolves to the app.
+# Function routes (/.netlify/functions/*) are handled before this.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
