@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { fadeUp, stagger, inView } from "../lib/motion";
+import { openXappy } from "../lib/xappy";
 import "./IndustryEntry.css";
 
 // Curated marketing subset of the platform's industry taxonomy. Each links into
@@ -29,7 +30,7 @@ export function IndustryEntry() {
 
         <motion.div className="ind__grid" variants={stagger(0.05)} initial="hidden" whileInView="show" viewport={inView}>
           {INDUSTRIES.map(([slug, label]) => (
-            <motion.a className="ind__card" key={slug} href={`/build?industry=${slug}`} variants={fadeUp}>
+            <motion.a className="ind__card" key={slug} href={`/build?industry=${slug}`} onClick={openXappy} variants={fadeUp}>
               <span className="ind__label">{label}</span>
               <span className="ind__go" aria-hidden="true">→</span>
             </motion.a>
