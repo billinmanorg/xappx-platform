@@ -1,0 +1,27 @@
+.tiles__head { max-width: 42ch; margin-bottom: clamp(32px, 5vw, 56px); }
+.tiles__head h2 { font-size: var(--fs-h2); margin-top: 14px; }
+.tiles__lede { margin-top: 16px; }
+
+.tiles__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.tile {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  transition: border-color var(--dur-ui) var(--ease), transform var(--dur-ui) var(--ease);
+}
+.tile:hover { border-color: var(--border-strong); transform: translateY(-3px); }
+.tile__viz {
+  aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(120% 120% at 30% 10%, rgba(0, 194, 255, 0.10), transparent 55%),
+    radial-gradient(120% 120% at 90% 90%, rgba(123, 121, 255, 0.12), transparent 55%),
+    var(--bg-2);
+}
+.tile__viz img { width: 100%; height: 100%; object-fit: cover; }
+.tile__body { padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 7px; }
+.tile__lab { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.tile__h3 { font-size: var(--fs-h3); font-family: var(--font-display); font-weight: 700; }
+.tile__p { font-size: var(--fs-sm); }
+
+@media (max-width: 900px) { .tiles__grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .tiles__grid { grid-template-columns: 1fr; } }
