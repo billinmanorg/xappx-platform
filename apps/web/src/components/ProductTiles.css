@@ -4,22 +4,18 @@
 
 .tiles__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .tile {
-  display: flex; flex-direction: column; overflow: hidden;
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px 22px;
   transition: border-color var(--dur-ui) var(--ease), transform var(--dur-ui) var(--ease);
 }
 .tile:hover { border-color: var(--border-strong); transform: translateY(-3px); }
-.tile__viz {
-  aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; overflow: hidden;
-  border-bottom: 1px solid var(--border);
-  background:
-    radial-gradient(120% 120% at 30% 10%, rgba(0, 194, 255, 0.10), transparent 55%),
-    radial-gradient(120% 120% at 90% 90%, rgba(123, 121, 255, 0.12), transparent 55%),
-    var(--bg-2);
+.tile__ic {
+  width: 46px; height: 46px; border-radius: 13px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent); background: rgba(0, 194, 255, 0.1); border: 1px solid rgba(0, 194, 255, 0.25);
 }
-.tile__viz img { width: 100%; height: 100%; object-fit: cover; }
-.tile__body { padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 7px; }
-.tile__lab { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.tile__ic svg { width: 24px; height: 24px; }
+.tile__lab { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
 .tile__h3 { font-size: var(--fs-h3); font-family: var(--font-display); font-weight: 700; }
 .tile__p { font-size: var(--fs-sm); }
 
