@@ -1,0 +1,26 @@
+.vid { background: var(--bg-2); border-block: 1px solid var(--border); }
+.vid__head { max-width: 46ch; margin-bottom: clamp(24px, 4vw, 40px); }
+.vid__head h2 { font-size: var(--fs-h2); margin-top: 14px; }
+.vid__lede { margin-top: 14px; }
+
+.vid__frame {
+  position: relative; aspect-ratio: 16 / 9; width: 100%; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--shadow-lg);
+  background:
+    radial-gradient(80% 90% at 20% 0%, rgba(0, 194, 255, 0.12), transparent 55%),
+    radial-gradient(80% 90% at 100% 100%, rgba(123, 121, 255, 0.14), transparent 55%),
+    var(--surface);
+}
+.vid__video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.vid__ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.vid__play {
+  width: 76px; height: 76px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 40px -10px rgba(0, 194, 255, 0.6); transition: transform var(--dur-micro) var(--ease), filter var(--dur-micro) var(--ease);
+}
+.vid__play svg { width: 32px; height: 32px; margin-left: 3px; }
+.vid__play:hover { transform: scale(1.05); filter: brightness(1.08); }
+.vid__cap { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--text); }
+.vid__soon { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); border: 1px solid var(--border-strong); border-radius: var(--r-pill); padding: 4px 12px; }

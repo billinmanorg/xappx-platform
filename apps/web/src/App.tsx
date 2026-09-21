@@ -1,6 +1,7 @@
 import { Nav } from "./components/Nav";
 import { Hero } from "./components/Hero";
 import { ProcessStory } from "./components/ProcessStory";
+import { VideoSection } from "./components/VideoSection";
 import { ProductTiles } from "./components/ProductTiles";
 import { IndustryEntry } from "./components/IndustryEntry";
 import { WhyXappx } from "./components/WhyXappx";
@@ -16,6 +17,7 @@ function Home() {
       <main>
         <Hero />
         <ProcessStory />
+        <VideoSection />
         <ProductTiles />
         <IndustryEntry />
         <WhyXappx />
