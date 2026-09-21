@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { fadeUp, inView } from "../lib/motion";
-import { openXappy } from "../lib/xappy";
 import "./Footer.css";
 
 const SITE = ""; // same-domain deploy — legal pages ship in this app's public/ folder
@@ -17,7 +16,7 @@ export function Footer() {
             Describe the problem in plain words. XAPPX takes it from there.
           </motion.p>
           <motion.div className="cta__row" variants={fadeUp} initial="hidden" whileInView="show" viewport={inView}>
-            <a className="btn btn-primary" href="/build" onClick={openXappy}>Build my solution</a>
+            <a className="btn btn-primary" href="/build">Build my solution</a>
             <a className="btn btn-ghost" href="#how">See how it works</a>
           </motion.div>
         </div>

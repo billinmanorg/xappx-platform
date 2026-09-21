@@ -7,8 +7,9 @@ import { WhyXappx } from "./components/WhyXappx";
 import { Ventures } from "./components/Ventures";
 import { Founders } from "./components/Founders";
 import { Footer } from "./components/Footer";
+import { BuildPage } from "./build/BuildPage";
 
-export default function App() {
+function Home() {
   return (
     <>
       <Nav />
@@ -24,4 +25,12 @@ export default function App() {
       <Footer />
     </>
   );
+}
+
+export default function App() {
+  // Minimal path routing — the static host rewrites unknown paths to index.html
+  // (public/_redirects), so the app reads the path and renders the right screen.
+  const path = window.location.pathname.replace(/\/+$/, "");
+  if (path === "/build") return <BuildPage />;
+  return <Home />;
 }

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { fadeUp, stagger } from "../lib/motion";
-import { openXappy } from "../lib/xappy";
 import { HeroWorkflowDemo } from "./HeroWorkflowDemo";
 import "./Hero.css";
 
@@ -18,7 +17,7 @@ export function Hero() {
             solution, and generate an intelligent working prototype — no tech knowledge needed.
           </motion.p>
           <motion.div className="hero__cta" variants={fadeUp}>
-            <a className="btn btn-primary" href="#build" onClick={openXappy}>Build my solution</a>
+            <a className="btn btn-primary" href="/build">Build my solution</a>
             <a className="btn btn-ghost" href="#how">See how it works</a>
           </motion.div>
           <motion.p className="hero__trust" variants={fadeUp}>

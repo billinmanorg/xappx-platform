@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { openXappy } from "../lib/xappy";
 import "./Nav.css";
 
 const LINKS = [
@@ -32,7 +31,7 @@ export function Nav() {
         </nav>
         <div className="nav__actions">
           <a className="nav__signin" href="https://app-factory-3jf3.onrender.com">Sign in</a>
-          <a className="btn btn-primary nav__cta" href="#build" onClick={openXappy}>Build my solution</a>
+          <a className="btn btn-primary nav__cta" href="/build">Build my solution</a>
         </div>
         <button
           className="nav__burger"
@@ -49,7 +48,7 @@ export function Nav() {
             <a key={l.href} href={l.href} onClick={() => setOpen(false)}>{l.label}</a>
           ))}
           <a href="https://app-factory-3jf3.onrender.com">Sign in</a>
-          <a className="btn btn-primary" href="#build" onClick={(e) => { setOpen(false); openXappy(e); }}>Build my solution</a>
+          <a className="btn btn-primary" href="/build" onClick={() => setOpen(false)}>Build my solution</a>
         </div>
       )}
     </header>
