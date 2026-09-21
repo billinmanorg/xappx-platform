@@ -1,11 +1,14 @@
 import { motion } from "framer-motion";
 import { fadeUp, stagger, inView } from "../lib/motion";
+import angelTwin from "../assets/brand/angel-twin.webp";
+import aiFi from "../assets/brand/ai-fi.webp";
+import chainge from "../assets/brand/chainge.webp";
 import "./Ventures.css";
 
 const VENTURES = [
-  { img: "angel-twin", cls: "icon", lab: "Angel Twin · AI Twins", p: "AI Twins that engage your audience 24/7 — and that people own, govern, and monetize themselves." },
-  { img: "ai-fi", cls: "", lab: "AI Fi · AI Payments", p: "Agentic payment rails so AI agents and people can transact autonomously." },
-  { img: "chainge", cls: "", lab: "CHAINGE · AI Media", p: "An AI-native media brand producing original shows on the rise of AI." },
+  { img: angelTwin, cls: "icon", name: "Angel Twin", lab: "Angel Twin · AI Twins", p: "AI Twins that engage your audience 24/7 — and that people own, govern, and monetize themselves." },
+  { img: aiFi, cls: "", name: "AI Fi", lab: "AI Fi · AI Payments", p: "Agentic payment rails so AI agents and people can transact autonomously." },
+  { img: chainge, cls: "", name: "CHAINGE", lab: "CHAINGE · AI Media", p: "An AI-native media brand producing original shows on the rise of AI." },
 ];
 
 export function Ventures() {
@@ -24,7 +27,7 @@ export function Ventures() {
           {VENTURES.map((v) => (
             <motion.article className="ven__card" key={v.img} variants={fadeUp}>
               <div className="ven__plate">
-                <img className={"ven__logo " + v.cls} src={`/brand/${v.img}.webp`} alt={v.lab.split(" · ")[0] + " logo"} loading="lazy" decoding="async" />
+                <img className={"ven__logo " + v.cls} src={v.img} alt={v.name + " logo"} loading="lazy" decoding="async" />
               </div>
               <div className="ven__body">
                 <span className="ven__lab">{v.lab}</span>

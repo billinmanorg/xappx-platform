@@ -5,6 +5,8 @@ export function openXappy(e?: { preventDefault?: () => void }) {
   e?.preventDefault?.();
   const root = document.getElementById("xappy-root") as (HTMLElement & { shadowRoot?: ShadowRoot }) | null;
   const launch = root?.shadowRoot?.querySelector<HTMLButtonElement>(".launch");
+  // Opens the chat when the widget is present. If it isn't (e.g. the static
+  // preview sandbox, or the script hasn't loaded yet), do nothing rather than
+  // navigate somewhere unexpected.
   if (launch) launch.click();
-  else window.location.href = "https://app-factory-3jf3.onrender.com";
 }

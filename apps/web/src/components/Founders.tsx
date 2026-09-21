@@ -1,15 +1,17 @@
 import { motion } from "framer-motion";
 import { fadeUp, stagger, inView } from "../lib/motion";
+import bill from "../assets/brand/bill.webp";
+import narinder from "../assets/brand/narinder.webp";
 import "./Founders.css";
 
 const FOUNDERS = [
   {
-    img: "bill", name: "Bill Inman", role: "Co-founder",
+    img: bill, name: "Bill Inman", role: "Co-founder",
     bio: "Decentralized-AI pioneer, investor, and multi-exit entrepreneur with 25+ years building companies from concept to scale — and a patent holder in AI and blockchain.",
     chips: ["25+ years building companies", "Multi-exit founder", "AI & blockchain patents"],
   },
   {
-    img: "narinder", name: "Narinder Kamra", role: "Co-founder",
+    img: narinder, name: "Narinder Kamra", role: "Co-founder",
     bio: "Founder & CEO of VDOIT Technologies, with 25+ years across AI/ML, Web3, blockchain, and cloud system integration — and a mentor with ASSOCHAM's National Startup Council.",
     chips: ["25+ years in tech", "Founder & CEO, VDOIT", "AI/ML · Web3 · Cloud"],
   },
@@ -31,7 +33,7 @@ export function Founders() {
           {FOUNDERS.map((f) => (
             <motion.article className="fnd__card" key={f.img} variants={fadeUp}>
               <div className="fnd__top">
-                <img className="fnd__photo" src={`/brand/${f.img}.webp`} alt={f.name} loading="lazy" decoding="async" />
+                <img className="fnd__photo" src={f.img} alt={f.name} loading="lazy" decoding="async" />
                 <div>
                   <h3 className="fnd__name">{f.name}</h3>
                   <div className="fnd__role">{f.role}</div>
