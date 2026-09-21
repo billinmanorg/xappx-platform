@@ -6,7 +6,7 @@ import "./PrototypeShell.css";
    clearly-labeled sample data. Dashboard + the primary workflow are usable;
    advanced features are locked — the natural bridge to the commercial step. */
 
-export function PrototypeShell({ spec, onBack, onRestart }: { spec: PrototypeSpec; onBack: () => void; onRestart: () => void }) {
+export function PrototypeShell({ spec, onBack, onRestart, onUnlock }: { spec: PrototypeSpec; onBack: () => void; onRestart: () => void; onUnlock: () => void }) {
   const [active, setActive] = useState("dashboard");
   const [selected, setSelected] = useState<PrototypeItem | null>(null);
   const [aiState, setAiState] = useState<"idle" | "running" | "done">("idle");
@@ -39,7 +39,7 @@ export function PrototypeShell({ spec, onBack, onRestart }: { spec: PrototypeSpe
 
         <main className="ps__main">
           {activeNav?.locked ? (
-            <LockedView label={activeNav.label} />
+            <LockedView label={activeNav.label} onUnlock={onUnlock} />
           ) : active === "dashboard" ? (
             <Dashboard spec={spec} onOpen={(it) => { setActive("queue"); openItem(it); }} />
           ) : (
@@ -51,6 +51,7 @@ export function PrototypeShell({ spec, onBack, onRestart }: { spec: PrototypeSpe
       <div className="ps__foot">
         <p>This is a working preview built from your blueprint — real screens, sample data. The full solution is engineered and deployed by XAPPX experts.</p>
         <div className="ps__foot-cta">
+          <button className="btn btn-primary" onClick={onUnlock}>Make it real →</button>
           <button className="btn btn-ghost" onClick={onBack}>← Blueprint</button>
           <button className="btn btn-ghost" onClick={onRestart}>Start over</button>
         </div>
@@ -137,7 +138,7 @@ function Queue({ spec, selected, onOpen, aiState, onRunAI, onClose }: {
   );
 }
 
-function LockedView({ label }: { label: string }) {
+function LockedView({ label, onUnlock }: { label: string; onUnlock: () => void }) {
   return (
     <div className="ps__locked">
       <div className="ps__locked-badge">🔒</div>
@@ -146,8 +147,7 @@ function LockedView({ label }: { label: string }) {
         This preview shows the core experience. {label}, deeper integrations, automation and production
         controls are engineered with you in the full XAPPX solution.
       </p>
-      <a className="btn btn-primary" href="#pricing" onClick={(e) => e.preventDefault()}>See what the full build includes →</a>
-      <p className="ps__locked-note">Pricing &amp; packages are coming online next.</p>
+      <button className="btn btn-primary" onClick={onUnlock}>See what the full build includes →</button>
     </div>
   );
 }
