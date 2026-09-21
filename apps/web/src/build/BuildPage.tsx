@@ -137,16 +137,23 @@ export function BuildPage() {
               {stage === "industry" && (
                 <>
                   <h1 className="build__q">What industry are you in?</h1>
-                  <p className="build__sub">XAPPX loads what it already knows about your world.</p>
-                  <input className="build__search" placeholder="Search industries…" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
+                  <p className="build__sub">Search the list, or type your own — XAPPX adapts to any industry.</p>
+                  <input className="build__search" placeholder="Search or type your industry…" value={search} onChange={(e) => setSearch(e.target.value)} autoFocus />
                   <div className="build__grid">
                     {filtered.map((i) => (
                       <button key={i.slug} className={"opt" + (d.industry?.slug === i.slug ? " opt--on" : "")} onClick={() => pickIndustry(i)}>
                         {i.label}
                       </button>
                     ))}
-                    {filtered.length === 0 && <p className="build__empty text-dim">No match — describe your business to XAPPY instead.</p>}
                   </div>
+                  {search.trim() && !industries.some((i) => i.label.toLowerCase() === search.trim().toLowerCase()) && (
+                    <button className="opt opt--custom" onClick={() => pickIndustry({ slug: search.trim(), label: search.trim() })}>
+                      Use my industry: <b>“{search.trim()}”</b> →
+                    </button>
+                  )}
+                  {!search.trim() && (
+                    <p className="build__empty text-dim">Don't see yours? Just start typing — XAPPX works with any industry.</p>
+                  )}
                 </>
               )}
 

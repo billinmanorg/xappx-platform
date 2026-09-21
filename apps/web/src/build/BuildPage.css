@@ -35,7 +35,10 @@
 .opt { text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 15px 16px; color: var(--text); font-weight: 600; font-size: var(--fs-sm); transition: border-color var(--dur-micro) var(--ease), transform var(--dur-micro) var(--ease); }
 .opt:hover { border-color: var(--accent); transform: translateY(-1px); }
 .opt--on { border-color: var(--accent); box-shadow: var(--glow); }
-.build__empty { grid-column: 1 / -1; }
+.opt--custom { display: block; width: 100%; margin-top: 12px; border-style: dashed; border-color: var(--border-strong); background: transparent; }
+.opt--custom:hover { border-style: solid; border-color: var(--accent); }
+.opt--custom b { color: var(--accent); }
+.build__empty { margin-top: 12px; }
 
 /* chips */
 .build__chips { display: flex; flex-wrap: wrap; gap: 10px; }
