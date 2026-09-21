@@ -1,0 +1,27 @@
+.story { background: var(--bg-2); border-block: 1px solid var(--border); }
+.story__head { max-width: 40ch; margin-bottom: clamp(32px, 5vw, 56px); }
+.story__head h2 { font-size: var(--fs-h2); margin-top: 14px; }
+
+.story__track {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; position: relative;
+}
+/* the connecting path through the stages */
+.story__track::before {
+  content: ""; position: absolute; top: 22px; left: 6%; right: 6%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--border-strong) 12%, var(--border-strong) 88%, transparent);
+}
+.story__step { position: relative; display: flex; flex-direction: column; gap: 8px; }
+.story__node {
+  width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border-strong); position: relative; z-index: 1; margin-bottom: 6px;
+}
+.story__node span { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+.story__t { font-size: var(--fs-h3); font-family: var(--font-display); font-weight: 700; }
+.story__d { font-size: var(--fs-sm); }
+
+@media (max-width: 900px) {
+  .story__track { grid-template-columns: 1fr 1fr; }
+  .story__track::before { display: none; }
+}
+@media (max-width: 520px) { .story__track { grid-template-columns: 1fr; } }

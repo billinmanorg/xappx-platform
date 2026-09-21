@@ -1,0 +1,18 @@
+.hero { position: relative; overflow: hidden; padding-block: clamp(40px, 6vw, 84px) clamp(48px, 8vw, 104px); }
+.hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(60% 50% at 15% 0%, rgba(0, 194, 255, 0.10), transparent 60%);
+}
+.hero__in { position: relative; display: grid; grid-template-columns: 1.02fr 1.18fr; gap: clamp(28px, 5vw, 64px); align-items: center; }
+.hero__copy { max-width: 33ch; }
+.hero__title { font-size: var(--fs-display); margin: 16px 0 18px; }
+.hero__title span { color: var(--accent); }
+.hero__lede { max-width: 42ch; }
+.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.hero__trust { margin-top: 20px; font-size: var(--fs-xs); color: var(--text-faint); max-width: 44ch; }
+
+@media (max-width: 900px) {
+  .hero__in { grid-template-columns: 1fr; }
+  .hero__copy { max-width: 100%; }
+  .hero__demo { order: 2; }
+}

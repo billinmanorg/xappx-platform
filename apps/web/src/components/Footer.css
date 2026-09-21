@@ -1,0 +1,15 @@
+.cta { position: relative; overflow: hidden; text-align: center; }
+.cta::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(50% 70% at 50% 0%, rgba(0, 194, 255, 0.12), transparent 60%); }
+.cta__in { position: relative; max-width: 640px; }
+.cta h2 { font-size: var(--fs-h1); }
+.cta__lede { margin: 16px auto 28px; max-width: 44ch; }
+.cta__row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.footer { border-top: 1px solid var(--border); background: var(--bg-2); }
+.footer__in { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding-block: 28px; }
+.footer__logo { font-family: var(--font-mono); letter-spacing: 0.28em; font-size: 14px; }
+.footer__logo span { color: var(--accent); }
+.footer__links { display: flex; gap: 20px; flex-wrap: wrap; }
+.footer__links a { color: var(--text-dim); font-size: var(--fs-sm); }
+.footer__links a:hover { color: var(--text); }
+.footer__legal { margin-left: auto; color: var(--text-faint); font-size: var(--fs-xs); font-family: var(--font-mono); }

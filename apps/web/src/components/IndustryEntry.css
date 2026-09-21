@@ -1,0 +1,16 @@
+.ind { background: var(--bg-2); border-block: 1px solid var(--border); }
+.ind__head { max-width: 40ch; margin-bottom: clamp(28px, 4vw, 44px); }
+.ind__head h2 { font-size: var(--fs-h2); margin-top: 14px; }
+.ind__grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.ind__card {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 18px 16px; transition: border-color var(--dur-micro) var(--ease), transform var(--dur-micro) var(--ease), background var(--dur-micro) var(--ease);
+}
+.ind__card:hover { border-color: var(--accent); transform: translateY(-2px); background: var(--surface-2); }
+.ind__label { font-weight: 600; font-size: var(--fs-sm); }
+.ind__go { color: var(--accent); opacity: 0; transform: translateX(-4px); transition: all var(--dur-micro) var(--ease); }
+.ind__card:hover .ind__go { opacity: 1; transform: translateX(0); }
+
+@media (max-width: 900px) { .ind__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px) { .ind__grid { grid-template-columns: 1fr; } }

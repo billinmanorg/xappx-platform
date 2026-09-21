@@ -1,0 +1,50 @@
+.demo { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }
+.demo__win {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden; box-shadow: var(--shadow-lg); min-height: 420px;
+}
+.demo__bar { display: flex; align-items: center; gap: 7px; padding: 12px 15px; background: var(--bg-2); border-bottom: 1px solid var(--border); }
+.demo__bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong); }
+.demo__url { margin-left: 10px; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+.demo__body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+.demo__prompt { display: flex; align-items: center; gap: 10px; font-size: var(--fs-sm); color: var(--text); }
+.demo__prompt-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--border-strong); border-radius: var(--r-sm); padding: 3px 7px; }
+
+.demo__context { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo__chip { display: inline-flex; align-items: baseline; gap: 7px; font-size: var(--fs-xs); color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 6px 12px; }
+.demo__chip b { font-family: var(--font-mono); font-weight: 500; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+
+.demo__block { display: flex; flex-direction: column; gap: 8px; }
+.demo__lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
+.demo__roles { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo__role { font-size: var(--fs-xs); color: var(--text-dim); border: 1px solid var(--border-strong); border-radius: var(--r-sm); padding: 6px 11px; }
+
+.demo__flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.demo__step { font-size: var(--fs-xs); color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 6px 10px; }
+.demo__arrow { color: var(--accent); font-style: normal; margin-left: 6px; }
+.demo__ai { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.demo__aibadge { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); border: 1px dashed rgba(0, 194, 255, 0.4); border-radius: var(--r-sm); padding: 4px 8px; }
+
+.demo__proto { display: flex; flex-direction: column; gap: 10px; margin-top: 2px; }
+.demo__proto-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 34px; gap: 8px; }
+.demo__tile { background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--border); border-radius: var(--r-sm); }
+.demo__tile--wide { grid-column: span 2; }
+.demo__tile--tall { grid-row: span 2; }
+.demo__ready { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; font-size: var(--fs-xs); font-weight: 600; color: var(--success); }
+.demo__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success); }
+
+/* process rail */
+.demo__rail { list-style: none; margin: 0; padding: 8px 0; display: flex; flex-direction: column; gap: 14px; min-width: 168px; }
+.demo__rail li { display: flex; align-items: center; gap: 10px; font-size: var(--fs-xs); color: var(--text-faint); transition: color var(--dur-ui) var(--ease); }
+.demo__rail-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--border-strong); flex: none; transition: all var(--dur-ui) var(--ease); }
+.demo__rail li.on { color: var(--text); }
+.demo__rail li.on .demo__rail-dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 10px rgba(0, 194, 255, 0.6); }
+.demo__rail li.done { color: var(--text-dim); }
+.demo__rail li.done .demo__rail-dot { border-color: var(--accent); background: var(--accent); opacity: 0.5; }
+
+@media (max-width: 560px) {
+  .demo { grid-template-columns: 1fr; }
+  .demo__rail { flex-direction: row; flex-wrap: wrap; min-width: 0; gap: 10px 16px; }
+  .demo__win { min-height: 0; }
+}
