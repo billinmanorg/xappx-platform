@@ -19,10 +19,17 @@
   .back{margin-left:auto;color:var(--dim);font-size:14px;text-decoration:none}.back:hover{color:var(--on)}
   main{max-width:820px;margin:0 auto;padding:40px 22px 80px}
   h1{font-size:clamp(28px,5vw,34px);letter-spacing:-.02em;margin:0 0 6px}
-  .eff{color:var(--dim);font-size:13px;font-family:var(--mono);margin-bottom:28px}
+  .eff{color:var(--dim);font-size:13px;font-family:var(--mono);margin-bottom:6px}
+  .scope{color:var(--dim);font-size:13px;margin-bottom:28px}
   h2{font-size:19px;margin:32px 0 8px;letter-spacing:-.01em}
+  h3{font-size:15px;margin:18px 0 4px;color:var(--on)}
   p,li{color:var(--body);font-size:15px}
   ul{padding-left:22px}
+  .lead{color:var(--on);font-weight:600}
+  .callout{border:1px solid var(--line);background:var(--ink2);border-radius:12px;padding:14px 18px;margin:18px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top;color:var(--body)}
+  th{color:var(--on);background:var(--ink2);font-weight:600}
   footer{border-top:1px solid var(--line);color:var(--dim);font-size:13px;text-align:center;padding:26px}
   footer a{color:var(--dim)}
 </style>
@@ -31,44 +38,188 @@
 <header><div class="nav"><a class="wm" href="/">X<b>APP</b>X</a><a class="back" href="/">← Back to home</a></div></header>
 <main>
   <h1>Privacy Policy</h1>
-  <p class="eff">Effective date: August 1, 2026</p>
+  <p class="eff">Effective date: September 29, 2026 · Last updated: September 29, 2026</p>
+  <p class="scope">Scope: the XAPPX platform, XAPPX Vault and related XAPPX services and technology. Contact details and resource requests: Appendix A — Contact &amp; Resources.</p>
 
-  <h2>1. Introduction</h2>
-  <p>This Privacy Policy explains how XAPPX Inc. ("XAPPX", "we", "us") collects, uses, and protects information when you visit our website and interact with XAPPY, our AI guide.</p>
+  <p>This Privacy Policy explains how XAPPX Inc. ("we," "us," or "our") handles personal information in connection with the XAPPX platform and the XAPPX services and technology it provides. Personal information means information that identifies, relates to, or can reasonably be linked to a person or household, as applicable law defines it.</p>
+  <p>The Services are offered to eligible U.S. adults age 18 and older and U.S. organizations. U.S. customer eligibility does not mean all processing necessarily occurs in the United States. Our Terms of Service address service use; this Policy is a notice of data practices, not a waiver of privacy rights or a substitute for consent required for a particular activity.</p>
 
-  <h2>2. Information we collect</h2>
+  <h2>1. Scope and our role</h2>
+  <p>This Policy covers personal information processed through XAPPX-provided platform accounts, XAPPX Vault, file storage and search, Ask AI, XAPPY chat, AI agents and supported voice/avatar features, content tools, authorized agents, integrations, APIs, SDKs, subscriptions, points, payment administration, support, and related commercial tools. It applies to personal information about individual customers, organizational users, partner contacts, prospects, and people whose information is lawfully supplied to an enabled service.</p>
+  <p>It does not automatically govern an independent company's website, app, model, wallet, or payment service simply because it integrates with us or uses XAPPX branding. That provider's role, agreement, and privacy practices also matter. Nor does it cover employment records of XAPPX's own personnel where a separate personnel notice applies.</p>
+  <p>We determine how to process account, billing, support, security, and business-contact information for our service operations. Where we process an organization's hosted content solely on its documented instructions, our role may instead be that of a service provider or processor under the applicable contract and law. The organization remains responsible for its own notices, instructions, and decisions. We assist with requests as required; we do not require every user to resolve all privacy concerns with a partner before contacting us.</p>
+
+  <h2>2. Information we collect and its sources</h2>
+  <p>We collect information from you, your authorized users, a properly authorized organization or provisioning partner, the devices and browsers used to access the Services, connected services you authorize, and service or transaction providers supporting your use. We do not treat account provisioning as consent to every optional disclosure or marketing activity.</p>
+  <h3>2.1 Account and business details.</h3>
+  <p>Name, email, ordinary contact details, organization, role, account identifiers, account preferences, eligibility statements, invitations, administrative assignments, and authentication or access records. Registration and recovery processes can involve information that law treats as sensitive, even though general sensitive-content uploads are prohibited.</p>
+  <h3>2.2 Customer Content.</h3>
+  <p>Uploaded or connected documents, files, ordinary contact records, prompts, conversations, instructions, knowledge bases, authorized brand materials, and supported media. Processing may produce extracted text, transcripts, summaries, indexes, embeddings, source references, and AI outputs. Content may concern you or others; submit it only with appropriate authority and within the restrictions in Section 3.</p>
+  <h3>2.3 AI and agent activity.</h3>
+  <p>Requests and answers; chosen models and tools; connected-account identifiers and granted permissions; schedules and task status; actions taken on files or through integrations; interaction or consent records; and usage and error information. Where a configured feature performs matching, recommendations, or personalization, outputs may include inferred preferences or assessments based on the permitted inputs. Those assessments are not necessarily accurate.</p>
+  <h3>2.4 Credentials supplied through approved connections.</h3>
+  <p>A designated connection feature may receive a scoped API key or access token that you authorize us to use. That is different from uploading passwords, private keys, or seed phrases as general content. Credential handling and connected-provider processing are described in Section 5.</p>
+  <h3>2.5 Commercial and payment records.</h3>
+  <p>Plans, purchases, invoices, billing contact details, subscription events, points balances and usage, transaction identifiers, payment status, and dispute or refund records. Cryptocurrency payments may involve public wallet addresses, asset and network information, transaction hashes, amounts, and confirmations. Exact payment fields received by XAPPX versus an independent processor depend on the implemented payment flow; do not assume we receive complete card data or control a customer's wallet.</p>
+  <h3>2.6 Portal activity and analytics.</h3>
+  <p>Page views, document downloads, calculator entries, demo interactions, conversations with XAPPY and portal assistants, IP addresses, browser and device details, timestamps, navigation, interaction events, and session recordings or replays. These records can be associated with a signed-in account and organization. Section 7 explains tracking and required controls.</p>
+  <h3>2.7 Communications.</h3>
+  <p>Support messages, privacy requests, feedback voluntarily submitted to us, sales and demo inquiries, preferences for follow-up, and correspondence needed to resolve a request. Audio/video recording of an actual call or meeting is separate from web session replay and requires appropriate notice and consent where applicable.</p>
+  <h3>2.8 Additional sources and future data products.</h3>
+  <p>We may receive transaction status from a payment service or permitted content from a service you connect. A future audience-data enrichment or licensing program is not authorized by a blanket reference to partners. Before adding such a program, we must establish the necessary data rights and provide applicable disclosures and consent choices. This Policy does not represent that any contemplated audience-data provider or technology integration is already operating.</p>
+
+  <h2>3. Sensitive information, media, and information about minors</h2>
+  <p>Do not place government identification numbers or scans, financial access credentials, full payment-card data or security codes, medical records, highly sensitive health data, genetic information, biometric identifiers/templates, precise location histories, children's personal information, intimate personal records, private wallet keys, or seed phrases into general Vault content, prompts, chat, or support messages.</p>
+  <p>Ordinary registration details and information submitted in an expressly designated payment or scoped-credential connection flow are limited exceptions for those purposes. These flows are not permission to upload unrelated sensitive material.</p>
+  <p>Voice recordings, images, and identifiable avatars must be supported by the rights and authorizations required for the relevant feature. A general content license does not authorize undisclosed biometric derivation, voiceprint identification, or face-template processing. Where such processing is involved, separate feature disclosures, consent where required, and retention rules must be in place before collection.</p>
+  <p>For authorized voice and avatar features, submitted recordings, images, scripts, and related service data may be processed by XAPPX and the providers supporting the selected feature to produce the requested voice, avatar, or AI experience. Use is limited to that authorized purpose, service support, security, and legal obligations. A separate identification, biometric-template, or recognition use is not permitted under the general content license; it requires the legally necessary feature-specific disclosures and authorization before collection or processing. You may request that an enabled feature be stopped and associated data deleted through the email address in Appendix A. Section 9 applies to retained copies, subject to any shorter biometric or other statutory period.</p>
+  <p>The Services are not directed to people under 18, and minors may not create or use accounts under these Terms. Do not provision an account for a child or upload a child's personal information. If we learn that information has been collected contrary to these restrictions, we will take appropriate steps to restrict processing and delete information as required by law. Report a concern through Section 15 without unnecessarily repeating the sensitive material. Prohibiting an upload does not remove legal protections from information we actually receive.</p>
+
+  <h2>4. Why we use information</h2>
+  <p>We use personal information for the following purposes, as relevant to the requested Service and permitted by law:</p>
   <ul>
-    <li><b>Information you provide.</b> When you chat with XAPPY or contact us, we may collect your name, email, company, and the details of what you'd like to build.</li>
-    <li><b>Automatically collected.</b> Basic technical data such as browser type, device, and pages visited, to keep the site working and secure.</li>
-    <li><b>Cookies.</b> We use essential cookies to run the site. With your consent we may also use analytics cookies to understand how the site is used — you can choose "Essential only" or "Accept all" in our cookie banner.</li>
+    <li><span class="lead">Service delivery.</span> Creating and administering accounts; storing, organizing, finding, and retrieving authorized content; producing requested AI outputs; providing supported AI experiences; and carrying out authorized instructions and integrations.</li>
+    <li><span class="lead">Account and partner administration.</span> Associating a user with an organization, maintaining authorized permissions, supporting provisioned accounts, implementing service configurations, and communicating about access or the applicable program.</li>
+    <li><span class="lead">Transactions and usage.</span> Measuring service consumption, maintaining points and usage records, billing authorized charges, recording crypto payment status, responding to billing disputes, and keeping necessary financial records.</li>
+    <li><span class="lead">Support and business follow-up.</span> Answering requests, providing demos, understanding a prospect's stated needs and use of portal materials, and following up about relevant services, subject to applicable communication rules and choices. Internal sales staff may use account-linked portal activity for this purpose. Partner access is limited by the actual authorized configuration and Section 6.</li>
+    <li><span class="lead">Reliability and protection.</span> Troubleshooting, diagnosing failures, monitoring performance, understanding use of features, detecting abuse and fraud, protecting systems, maintaining appropriate records, and enforcing lawful service restrictions.</li>
+    <li><span class="lead">Legal and rights administration.</span> Handling privacy and copyright requests, satisfying legal obligations, responding to valid legal process, and establishing, exercising, or defending legal claims.</li>
   </ul>
+  <p>Operational analytics and debugging are distinct from training a model for unrelated users, creating a commercial dataset, or advertising uses. Those practices require the specific disclosure in Section 5 or 8; this purpose list does not supply blanket permission for them.</p>
 
-  <h2>3. How we use information</h2>
+  <h2>5. AI providers, API keys, and model-training uses</h2>
+  <h3>5.1 Requested AI processing.</h3>
+  <p>When you ask a question, generate an AI output, or authorize an agent, the service may retrieve permitted information and transmit the request, relevant context, tool results, and necessary metadata to the selected model or service provider. The output and related activity can be stored in your account. Using a Vault does not mean data never leaves it or that no provider sees the context used for a request.</p>
+  <h3>5.2 User-supplied accounts.</h3>
+  <p>With your own LLM key, model calls use the connected provider account according to the actual configuration. That provider's account settings and terms can affect retention, usage, billing, and processing. XAPPX processes the credential and relevant data only within the authorized service purpose, subject to applicable duties. Use the designated connection flow and provider-side safeguards; never disclose raw credentials in general content.</p>
+  <p><span class="lead">Credential and provider handling.</span> A supplied key or access token may be used and retained only for the authorized connection and necessary security or troubleshooting. Access must be limited to personnel and service components with a legitimate operational need. Credentials must not be repurposed for unrelated accounts, content, or charges. After disconnection or account closure, we stop new use and remove the usable credential from active connection systems without unnecessary delay; restricted backup or security copies follow Section 9. You should also revoke or rotate the credential at its issuing provider. Authorized model providers may receive prompts, relevant context, tool results, and metadata needed for the request. Hosting, storage, content-processing, and support providers may process the data needed for their functions. Provider and connection-handling information applicable to your Service may be requested through Appendix A before authorizing a connection. No particular encryption, zero-access architecture, or provider retention period is promised by this paragraph.</p>
+  <h3>5.3 Shared-model training and secondary exploitation.</h3>
+  <p>Processing content to answer your request is different from training or improving a general model for other customers, licensing a dataset, or exploiting your content for unrelated advertising. The content license in the Terms is not blanket authorization for those secondary purposes.</p>
+  <p>Under this Policy, XAPPX will not use Customer Content, private prompts, outputs, recordings, or likeness materials to train a general-purpose or shared model for unrelated users without a separate, specific, voluntary opt-in. Processing and adaptation needed to provide your expressly requested personal AI agent or private service is distinct from that secondary training use. Operational debugging and service analytics remain limited to the purposes described here. Contracted providers processing on our behalf must be restricted to their authorized purposes. A model or other independent service you select may apply its own account terms and settings; review them before connecting it. You may withdraw a separate optional training consent prospectively through the email address in Appendix A. Withdrawal does not promise removal of information from an independently operated model beyond rights and remedies actually available under law and the applicable provider arrangement.</p>
+  <h3>5.4 Agent control.</h3>
+  <p>Tools may read or modify content, send communications, operate connected applications, delegate work, or perform supported transactions only within the relevant authorization. Review the data scope and action permissions before enabling a task. You can withdraw authorization through supported controls and the connected provider. Revocation does not erase information already legitimately delivered or reverse an irrevocable action, but it does not authorize new unrelated processing.</p>
+  <h3>5.5 Automated assessments.</h3>
+  <p>Recommendations and match explanations may be derived from permitted information. They are not a guarantee of a person's attributes or suitability. Where a use constitutes regulated profiling or automated decisionmaking, applicable notice, access, objection, or opt-out requirements must be met. This Policy does not by itself authorize an unreviewed significant decision about employment, credit, housing, or another regulated opportunity.</p>
+
+  <h2>6. How information is disclosed</h2>
+  <h3>6.1 Suppliers acting for us.</h3>
+  <p>We disclose information necessary for hosting, storage and content processing; model and agent functionality; security; support; analytics and session replay; communications; and billing or payment administration, to suppliers supporting those functions. Applicable contractual and legal restrictions govern processing on our behalf. Engaging a vendor does not eliminate duties imposed on XAPPX.</p>
+  <h3>6.2 Your authorized recipients.</h3>
+  <p>A person, organization, Vault, app, or service may receive content when you authorize sharing, connect it, or approve an agent action. Participation in networking or a matching service does not by itself authorize public release of contact details. Check the recipient, purpose, and information scope. A legitimate recipient may retain an independent copy under its own obligations after delivery.</p>
+  <h3>6.3 Organization and partner administrators.</h3>
+  <p>Managed-account administrators can receive information to the extent their actual permissions, contractual authority, and disclosed role permit. Their access may include account status, plan or usage information, or content where specifically authorized. Creation or sponsorship of a Vault alone does not grant every partner unrestricted viewing rights. An administrator's monitoring obligations to its own users remain its responsibility.</p>
+  <h3>6.4 Affiliates and advisers.</h3>
+  <p>Information may be made available to authorized affiliate personnel providing an actual operational function, and to advisers where reasonably necessary for the stated purpose and subject to appropriate restrictions. Our corporate affiliation does not mean an affiliate or parent automatically receives all Vault content.</p>
+  <h3>6.5 Legal, safety, and business transfers.</h3>
+  <p>Information may be disclosed as legally required, in response to valid process, to address fraud or protect rights and safety where legally permitted, or in a lawful merger, reorganization, financing, asset transfer, or similar transaction. Appropriate restrictions and continuing privacy obligations apply. A business transfer does not automatically eliminate existing privacy choices.</p>
+  <h3>6.6 Public systems.</h3>
+  <p>A supported cryptocurrency payment may put transaction information on a public blockchain, where it can be visible beyond XAPPX and persist. You should not put personal content or secrets into a public transaction memo. Decentralized storage and blockchain are not interchangeable, and this Policy does not say all Vault files are stored publicly or directly on-chain. Storage-provider and access details are provided in Section 5.</p>
+
+  <h2>7. Cookies, session replay, and portal tracking</h2>
+  <p>We track portal use including pages viewed, downloads, calculator inputs, demo activity, conversations, IP/device information, and session interactions. This can help us operate the portal, troubleshoot, understand service interest, and follow up with prospects. Session replay can reconstruct interaction sequences; it is distinct from a live human observing a call. Some tracking may be provided by third-party tools that receive the related data.</p>
+  <p><span class="lead">Recording limits and retention.</span> Portal recording may capture navigation, page interactions, calculator entries, demo activity, and assistant interactions for the purposes stated above. Session replay is permitted only on screens and fields configured to exclude credential-entry fields, payment security data, and private Vault file contents. If those exclusions cannot be maintained for an area, replay must remain disabled for that area. This does not prevent separately authorized processing of content to deliver a requested AI or storage feature. Recordings must be deleted no later than 90 days after capture unless a specific legal, security, or documented dispute-preservation need requires restricted retention. Other identifiable interaction and technical logs follow Section 9. We do not promise that every prohibited sensitive upload can be detected. Tracking-provider and recording-scope information may be requested through Appendix A.</p>
+  <p>Where consent is required before recording or nonessential tracking, we will present the required notice and obtain consent before that activity begins. A general acceptance of the Terms or visit to the portal does not replace that consent. Essential security and service records are distinguished from optional recording and marketing uses.</p>
+  <p>To request information about cookies, recording, or tracking, or to withdraw optional consent, use the email address in Appendix A. No special subject line is required. We will apply applicable choices prospectively without unnecessary delay and within required legal periods. Browser controls may limit cookies but do not necessarily stop server-side records. Essential functions may depend on required technologies. An email request supplements, rather than displaces, any in-service or automated control required by applicable law.</p>
+  <p>Recognized opt-out preference signals, including Global Privacy Control where applicable, will be processed as required for covered sale, sharing, or targeted advertising. Traditional browser "Do Not Track" signals are different; this Policy does not promise a separate technical response to every such setting. You may communicate a choice using the email address in Appendix A. Neither an opt-out signal nor an email opt-out requires discontinuing essential security records or closes your account.</p>
+
+  <h2>8. Sale, sharing, targeted advertising, and incentives</h2>
+  <p>Privacy laws may treat certain disclosures as a "sale," "sharing," or targeted advertising even without a conventional sale for money. Supplier analytics, advertising arrangements, and some partner disclosures must be evaluated by their actual use, contracts, and applicable law.</p>
+  <p>This Policy does not permit XAPPX to sell personal information or disclose it for cross-context behavioral advertising or targeted advertising. Information may still be disclosed to contracted service providers for the permitted business purposes in Section 6, to recipients you specifically direct, or where law permits or requires it; those disclosures must not be used to evade an applicable sale or sharing restriction. General acceptance of the Services does not authorize an unrelated commercial data program. Any future change involving a covered sale, sharing, targeted advertising, or financial incentive requires an accurate updated notice, applicable opt-out mechanisms, and any legally required separate consent before the change applies.</p>
+  <p>Use the email address in Appendix A to opt out of any legally covered sale, sharing, targeted advertising, or optional data use, or to ask about this Policy. We will honor applicable rights and recognized preference signals without requiring an unnecessary account or identity document. Opting out of targeted advertising is distinct from unsubscribing from direct communications.</p>
+  <p>Current account access does not create a right to payment for information, matches, or interactions. Future financial incentives or user-payout programs, if offered, will need their own material terms, required privacy notices, choices, and lawful participation process. Joining a service or receiving a partner-created Vault is not automatic enrollment in such a program.</p>
+
+  <h2>9. Retention, closure, and deletion</h2>
+  <p>We retain information only for the purposes described in this Policy, as necessary for the account or requested service and applicable legal obligations. The criteria differ by category:</p>
   <ul>
-    <li>To respond to your enquiries and prepare a build plan or proposal.</li>
-    <li>To operate, secure, and improve the site and XAPPY.</li>
-    <li>To contact you about your request.</li>
+    <li><span class="lead">Customer Content and derivatives.</span> Stored while needed to provide the active account and requested features, subject to deletion instructions and legal rights. When the account closes, controllable content, extracted text, transcripts, indexes, embeddings, and associated copies are deleted within six months, except narrowly justified retention below.</li>
+    <li><span class="lead">Account and administrative data.</span> Kept while necessary to administer the relationship. Personal information attributable solely to a closed account is ordinarily deleted within the same six-month ceiling unless a specific exception applies.</li>
+    <li><span class="lead">Credentials.</span> Used only for the authorized connection. On disconnection or closure we stop new use and remove usable credentials from active connection systems without unnecessary delay. Restricted residual copies may remain only for necessary backup, security, or legal purposes under the applicable deletion schedule, ordinarily no longer than six months after closure unless a lawful exception applies. You should also revoke access at the provider. No retention period authorizes continued use of a disconnected key.</li>
+    <li><span class="lead">Portal analytics, recordings, and technical logs.</span> Session recordings follow the 90-day maximum in Section 7. Other identifiable analytics and routine technical logs must be deleted or deidentified within 180 days of collection unless a shorter applicable period or a specific legal, security, or dispute-preservation need applies. Account-level billing, consent, support, and transaction records are governed separately below. Data attributable solely to a closed account remains subject to the six-month closure ceiling where sooner, absent a justified exception. Deidentified information may be retained only with measures and commitments required to keep it deidentified.</li>
+    <li><span class="lead">Billing, consent, request, and dispute records.</span> Limited records may be retained beyond account closure as required or reasonably necessary for taxes, accounting, fraud prevention, proof of authorization, privacy-request handling, legal claims, or a valid preservation obligation. They must remain restricted to the justified purpose and be deleted when no longer necessary.</li>
+    <li><span class="lead">Backups and supplier copies.</span> The deletion process must include controllable backups and instructions to contracted suppliers, within the applicable period and subject to legitimate legal exceptions. Restoring a backup must not defeat a valid deletion. Public blockchain records and information independently retained by authorized external recipients may not be erasable by us; that does not excuse deletion of copies we control or required instructions to service providers.</li>
   </ul>
+  <p>Six months is an ordinary account-closure ceiling, not a minimum retention period. A statutory deletion or other privacy request may require action sooner. Closing an organizational account does not authorize destruction of another customer's independently owned account information.</p>
 
-  <h2>4. How we share information</h2>
-  <p>We do not sell your personal information. We may share it with service providers who help us operate the site and power the XAPPY chat (for example, hosting and communication providers), and where required by law.</p>
+  <h2>10. Security and processing locations</h2>
+  <p>We use reasonable safeguards appropriate to the information and applicable obligations. No internet service, AI workflow, storage system, or supplier is completely secure. XAPPX and authorized personnel or suppliers may access information for the operational purposes and permissions described above. Customer-controlled credentials, devices, sharing instructions, and backups also affect protection.</p>
+  <p>This Policy does not promise end-to-end encryption for every operation, exclusive user decryption, zero staff access, continuous availability, or recovery of all lost data. We will provide incident notices and take other steps where applicable law requires them. A user's upload restriction or acceptance of risk does not waive non-waivable duties.</p>
+  <p>U.S.-only participation does not establish U.S.-only data residency. Information may be processed in the United States or other countries where authorized service providers or personnel perform the stated functions. Such processing remains subject to this Policy and applicable contractual and legal protections; foreign legal requirements may differ from U.S. requirements. We do not promise a particular data-residency arrangement unless a signed agreement expressly provides one. Processing-location and provider information applicable to your Service may be requested through Appendix A before supplying information or connecting an account.</p>
 
-  <h2>5. Data storage and security</h2>
-  <p>We use reasonable technical and organizational measures to protect your information. Sensitive operations are handled server-side, and access is limited to those who need it. No method of transmission or storage is completely secure.</p>
+  <h2>11. Your choices and request process</h2>
+  <p>Depending on your residence, our role, and applicable law, you may have rights to confirm processing; access information and obtain a portable copy; correct inaccuracies; delete information; opt out of covered sale, sharing, targeted advertising, or certain profiling; limit or consent to certain sensitive-information uses; appeal a denied request; and use an authorized agent. We do not unlawfully discriminate or retaliate for exercising a protected right.</p>
+  <p>Submit privacy requests using the email address in Appendix A — Contact &amp; Resources. Identify the right you wish to exercise and provide enough information to locate the relevant account or matter. A suggested subject is "Privacy Request," but no prescribed wording is required. Do not submit passwords, raw API keys, or identity documents in the request. You do not have to create a new account where law prohibits that requirement. This email is our designated contact; any additional request method required by applicable law must also be made available, and no provision here waives such a requirement.</p>
+  <p>We use proportionate verification appropriate to the request and risk. We may ask for information already associated with the account and evidence of an agent's authority. Do not send raw passwords, API keys, seed phrases, or sensitive identification documents through an ordinary request channel. An opt-out that does not legally require identity verification will not be conditioned on unnecessary verification.</p>
+  <p>We will acknowledge and respond within applicable legal periods and explain any permitted extension, denial, or partial fulfillment. We may need to preserve limited information under a legal exception or protect another person's rights. If an appeal right applies, use the email address in Appendix A, identify the original request, and explain the disagreement; "Privacy Appeal" is a suggested subject. We will provide the required response and information about further recourse. You may independently contact the relevant regulator or state attorney general; contacting XAPPX is not a prerequisite to a lawful regulator complaint.</p>
+  <p>When an organization controls processing of its own content, we may direct the request to that organization or assist it as required by our role. That does not displace rights concerning information for which XAPPX is independently responsible.</p>
+  <p>You can withdraw an optional consent, change supported permissions, or revoke a connected account prospectively. Use Appendix A for assistance and revoke provider credentials directly where necessary. This does not undo lawful earlier processing or irreversible transmissions. To stop marketing communications, use the email address in Appendix A; any legally required unsubscribe mechanism in a message also remains available. Necessary account, security, and legal communications may continue. Subscription cancellation and account closure are separate from a marketing opt-out.</p>
 
-  <h2>6. Your rights</h2>
-  <p>Depending on your location, you may have rights to access, correct, delete, or restrict use of your personal information. To exercise these, contact us at the address in Section 9. Residents of certain states, including California and Nevada, may have additional rights regarding their personal information.</p>
+  <h2>12. Nevada residents</h2>
+  <p>Nevada residents may submit a verified request directing an operator not to sell covered information as Nevada law defines a sale. Use the designated email address in Appendix A and identify the Nevada sale opt-out. This right can be exercised even when a sale is not presently planned.</p>
+  <p>For an applicable Nevada request, we will respond within 60 days, subject to a legally permitted extension of up to 30 additional days with notice. A different applicable law may require faster action. Nevada's sale definition is not identical to California's sale/sharing definitions. Our applicable sale, sharing, and targeted-advertising practices are described in Section 8.</p>
+  <p>Contact us to review or request changes to covered personal information through Section 11. Material privacy-practice changes will be communicated as described in Section 14. Non-waivable Nevada security and privacy protections remain applicable despite any limitation of liability in the Terms.</p>
 
-  <h2>7. Children</h2>
-  <p>The site is not directed to children under 13, and we do not knowingly collect their information.</p>
+  <h2>13. California and other U.S. state disclosures</h2>
+  <h3>13.1 Applicability.</h3>
+  <p>Where the California Consumer Privacy Act, as amended (CCPA), applies to XAPPX and the processing concerned, California residents may exercise the rights described here. Other state rights apply according to their own scope, exemptions, and effective requirements. An adult business contact or employee is not automatically outside privacy protections simply because the account is organizational.</p>
+  <h3>13.2 California categories and purposes.</h3>
+  <p>The following is the category mapping for the services described in this Policy. Sections 2, 4, 6, and 9 identify sources, purposes, recipient categories, and retention criteria. Sensitive uploads are prohibited, but information actually received or generated must still be assessed accurately.</p>
+  <table>
+    <thead><tr><th>Category</th><th>Service examples / treatment</th></tr></thead>
+    <tbody>
+      <tr><td>Identifiers</td><td>Name, email, account and device identifiers, IP address, ordinary contact details, and public payment-wallet address where used.</td></tr>
+      <tr><td>Customer-record information</td><td>Account, contact, organization and billing records; do not assume full card details are received by XAPPX.</td></tr>
+      <tr><td>Commercial information</td><td>Purchases, subscriptions, points activity, invoices, demo/calculator interactions, and payment records.</td></tr>
+      <tr><td>Internet or network activity</td><td>Portal navigation, downloads, browser/device events, session replay, service use, and security logs.</td></tr>
+      <tr><td>Audio, electronic and visual information</td><td>Authorized media, chats, prompts, transcripts, outputs and support communications where supplied or generated.</td></tr>
+      <tr><td>Professional information</td><td>Organizational role or professional details voluntarily supplied in an authorized service; not independent background reporting.</td></tr>
+      <tr><td>Inferences</td><td>Configured AI summaries, recommendations or assessments derived from permitted content, subject to the stated purposes.</td></tr>
+      <tr><td>Sensitive personal information</td><td>Authentication/connection credentials handled only in designated flows; separately approved media processing if legally sensitive. Other sensitive uploads are prohibited.</td></tr>
+    </tbody>
+  </table>
+  <p><span class="lead">Category and disclosure summary.</span> The table above identifies the information categories involved in the Services described by this Policy. Those categories may be processed by the functional provider categories in Section 6 as needed for hosting, storage, AI, support, security, analytics, communications, and payment administration. Authorized recipients and managed-account administrators receive only information within their permitted role or instructions. This Policy does not authorize sales or advertising-related sharing, as described in Section 8. To request the information collected about you and the relevant sources, purposes, disclosures, and recipients for the preceding 12 months or any longer period required by law, use the email address in Appendix A. A category appearing in the table does not mean that every type of information is collected from every person.</p>
+  <h3>13.3 California rights and timing.</h3>
+  <p>Subject to applicable exceptions, you may request access and information about collection, use and disclosure; correction; deletion; portability; opt-out of sale or sharing; and limitation of sensitive-information uses where applicable. Use Section 11's designated methods. We generally acknowledge access, correction, and deletion requests within 10 business days and respond within 45 calendar days, with one permitted additional 45-day extension on notice. Applicable sale/sharing opt-outs and sensitive-use limitation requests are handled as soon as feasible within the required period, not through the six-month closure schedule.</p>
+  <h3>13.4 Choices and agents.</h3>
+  <p>Use the email address in Appendix A for applicable privacy choices and opt-outs. Legally recognized preference signals must also be honored where required. An authorized agent may act with appropriate authority. Reasonable verification may apply to access, correction, and deletion, but not as a pretext to obstruct a legally valid opt-out. Applicable non-retaliation rights, remedies, and statutory limitations remain intact.</p>
+  <h3>13.5 Incentives, profiling, and additional rights.</h3>
+  <p>A future program offering compensation for personal information requires its own notice, material terms, and any required opt-in or withdrawal mechanism. Where applicable law requires additional notices or choices for automated significant decisions or profiling, those must be provided for the relevant feature. For other qualifying U.S. state requests, we apply that state's rights, deadlines, appeal procedures, and required preference-signal treatment rather than assuming California's process is universal.</p>
 
-  <h2>8. Changes to this policy</h2>
-  <p>We may update this policy from time to time. Material changes will be posted here with a new effective date.</p>
+  <h2>14. Policy changes</h2>
+  <p>We may update this Policy as service practices and legal requirements change. We will identify the effective date and give appropriate notice of material changes through the Service, account contact, or another suitable method. Where fresh consent is legally required, we will obtain it before the new activity. A posted update or continued use is not retroactive permission for an incompatible undisclosed use of previously collected information.</p>
+  <p>Privacy requests and choices already in effect remain subject to applicable law. A change in ownership or supplier does not automatically cancel them. We will update this Policy to reflect material changes in our practices and honor applicable privacy commitments made during signup, sales, and product use.</p>
 
-  <h2>9. Contact</h2>
-  <p>XAPPX Inc., 5725 S Valley View Blvd Ste 5 PMB 375749, Las Vegas, Nevada 89118-3122, US.</p>
+  <h2>15. Contact us</h2>
+  <p>Appendix A — Contact &amp; Resources contains our designated email address for privacy rights, access, correction, deletion, appeals, tracking and recording choices, marketing opt-outs, provider information, billing, support and account closure. Suggested subjects help route a request, but special wording is not required. A separate contact-page address is not required to email us.</p>
+  <p>Include only information needed to identify the account or issue. Do not include passwords, API secrets, wallet seed phrases, prohibited sensitive documents or unnecessary third-party information. Without an actual processing role, a corporate affiliate is not the recipient of all your information. Mandatory privacy-request and legal-process requirements remain unaffected by the designated email channel.</p>
+
+  <h2>Appendix A — Contact &amp; Resources</h2>
+  <div class="callout">
+    <p style="margin:0"><span class="lead">legal@xappx.com</span><br>Primary contact for XAPPX Inc.<br>XAPPX platform and services · Directory updated September 29, 2026</p>
+    <p style="margin:8px 0 0">XAPPX Inc., 5725 S Valley View Blvd Ste 5 PMB 375749, Las Vegas, Nevada 89118-3122, US.</p>
+  </div>
+  <p>Use this email address for all service inquiries, notices, privacy choices and resource requests. The subjects below are suggestions only; a valid request does not require special wording.</p>
+  <table>
+    <thead><tr><th>Request or resource</th><th>Suggested email subject</th></tr></thead>
+    <tbody>
+      <tr><td>Privacy rights, choices and appeals</td><td>Privacy Request / Privacy Choices / Privacy Appeal</td></tr>
+      <tr><td>Cancel subscription renewal</td><td>Cancel Subscription</td></tr>
+      <tr><td>Close an account or request an export</td><td>Close Account / Export Request</td></tr>
+      <tr><td>Billing, XAPPX Points and crypto payments</td><td>Billing / Payment Question</td></tr>
+      <tr><td>Security incidents or unintended uploads</td><td>Security Incident</td></tr>
+      <tr><td>Copyright or other rights complaints</td><td>Copyright Notice</td></tr>
+      <tr><td>Nonconsensual intimate-image removal</td><td>Urgent Intimate-Image Removal</td></tr>
+      <tr><td>Disputes or arbitration opt-out</td><td>Dispute Notice / Arbitration Opt-Out</td></tr>
+      <tr><td>Policies, provider information and assistance</td><td>Resource Request / Support</td></tr>
+    </tbody>
+  </table>
+  <h3>Ready-to-send cancellation email</h3>
+  <p>Message: Please cancel automatic renewal of all XAPPX subscriptions associated with this sending account email address, effective when received, and confirm by email.</p>
+  <h3>What to include</h3>
+  <p>Describe the request and identify the account or relevant item if it cannot be identified from your email. For an appeal, identify the original request. For arbitration opt-out, follow the 30-day period and content requirements in Terms Section 21. Do not send passwords, API secrets, seed phrases or unnecessary sensitive content.</p>
+  <h3>Available resources</h3>
+  <p>Request copies of the Terms, Privacy Policy, applicable purchase or points-program terms, payment disclosures, provider and processing information, voice/avatar disclosures, tracking information, and applicable AAA rules and filing instructions. Resource requests do not replace disclosures required before purchase or processing, and do not delay the exercise of a legal right.</p>
 </main>
-<footer>&copy; 2026 XAPPX Inc. &middot; <a href="/terms.html">Terms of Use</a></footer>
+<footer>&copy; 2026 XAPPX Inc. &middot; <a href="/terms.html">Terms of Service</a></footer>
 <script src="/xappy-widget.js" defer></script>
 <script src="/cookies.js" defer></script>
 </body>
