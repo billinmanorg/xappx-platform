@@ -15,7 +15,7 @@
 //   ENDPOINT=https://xappx-staging.netlify.app/.netlify/functions/discovery node tools/eval_discovery.mjs
 //   node tools/eval_discovery.mjs --out tools/eval-report.html
 
-const ENDPOINT = process.env.ENDPOINT || "https://xappx-staging.netlify.app/.netlify/functions/discovery";
+const ENDPOINT = process.env.ENDPOINT || "https://xappx-app.netlify.app/.netlify/functions/discovery";
 const OUT = (() => { const i = process.argv.indexOf("--out"); return i > -1 ? process.argv[i + 1] : "tools/eval-report.html"; })();
 const CONCURRENCY = Number(process.env.CONCURRENCY || 4);
 
