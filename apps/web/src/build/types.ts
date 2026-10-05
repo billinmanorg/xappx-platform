@@ -10,6 +10,8 @@ export interface Blueprint {
   users: string[];
   workflow: string[];
   aiOpportunities: string[];
+  /** How the solution is grounded on the Twin Vault (data/identity foundation). */
+  foundation?: string;
 }
 
 export interface SolutionDiscovery {

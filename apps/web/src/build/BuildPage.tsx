@@ -12,6 +12,9 @@ import "./BuildPage.css";
 type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype" | "plans" | "lead";
 const svc = getDiscoveryService();
 const KEY = "xappx_discovery";
+// The industry the flow is focused on for now (Bill's direction). Change or
+// clear this to open on the full industry picker again.
+const FEATURED_INDUSTRY = "events_conferences";
 const PROC = ["Understanding your challenge", "Mapping the workflow", "Identifying automation", "Designing the solution", "Creating your blueprint"];
 const PROTO_PROC = ["Reading your blueprint", "Assembling the interface", "Wiring the sample workflow", "Loading representative data", "Preparing your prototype"];
 
@@ -45,11 +48,13 @@ export function BuildPage() {
 
   useEffect(() => { try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch { /* ignore */ } }, [d]);
 
-  // deep link ?industry=slug (brief §49)
+  // Focused on Events & Conferences for now: a fresh visitor lands straight in
+  // that industry. A ?industry=slug deep link still wins, and the Industry row
+  // in the context rail lets them switch. (brief §49)
   useEffect(() => {
     if (started.current) return; started.current = true;
-    const slug = new URLSearchParams(window.location.search).get("industry");
-    if (slug && !d.industry) {
+    if (!d.industry) {
+      const slug = new URLSearchParams(window.location.search).get("industry") || FEATURED_INDUSTRY;
       const found = svc.getIndustries().find((i) => i.slug === slug);
       if (found) pickIndustry(found);
     }
@@ -297,6 +302,13 @@ function Blueprint({ d, onRestart, onGenerate }: { d: SolutionDiscovery; onResta
       <p className="eyebrow">Your solution blueprint</p>
       <h1 className="build__q">{bp.solutionName}</h1>
       <p className="bp__understood">{bp.understood}</p>
+
+      {bp.foundation && (
+        <div className="bp__foundation">
+          <span className="bp__foundation-tag">Twin Vault</span>
+          <p>{bp.foundation}</p>
+        </div>
+      )}
 
       <div className="bp__cols">
         <div className="bp__card">

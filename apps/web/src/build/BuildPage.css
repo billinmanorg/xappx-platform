@@ -79,7 +79,10 @@
 .build__proclist li.done { color: var(--text-dim); } .build__proclist li.done .build__pdot { background: var(--accent); border-color: var(--accent); opacity: 0.5; }
 
 /* blueprint */
-.bp__understood { font-size: var(--fs-body); color: var(--text-dim); margin: 12px 0 26px; max-width: 60ch; }
+.bp__understood { font-size: var(--fs-body); color: var(--text-dim); margin: 12px 0 18px; max-width: 60ch; }
+.bp__foundation { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 26px; padding: 13px 16px; border: 1px solid rgba(0, 194, 255, 0.28); background: rgba(0, 194, 255, 0.07); border-radius: var(--r-md); }
+.bp__foundation-tag { flex: none; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(0, 194, 255, 0.4); border-radius: var(--r-pill); padding: 4px 10px; margin-top: 1px; }
+.bp__foundation p { margin: 0; font-size: var(--fs-sm); color: var(--text); }
 .bp__cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 @media (max-width: 700px) { .bp__cols { grid-template-columns: 1fr; } }
 .bp__card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px; }

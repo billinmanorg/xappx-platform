@@ -78,14 +78,15 @@ export default async (req) => {
     } else if (kind === "blueprint") {
       const d = discovery || {};
       const out = extractJson(await complete(
-        'You are a solution architect. From the discovery, produce a concise solution blueprint that keeps humans in control of key decisions. Reply with ONLY JSON: {"understood": 1-2 sentence summary, "solutionName": string <=6 words, "users": array of strings, "workflow": array of 4-6 short step strings, "aiOpportunities": array of 3-5 short strings}. No markdown.',
-        `Industry: ${d.industry?.label || ""}\nChallenge: ${d.challenge || ""}\nUsers: ${(d.stakeholders || []).join(", ")}\nOutcomes: ${(d.outcomes || []).join(", ")}`, 800));
+        'You are a senior solution architect for XAPPX. Every XAPPX solution is built on the Twin Vault — a secure, per-party data vault where each person or organization owns their data and the AI only ever acts on what they authorize (no central data grab). From the discovery, design a CONCRETE solution for the EXACT challenge: name real features, data and roles specific to this industry and problem; keep humans in control of key decisions; reference the Twin Vault where data is read or written. Avoid generic filler — do not say "streamline", "boost efficiency", "leverage AI", "AI at the core", or anything that would fit any industry. Reply with ONLY JSON: {"understood": 1-2 sentences naming the specific challenge, "solutionName": concrete product name <=6 words, "users": array of strings, "workflow": array of 4-6 concrete step strings that mention the Twin Vault where relevant, "aiOpportunities": array of 3-5 specific AI capabilities for this exact problem, "foundation": 1 sentence on how this solution uses the Twin Vault}. No markdown.',
+        `Industry: ${d.industry?.label || ""}\nChallenge: ${d.challenge || ""}\nUsers: ${(d.stakeholders || []).join(", ")}\nOutcomes: ${(d.outcomes || []).join(", ")}`, 900));
       data = {
         understood: clean(out.understood, 400),
         solutionName: clean(out.solutionName, 80) || "Your AI-assisted solution",
         users: Array.isArray(out.users) ? out.users.map((s) => clean(s, 60)).filter(Boolean) : [],
         workflow: Array.isArray(out.workflow) ? out.workflow.map((s) => clean(s, 80)).filter(Boolean) : [],
         aiOpportunities: Array.isArray(out.aiOpportunities) ? out.aiOpportunities.map((s) => clean(s, 80)).filter(Boolean) : [],
+        foundation: clean(out.foundation, 260) || undefined,
       };
       if (!data.workflow.length || !data.understood) throw new Error("empty");
     } else {

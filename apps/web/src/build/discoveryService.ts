@@ -8,6 +8,7 @@ import type { Blueprint, Challenge, DiscoveryAIService, Industry, PrototypeSpec,
 // full set is searchable, and the /build step also lets people type their own —
 // so any industry is covered (the AI tailors to whatever it's given).
 const INDUSTRIES: Industry[] = [
+  { slug: "events_conferences", label: "Events & Conferences" },
   { slug: "financial_services", label: "Financial Services" },
   { slug: "healthcare", label: "Healthcare" },
   { slug: "retail", label: "Retail" },
@@ -54,8 +55,16 @@ const INDUSTRIES: Industry[] = [
   { slug: "gaming", label: "Gaming & Esports" },
 ];
 
-interface Ch { id: string; label: string; blurb?: string; outcomes: string[] }
+// A per-challenge blueprint keeps the generated solution concrete instead of
+// boilerplate — each challenge names its own solution, workflow and AI work.
+interface BP { solutionName: string; understood?: string; workflow: string[]; aiOpportunities: string[] }
+interface Ch { id: string; label: string; blurb?: string; outcomes: string[]; blueprint?: BP }
 interface Ind { stakeholders: string[]; challenges: Ch[] }
+
+// Every XAPPX app is built on the Twin Vault — the secure, per-party data vault
+// each person/organization owns; the AI only ever acts on what's authorized.
+const TWIN_VAULT =
+  "Built on the Twin Vault: every attendee, sponsor and organizer keeps their own data in a secure Twin Vault, and XAPPX's AI only acts on what each party has authorized — no central data grab.";
 
 const GENERIC_OUTCOMES = [
   "Cut manual, repetitive work",
@@ -66,6 +75,71 @@ const GENERIC_OUTCOMES = [
 ];
 
 const DATA: Record<string, Ind> = {
+  events_conferences: {
+    stakeholders: ["Attendee", "Event organizer", "Exhibitor / sponsor", "Speaker", "Registration & check-in", "Venue & operations", "Marketing team"],
+    challenges: [
+      {
+        id: "registration", label: "Registration & check-in is slow and manual",
+        outcomes: ["Cut check-in lines", "Auto-issue badges & QR passes", "Catch duplicate or unpaid registrations", "Give organizers a live headcount"],
+        blueprint: {
+          solutionName: "Smart Registration & Check-in",
+          understood: "You're solving slow, manual registration and check-in for your event. Here's a Twin-Vault-based solution that gets attendees through the door in seconds.",
+          workflow: ["Attendee registers or imports an existing ticket", "Identity & ticket verified against their Twin Vault", "AI issues a personalized badge and QR pass", "Self-serve check-in at the door in seconds", "Live headcount & no-show tracking for organizers"],
+          aiOpportunities: ["Match each registration to an existing Twin Vault profile", "Flag duplicate, unpaid or suspicious sign-ups", "Auto-generate badges and personalized agendas", "Predict no-shows and walk-in load by session"],
+        },
+      },
+      {
+        id: "engagement", label: "Attendees don't engage during the event",
+        outcomes: ["Drive session attendance", "Answer attendee questions instantly", "Capture live feedback & polls", "Grow networking and activity participation"],
+        blueprint: {
+          solutionName: "Attendee Engagement Companion",
+          understood: "You want attendees doing more than showing up. Here's a Twin-Vault-based companion that guides each attendee and feeds engagement back to you.",
+          workflow: ["Attendee opens their Twin-Vault-backed event profile", "XAPPY concierge answers questions & suggests sessions", "Live Q&A, polls and networking nudges in-session", "Personalized schedule reminders throughout the day", "Engagement scored and shared with organizers & sponsors"],
+          aiOpportunities: ["Personalized session & people recommendations from Vault interests", "24/7 multilingual attendee concierge (XAPPY)", "Summarize sessions and surface highlights in real time", "Read sentiment from polls and chat as it happens"],
+        },
+      },
+      {
+        id: "matchmaking", label: "Sponsors & exhibitors want better leads",
+        outcomes: ["Match attendees to the right sponsors", "Capture qualified leads", "Prove sponsor ROI", "Enable warm intros, not cold badge scans"],
+        blueprint: {
+          solutionName: "Sponsor & Exhibitor Matchmaking",
+          understood: "You need sponsors to leave with real, qualified leads. Here's a consent-based, Twin-Vault matchmaking solution that proves ROI.",
+          workflow: ["Attendee and sponsor goals read from their Twin Vaults (with consent)", "AI matches attendees to the most relevant exhibitors", "Consent-based intros and meeting booking", "Captured leads written back to each party's Vault", "Live sponsor ROI dashboard"],
+          aiOpportunities: ["Interest-based attendee ↔ sponsor matching", "Score and qualify leads automatically", "Draft personalized outreach and meeting agendas", "Measure booth, session and spend ROI"],
+        },
+      },
+      {
+        id: "agenda", label: "Attendees can't navigate a packed agenda",
+        outcomes: ["Personalize each attendee's schedule", "Balance overcrowded sessions", "Surface must-see sessions", "Keep everyone on time"],
+        blueprint: {
+          solutionName: "Personalized Agenda Builder",
+          understood: "A packed multi-track agenda is overwhelming your attendees. Here's a Twin-Vault-based planner that builds each person their own schedule.",
+          workflow: ["Attendee interests & goals pulled from their Twin Vault", "AI drafts a personalized, conflict-free agenda", "Attendee edits and locks their schedule", "Smart reminders and room-change alerts", "Organizers see demand per session and rebalance rooms"],
+          aiOpportunities: ["Build a personalized agenda from Vault interests", "Predict and smooth session overcrowding", "Recommend must-see sessions and speakers", "Re-route attendees live when rooms fill up"],
+        },
+      },
+      {
+        id: "followup", label: "Post-event follow-up & ROI is weak",
+        outcomes: ["Automate thank-you & recap", "Deliver session recordings & summaries", "Nurture leads after the event", "Report ROI to every stakeholder"],
+        blueprint: {
+          solutionName: "Post-Event Follow-up & ROI",
+          understood: "The value leaks away after the doors close. Here's a Twin-Vault-based follow-up solution that turns the event into lasting outcomes.",
+          workflow: ["Each attendee's sessions & contacts recorded in their Twin Vault", "AI drafts personalized recaps, summaries and thank-yous", "Session recordings & notes delivered to the right people", "Leads routed and nurtured with consent", "ROI report generated for organizers and sponsors"],
+          aiOpportunities: ["Summarize each attendee's personal event journey", "Draft tailored follow-ups per attendee and sponsor", "Prioritize and nurture the warmest leads", "Compile attendance, engagement and ROI reports"],
+        },
+      },
+      {
+        id: "logistics", label: "Organizer comms & logistics are chaotic",
+        outcomes: ["Centralize schedules & changes", "Alert staff & attendees instantly", "Track tasks, vendors & rooms", "React to issues in real time"],
+        blueprint: {
+          solutionName: "Event Operations Command Center",
+          understood: "Running the event day is chaos across chats and spreadsheets. Here's a Twin-Vault-based command center that keeps everyone in sync.",
+          workflow: ["Schedule, staff, vendors and rooms in one shared view", "Change made once, pushed to everyone affected", "AI alerts the right staff and attendees instantly", "Tasks and vendor SLAs tracked to completion", "Incidents triaged and escalated in real time"],
+          aiOpportunities: ["Turn a change into the right targeted notifications", "Draft staff and attendee comms automatically", "Flag at-risk tasks, vendors and rooms early", "Summarize the day's incidents and resolutions"],
+        },
+      },
+    ],
+  },
   financial_services: {
     stakeholders: ["Customer / applicant", "Relationship manager", "Credit analyst", "Underwriter", "Compliance officer", "Operations team", "Branch manager"],
     challenges: [
@@ -135,6 +209,7 @@ const GENERIC: Ind = {
 };
 
 const ITEM: Record<string, string> = {
+  events_conferences: "Registration",
   financial_services: "Loan application",
   healthcare: "Patient case",
   retail: "Order",
@@ -161,20 +236,30 @@ export const mockService: DiscoveryAIService = {
   },
 
   generateBlueprint: (d: SolutionDiscovery) => {
+    const slug = d.industry?.slug ?? "";
     const industryLabel = d.industry?.label ?? "your";
     const challenge = d.challenge ?? "the problem";
-    const bp: Blueprint = {
-      understood: `You told us the challenge is: “${challenge}”. XAPPX will tackle it with AI at the core, while keeping people in control of the decisions that matter.`,
-      solutionName: `Your AI-assisted ${industryLabel} solution`,
-      users: d.stakeholders.length ? d.stakeholders : ind(d.industry?.slug ?? "").stakeholders.slice(0, 3),
-      workflow: ["Intake", "AI review & data extraction", "Exception handling", "Human decision", "Status update & follow-up"],
-      aiOpportunities: [
-        "Extract and summarize incoming information",
-        "Detect missing or risky details",
-        "Prioritize the queue by urgency",
-        "Draft the recommended next action",
-      ],
-    };
+    const users = d.stakeholders.length ? d.stakeholders : ind(slug).stakeholders.slice(0, 4);
+    // Use the challenge's own concrete blueprint when we have one; otherwise a
+    // smarter generic that still names the challenge and the Twin Vault.
+    const spec = ind(slug).challenges.find((c) => c.label === challenge)?.blueprint;
+    const bp: Blueprint = spec
+      ? {
+          understood: spec.understood ?? `You're solving: “${challenge}” in ${industryLabel}. Here's how XAPPX would build it — AI at the core, people in control, all on the Twin Vault.`,
+          solutionName: spec.solutionName,
+          users,
+          workflow: spec.workflow,
+          aiOpportunities: spec.aiOpportunities,
+          foundation: TWIN_VAULT,
+        }
+      : {
+          understood: `You're solving: “${challenge}” in ${industryLabel}. XAPPX puts AI at the core while keeping people in control of the decisions that matter.`,
+          solutionName: `Your ${industryLabel} AI solution`,
+          users,
+          workflow: ["Capture the request or data", "AI reviews, extracts and checks it against your rules", "Exceptions flagged for a person", "Human makes the decision", "Status update, follow-up and record in the Twin Vault"],
+          aiOpportunities: ["Extract and summarize incoming information", "Detect missing or risky details", "Prioritize the queue by urgency", "Draft the recommended next action"],
+          foundation: TWIN_VAULT,
+        };
     return delay(bp, 1100);
   },
 
@@ -200,6 +285,7 @@ export const mockService: DiscoveryAIService = {
       nav: [
         { id: "dashboard", label: "Dashboard", locked: false },
         { id: "queue", label: plural, locked: false },
+        { id: "vault", label: "Twin Vault", locked: false },
         { id: "reports", label: "Reports", locked: true },
         { id: "integrations", label: "Integrations", locked: true },
         { id: "automation", label: "Automation", locked: true },
@@ -214,7 +300,7 @@ export const mockService: DiscoveryAIService = {
       items,
       aiActionLabel: "Run AI review",
       aiResult: {
-        summary: `XAPPY read this ${noun.toLowerCase()}, extracted the key details, and checked it against your rules.`,
+        summary: `XAPPY read this ${noun.toLowerCase()} using only the data authorized in the Twin Vault, extracted the key details, and checked it against your rules.`,
         recommendation: `Recommended next step: fast-track to a human decision — this helps ${firstOutcome}.`,
         flags: ["1 document missing a signature", "Eligibility looks strong", "No fraud signals detected"],
       },
