@@ -5,7 +5,6 @@ import { VideoSection } from "./components/VideoSection";
 import { ProductTiles } from "./components/ProductTiles";
 import { IndustryEntry } from "./components/IndustryEntry";
 import { WhyXappx } from "./components/WhyXappx";
-import { Ventures } from "./components/Ventures";
 import { Founders } from "./components/Founders";
 import { Footer } from "./components/Footer";
 import { BuildPage } from "./build/BuildPage";
@@ -21,7 +20,6 @@ function Home() {
         <ProductTiles />
         <IndustryEntry />
         <WhyXappx />
-        <Ventures />
         <Founders />
       </main>
       <Footer />

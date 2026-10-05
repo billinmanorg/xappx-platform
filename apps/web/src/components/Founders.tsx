@@ -4,16 +4,26 @@ import bill from "../assets/brand/bill.webp";
 import narinder from "../assets/brand/narinder.webp";
 import "./Founders.css";
 
-const FOUNDERS = [
+type Person = {
+  img?: string; initials?: string; name: string; role: string; link?: string;
+  bio: string; chips: string[];
+};
+
+const FOUNDERS: Person[] = [
   {
-    img: bill, name: "Bill Inman", role: "Co-founder",
-    bio: "Decentralized-AI pioneer, investor, and multi-exit entrepreneur with 25+ years building companies from concept to scale — and a patent holder in AI and blockchain.",
-    chips: ["25+ years building companies", "Multi-exit founder", "AI & blockchain patents"],
-  },
-  {
-    img: narinder, name: "Narinder Kamra", role: "Co-founder",
+    img: narinder, name: "Narinder Kamra", role: "CIO & Founder",
     bio: "Founder & CEO of VDOIT Technologies, with 25+ years across AI/ML, Web3, blockchain, and cloud system integration — and a mentor with ASSOCHAM's National Startup Council.",
     chips: ["25+ years in tech", "Founder & CEO, VDOIT", "AI/ML · Web3 · Cloud"],
+  },
+  {
+    initials: "NG", name: "Neetu Gupta", role: "CTO", link: "https://www.linkedin.com/in/neetugupta/",
+    bio: "20+ years leading platform and product development across technology and e-commerce — now driving XAPPX's engineering, with deep experience in AI and digital-twin systems.",
+    chips: ["20+ years in tech", "Platform & product dev", "AI · digital twins"],
+  },
+  {
+    img: bill, name: "Bill Inman", role: "Advisor",
+    bio: "Decentralized-AI pioneer, investor, and multi-exit entrepreneur with 25+ years building companies from concept to scale — and a patent holder in AI and blockchain.",
+    chips: ["25+ years building companies", "Multi-exit founder", "AI & blockchain patents"],
   },
 ];
 
@@ -25,17 +35,23 @@ export function Founders() {
           <motion.p className="eyebrow" variants={fadeUp}>Who's behind XAPPX</motion.p>
           <motion.h2 variants={fadeUp}>Built by proven operators.</motion.h2>
           <motion.p className="lede fnd__lede" variants={fadeUp}>
-            Not a first attempt. XAPPX comes from founders who have built, scaled, and shipped real AI products.
+            Not a first attempt. XAPPX is led by a team who have built, scaled, and shipped real AI products.
           </motion.p>
         </motion.div>
 
         <motion.div className="fnd__grid" variants={stagger(0.1)} initial="hidden" whileInView="show" viewport={inView}>
           {FOUNDERS.map((f) => (
-            <motion.article className="fnd__card" key={f.img} variants={fadeUp}>
+            <motion.article className="fnd__card" key={f.name} variants={fadeUp}>
               <div className="fnd__top">
-                <img className="fnd__photo" src={f.img} alt={f.name} loading="lazy" decoding="async" />
+                {f.img
+                  ? <img className="fnd__photo" src={f.img} alt={f.name} loading="lazy" decoding="async" />
+                  : <span className="fnd__photo fnd__avatar" aria-hidden="true">{f.initials}</span>}
                 <div>
-                  <h3 className="fnd__name">{f.name}</h3>
+                  <h3 className="fnd__name">
+                    {f.link
+                      ? <a className="fnd__link" href={f.link} target="_blank" rel="noopener noreferrer">{f.name}</a>
+                      : f.name}
+                  </h3>
                   <div className="fnd__role">{f.role}</div>
                 </div>
               </div>
