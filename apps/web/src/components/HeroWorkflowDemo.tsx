@@ -15,13 +15,13 @@ const STAGES = [
 ] as const;
 
 const CONTEXT = [
-  { k: "Industry", v: "Banking" },
-  { k: "Process", v: "Loan approval" },
-  { k: "Problem", v: "Processing delay" },
+  { k: "Industry", v: "Events & Conferences" },
+  { k: "Process", v: "Registration & check-in" },
+  { k: "Problem", v: "Long queues" },
 ];
-const ROLES = ["Applicant", "Loan officer", "Underwriter"];
-const FLOW = ["Application", "Document check", "Risk review", "Human approval"];
-const AI = ["Document extraction", "Missing-data detection", "Case prioritization"];
+const ROLES = ["Attendee", "Registration desk", "Event organizer"];
+const FLOW = ["Register", "Verify ticket", "Issue badge", "Self check-in"];
+const AI = ["Match to Twin Vault profile", "Flag duplicate sign-ups", "Auto-generate badges"];
 
 const layer = {
   hidden: { opacity: 0, y: 10 },
@@ -50,7 +50,7 @@ export function HeroWorkflowDemo() {
     <div
       className="demo"
       role="img"
-      aria-label="Animated demonstration: XAPPX turns the problem 'loan approvals take 8 days' into a structured, AI-designed prototype."
+      aria-label="Animated demonstration: XAPPX turns the problem 'event check-in lines take 30 minutes' into a structured, AI-designed prototype."
     >
       <div className="demo__win" aria-hidden="true">
         <div className="demo__bar">
@@ -62,7 +62,7 @@ export function HeroWorkflowDemo() {
           {/* the problem, always present as the origin */}
           <div className="demo__prompt">
             <span className="demo__prompt-tag">You</span>
-            <span>"Loan approvals take 8 days."</span>
+            <span>"Event check-in lines take 30 minutes."</span>
           </div>
 
           {/* context extraction */}
