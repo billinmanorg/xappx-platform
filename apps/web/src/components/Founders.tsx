@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { fadeUp, stagger, inView } from "../lib/motion";
 import bill from "../assets/brand/bill.webp";
 import narinder from "../assets/brand/narinder.webp";
+import neetu from "../assets/brand/neetu.webp";
 import "./Founders.css";
 
 type Person = {
@@ -16,7 +17,7 @@ const FOUNDERS: Person[] = [
     chips: ["25+ years in tech", "Founder & CEO, VDOIT", "AI/ML · Web3 · Cloud"],
   },
   {
-    initials: "NG", name: "Neetu Gupta", role: "CTO", link: "https://www.linkedin.com/in/neetugupta/",
+    img: neetu, name: "Neetu Gupta", role: "CTO", link: "https://www.linkedin.com/in/neetugupta/",
     bio: "20+ years leading platform and product development across technology and e-commerce — now driving XAPPX's engineering, with deep experience in AI and digital-twin systems.",
     chips: ["20+ years in tech", "Platform & product dev", "AI · digital twins"],
   },
