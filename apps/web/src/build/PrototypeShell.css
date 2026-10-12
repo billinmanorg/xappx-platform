@@ -52,6 +52,11 @@
 .ps__drawer-h { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
 .ps__drawer-t { font-weight: 700; }
 .ps__drawer-m { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 3px; }
+.ps__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin: 0 0 16px; padding: 0; }
+.ps__field { display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid var(--border); padding-bottom: 7px; }
+.ps__field dt { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); font-family: var(--font-mono); }
+.ps__field dd { margin: 0; font-size: var(--fs-sm); color: var(--text); }
+@media (max-width: 520px) { .ps__fields { grid-template-columns: 1fr; } }
 .ps__x { background: none; border: 0; color: var(--text-dim); font-size: 15px; }
 .ps__thinking { display: inline-flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: var(--fs-sm); }
 .ps__thinking span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: bounce 1s infinite ease-in-out; }

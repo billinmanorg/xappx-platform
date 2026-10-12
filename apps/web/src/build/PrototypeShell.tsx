@@ -119,6 +119,13 @@ function Queue({ spec, selected, onOpen, aiState, onRunAI, onClose }: {
             <div><div className="ps__drawer-t">{selected.title}</div><div className="ps__drawer-m">Assigned to {selected.assignee} · {selected.priority} priority</div></div>
             <button className="ps__x" onClick={onClose} aria-label="Close">✕</button>
           </div>
+          {selected.fields && selected.fields.length > 0 && (
+            <dl className="ps__fields">
+              {selected.fields.map((f) => (
+                <div className="ps__field" key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>
+              ))}
+            </dl>
+          )}
           {aiState === "idle" && (
             <button className="btn btn-primary" onClick={onRunAI}>{spec.aiActionLabel} →</button>
           )}

@@ -1,4 +1,6 @@
-import type { Blueprint, Challenge, DiscoveryAIService, Industry, PrototypeSpec, SolutionDiscovery } from "./types";
+import type { Blueprint, Challenge, DiscoveryAIService, Industry, SolutionDiscovery } from "./types";
+import type { AppSpec, AppEntity, AppRole, AppView, VaultBinding } from "./appSpec";
+import { prototypeFromSpec } from "./appSpec";
 
 /* Curated stand-in for the AI layer (brief §38). Structured industry knowledge
    with simulated latency so the "AI is working" UX is real. A live adapter can
@@ -222,6 +224,189 @@ const itemNoun = (slug: string) => ITEM[slug] ?? "Request";
 const ind = (slug: string): Ind => DATA[slug] ?? GENERIC;
 const delay = <T,>(v: T, ms = 700): Promise<T> => new Promise((r) => setTimeout(() => r(v), ms));
 
+// ---- App Spec generation -------------------------------------------------
+// The concrete data model + AI behavior per challenge. Today curated (mock);
+// the live AI will generate the same AppSpec shape later. Keyed by challenge id.
+type EntitySpec = { entity: AppEntity; primaryAIAction: string; aiResult: { summary: string; recommendation: string; flags: string[] } };
+
+const NAMES = ["Priya Sharma", "Marcus Lee", "Aisha Khan", "Tom Becker", "Lena Ortiz", "Raj Patel"];
+const COMPANIES = ["Acme", "Globex", "Initech", "Hooli", "Stark", "Umbrella"];
+
+const ENTITY_SPECS: Record<string, EntitySpec> = {
+  registration: {
+    entity: {
+      name: "registration", label: "Registration", labelPlural: "Registrations", statusField: "status",
+      fields: [
+        { name: "attendee", label: "Attendee", type: "text", vaultOwned: true, samples: NAMES },
+        { name: "email", label: "Email", type: "email", vaultOwned: true, samples: ["priya@acme.io", "marcus@globex.com", "aisha@initech.co", "tom@hooli.com", "lena@stark.io", "raj@umbrella.co"] },
+        { name: "ticket", label: "Ticket", type: "select", options: ["General", "VIP", "Speaker", "Exhibitor"] },
+        { name: "company", label: "Company", type: "text", samples: COMPANIES },
+        { name: "status", label: "Status", type: "status", options: ["New", "Verified", "Checked-in", "Needs review"] },
+      ],
+    },
+    primaryAIAction: "Verify & issue badge",
+    aiResult: {
+      summary: "XAPPY matched this registration to the attendee's Twin Vault, verified the ticket, and generated a badge and QR pass.",
+      flags: ["Ticket valid · paid", "Matched to an existing Twin Vault profile", "No duplicate registration found"],
+      recommendation: "Recommended: auto-issue the badge & QR pass — this helps cut check-in lines.",
+    },
+  },
+  engagement: {
+    entity: {
+      name: "attendee", label: "Attendee", labelPlural: "Attendees", statusField: "status",
+      fields: [
+        { name: "attendee", label: "Attendee", type: "text", vaultOwned: true, samples: NAMES },
+        { name: "interests", label: "Interests", type: "text", vaultOwned: true, samples: ["AI · Fintech", "Web3 · Payments", "Healthtech", "Martech", "Climate", "Gaming"] },
+        { name: "saved", label: "Sessions saved", type: "number" },
+        { name: "status", label: "Engagement", type: "status", options: ["Invited", "Active", "Highly engaged", "At risk"] },
+      ],
+    },
+    primaryAIAction: "Suggest sessions & intros",
+    aiResult: {
+      summary: "XAPPY read this attendee's Twin Vault interests and suggested the most relevant sessions and people to meet.",
+      flags: ["3 must-see sessions matched", "2 high-value intros available", "Prefers afternoon tracks"],
+      recommendation: "Recommended: send a personalized agenda and 2 intro requests — this helps drive engagement.",
+    },
+  },
+  matchmaking: {
+    entity: {
+      name: "lead", label: "Lead", labelPlural: "Leads", statusField: "status",
+      fields: [
+        { name: "attendee", label: "Attendee", type: "text", vaultOwned: true, samples: NAMES },
+        { name: "sponsor", label: "Sponsor", type: "text", samples: COMPANIES },
+        { name: "fit", label: "Fit", type: "select", options: ["Hot", "Warm", "Exploratory"] },
+        { name: "status", label: "Status", type: "status", options: ["Suggested", "Intro sent", "Meeting booked", "Followed up"] },
+      ],
+    },
+    primaryAIAction: "Score & draft intro",
+    aiResult: {
+      summary: "XAPPY matched this attendee and sponsor from their Twin Vault goals, scored the fit, and drafted a meeting agenda.",
+      flags: ["Strong interest overlap", "Budget & authority signals present", "Consent to share granted"],
+      recommendation: "Recommended: send a warm intro with a 15-minute meeting slot — this helps capture qualified leads.",
+    },
+  },
+  agenda: {
+    entity: {
+      name: "session", label: "Session", labelPlural: "Sessions", statusField: "status",
+      fields: [
+        { name: "session", label: "Session", type: "text", samples: ["Keynote: The AI Shift", "Workshop: Agents 101", "Panel: Web3 Payments", "Fireside: Scaling AI", "Track: Healthtech", "Deep-dive: Twin Vault"] },
+        { name: "room", label: "Room", type: "text", samples: ["Hall A", "Room 2", "Room 3", "Hall B", "Room 4", "Studio"] },
+        { name: "time", label: "Time", type: "text", samples: ["09:00", "10:30", "11:45", "14:00", "15:30", "16:45"] },
+        { name: "status", label: "Capacity", type: "status", options: ["Open", "Filling", "Full", "Overflow"] },
+      ],
+    },
+    primaryAIAction: "Balance & recommend",
+    aiResult: {
+      summary: "XAPPY checked demand from attendees' Twin-Vault interests and flagged overcrowding and must-see gaps.",
+      flags: ["Projected 120% capacity", "2 clashing must-see sessions", "Larger room available"],
+      recommendation: "Recommended: move to a larger room and nudge 40 attendees to an alternate — this helps balance sessions.",
+    },
+  },
+  followup: {
+    entity: {
+      name: "followup", label: "Follow-up", labelPlural: "Follow-ups", statusField: "status",
+      fields: [
+        { name: "attendee", label: "Attendee", type: "text", vaultOwned: true, samples: NAMES },
+        { name: "sessions", label: "Sessions attended", type: "number" },
+        { name: "owner", label: "Owner", type: "text", samples: ["Dana", "Omar", "Kim", "Lee", "Dana", "Omar"] },
+        { name: "status", label: "Status", type: "status", options: ["Pending", "Recap sent", "Nurturing", "Converted"] },
+      ],
+    },
+    primaryAIAction: "Draft recap & next step",
+    aiResult: {
+      summary: "XAPPY summarized this attendee's event journey from their Twin Vault and drafted a personalized recap and next step.",
+      flags: ["Attended 4 sessions", "2 sponsor meetings", "High intent signals"],
+      recommendation: "Recommended: send the personalized recap and a tailored offer — this helps nurture leads after the event.",
+    },
+  },
+  logistics: {
+    entity: {
+      name: "task", label: "Task", labelPlural: "Tasks", statusField: "status",
+      fields: [
+        { name: "task", label: "Task", type: "text", samples: ["AV check – Hall A", "Catering setup", "Speaker green room", "Signage install", "Registration desks", "Wi-Fi load test"] },
+        { name: "owner", label: "Owner", type: "text", samples: ["Ops", "AV vendor", "Catering", "Facilities", "Front desk", "IT"] },
+        { name: "due", label: "Due", type: "text", samples: ["08:00", "09:30", "10:00", "12:00", "13:30", "16:00"] },
+        { name: "status", label: "Status", type: "status", options: ["To do", "In progress", "Blocked", "Done"] },
+      ],
+    },
+    primaryAIAction: "Alert owners & triage",
+    aiResult: {
+      summary: "XAPPY turned this change into targeted alerts and flagged at-risk tasks and vendors.",
+      flags: ["2 tasks at risk", "Vendor SLA tight", "3 staff to notify"],
+      recommendation: "Recommended: notify the 3 owners now and escalate the blocked task — this helps keep the day on track.",
+    },
+  },
+};
+
+function genericEntitySpec(slug: string): EntitySpec {
+  const noun = itemNoun(slug);
+  return {
+    entity: {
+      name: noun.replace(/\s+/g, "").toLowerCase() || "record", label: noun, labelPlural: `${noun}s`, statusField: "status",
+      fields: [
+        { name: "title", label: noun, type: "text", vaultOwned: true },
+        { name: "owner", label: "Owner", type: "text" },
+        { name: "status", label: "Status", type: "status", options: ["New", "AI-reviewed", "Needs review", "Approved"] },
+      ],
+    },
+    primaryAIAction: "Run AI review",
+    aiResult: {
+      summary: `XAPPY read this ${noun.toLowerCase()} using only the data authorized in the Twin Vault, extracted the key details, and checked it against your rules.`,
+      flags: ["Key details extracted", "Looks complete", "No issues detected"],
+      recommendation: "Recommended next step: fast-track to a human decision.",
+    },
+  };
+}
+
+// Turn a completed discovery into a full, backend-ready App Spec.
+export function buildAppSpec(d: SolutionDiscovery): AppSpec {
+  const slug = d.industry?.slug ?? "";
+  const industryLabel = d.industry?.label ?? "Your industry";
+  const challenge = d.challenge ?? "the problem";
+  const ch = ind(slug).challenges.find((c) => c.label === challenge);
+  const bp = ch?.blueprint;
+  const es = (ch && ENTITY_SPECS[ch.id]) || genericEntitySpec(slug);
+  const entity = es.entity;
+
+  const people = d.stakeholders.length ? d.stakeholders : ind(slug).stakeholders.slice(0, 3);
+  const roles: AppRole[] = people.slice(0, 4).map((label, i, arr) => ({
+    name: label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""),
+    label,
+    access: i === 0 ? "admin" : i === arr.length - 1 ? "member" : "staff",
+  }));
+  const memberLabel = roles[roles.length - 1]?.label ?? "Member";
+
+  const views: AppView[] = [
+    { id: "dashboard", label: "Dashboard", kind: "dashboard", locked: false },
+    { id: "queue", label: entity.labelPlural, kind: "list", entity: entity.name, locked: false },
+    { id: "vault", label: "Twin Vault", kind: "vault", locked: false },
+    { id: "reports", label: "Reports", kind: "reports", locked: true },
+    { id: "integrations", label: "Integrations", kind: "integrations", locked: true },
+    { id: "automation", label: "Automation", kind: "automation", locked: true },
+    { id: "settings", label: "Settings", kind: "settings", locked: true },
+  ];
+  const vaultBindings: VaultBinding[] = [{
+    entity: entity.name, owner: memberLabel,
+    note: `${entity.label} data lives in each ${memberLabel.toLowerCase()}'s Twin Vault; the app reads and writes only what's authorized.`,
+  }];
+
+  return {
+    name: bp?.solutionName ?? `Your ${industryLabel} app`,
+    industry: industryLabel,
+    challenge,
+    summary: bp?.understood ?? `You're solving “${challenge}” in ${industryLabel}.`,
+    foundation: TWIN_VAULT,
+    entities: [entity],
+    roles,
+    views,
+    workflow: (bp?.workflow ?? ["Capture the request", "AI review & checks", "Exception handling", "Human decision", "Follow-up"]).map((label) => ({ label })),
+    aiActions: (bp?.aiOpportunities ?? ["Extract & summarize", "Detect issues", "Prioritize the queue", "Draft the next action"]).map((label) => ({ label })),
+    primaryAIAction: es.primaryAIAction,
+    vaultBindings,
+    aiResult: es.aiResult,
+  };
+}
+
 export const mockService: DiscoveryAIService = {
   getIndustries: () => INDUSTRIES,
 
@@ -263,48 +448,7 @@ export const mockService: DiscoveryAIService = {
     return delay(bp, 1100);
   },
 
-  generatePrototype: (d: SolutionDiscovery) => {
-    const slug = d.industry?.slug ?? "";
-    const industryLabel = d.industry?.label ?? "Your";
-    const noun = itemNoun(slug);
-    const plural = `${noun}s`;
-    const roles = d.stakeholders.length ? d.stakeholders : ind(slug).stakeholders.slice(0, 3);
-    const statuses = ["New", "AI-reviewed", "Needs review", "In progress", "Approved"];
-    const prios: Array<"High" | "Normal" | "Low"> = ["High", "Normal", "Normal", "Low", "Normal", "High"];
-    const items = Array.from({ length: 6 }, (_, i) => ({
-      id: `IT-${1040 + i}`,
-      title: `${noun} #${1040 + i}`,
-      assignee: roles[i % roles.length]!,
-      status: statuses[i % statuses.length]!,
-      priority: prios[i % prios.length]!,
-    }));
-    const firstOutcome = (d.outcomes[0] ?? "resolve it faster").toLowerCase();
-    const spec: PrototypeSpec = {
-      appName: `${industryLabel} Workspace`,
-      workflowLabel: plural,
-      nav: [
-        { id: "dashboard", label: "Dashboard", locked: false },
-        { id: "queue", label: plural, locked: false },
-        { id: "vault", label: "Twin Vault", locked: false },
-        { id: "reports", label: "Reports", locked: true },
-        { id: "integrations", label: "Integrations", locked: true },
-        { id: "automation", label: "Automation", locked: true },
-        { id: "settings", label: "Settings", locked: true },
-      ],
-      stats: [
-        { label: `Open ${plural.toLowerCase()}`, value: "42" },
-        { label: "Auto-handled by AI", value: "68%", hint: "this week" },
-        { label: "Avg. handling time", value: "2.4h", hint: "↓ from 3.1 days" },
-        { label: "Needs your review", value: "7" },
-      ],
-      items,
-      aiActionLabel: "Run AI review",
-      aiResult: {
-        summary: `XAPPY read this ${noun.toLowerCase()} using only the data authorized in the Twin Vault, extracted the key details, and checked it against your rules.`,
-        recommendation: `Recommended next step: fast-track to a human decision — this helps ${firstOutcome}.`,
-        flags: ["1 document missing a signature", "Eligibility looks strong", "No fraud signals detected"],
-      },
-    };
-    return delay(spec, 1200);
-  },
+  // The prototype is now a projection of the App Spec — same definition that
+  // will drive the real web-runtime app, so preview and production stay in sync.
+  generatePrototype: (d: SolutionDiscovery) => delay(prototypeFromSpec(buildAppSpec(d)), 1200),
 };

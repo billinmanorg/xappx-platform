@@ -28,7 +28,7 @@ export interface SolutionDiscovery {
 // Deliberately a demo shell: enough to prove understanding, not a production app.
 export interface PrototypeNav { id: string; label: string; locked: boolean }
 export interface PrototypeStat { label: string; value: string; hint?: string }
-export interface PrototypeItem { id: string; title: string; assignee: string; status: string; priority: "High" | "Normal" | "Low" }
+export interface PrototypeItem { id: string; title: string; assignee: string; status: string; priority: "High" | "Normal" | "Low"; fields?: { label: string; value: string }[] }
 export interface PrototypeAIResult { summary: string; recommendation: string; flags: string[] }
 export interface PrototypeSpec {
   appName: string;
