@@ -44,6 +44,7 @@ export async function observeNativePointerInput(control: Locator) {
     try {
       const report = await control.evaluate((element) => element.closest<ProbeRoot>(".working-preview")?.stopPointerProbe?.(), undefined, { timeout: 2_000 });
       console.log("Native sample pointer diagnostics:", JSON.stringify(report));
+      return report;
     } catch {
       console.log("Native sample pointer diagnostics unavailable: page closed or changed.");
     }

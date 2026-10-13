@@ -182,6 +182,51 @@ for (const width of [375, 768, 1440]) {
   });
 }
 
+test.describe("recovery layout after an in-place viewport resize", () => {
+  test.use({ viewport: { width: 1440, height: 1000 } });
+  for (const flow of flows.filter((item) => item.filter)) {
+    test(`${flow.title}: resized feedback keeps both native double-clicks on the filter`, async ({ page }) => {
+      await launch(page, flow);
+      await button(page, `Open ${flow.target}`).click();
+      await expect(page.getByRole("alert")).toContainText("prompted guided step");
+      const feedback = page.locator(".sample-error-space");
+      const wideHeight = (await feedback.boundingBox())!.height;
+      await page.setViewportSize({ width: 375, height: 1000 });
+      // Mobile separates details from records; returning leaves the alert visible.
+      await button(page, "Back to records").click();
+      await expect(page.getByRole("alert")).toContainText("prompted guided step");
+      await expect.poll(async () => (await feedback.boundingBox())!.height).toBeGreaterThan(wideHeight);
+      const filter = button(page, flow.filter!);
+      await filter.scrollIntoViewIfNeeded();
+      const before = (await filter.boundingBox())!;
+      const resizedHeight = (await feedback.boundingBox())!.height;
+      await expect(page.getByRole("group", { name: flow.count })).toContainText("1");
+      const reportInput = await observeNativePointerInput(filter);
+      let report: unknown;
+      try { await filter.dblclick(); }
+      finally { report = await reportInput(); }
+      const clicks = (report as { events: { type: string; label: string; trusted: boolean; detail: number }[] } | undefined)?.events
+        .filter((event) => event.type === "click")
+        .map(({ label, trusted, detail }) => ({ label, trusted, detail }));
+      expect(clicks).toEqual([
+        { label: flow.filter, trusted: true, detail: 1 },
+        { label: flow.filter, trusted: true, detail: 2 },
+      ]);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      await expect(page.getByRole("region", { name: "Record details" })).toHaveCount(0);
+      await expect(page.getByRole("status", { name: "Guided progress" })).toContainText("1 of 3");
+      await expect(page.getByRole("group", { name: flow.count })).toContainText("1");
+      expect((await feedback.boundingBox())!.height).toBeCloseTo(resizedHeight, 0);
+      const after = (await filter.boundingBox())!;
+      expect(after.y).toBeCloseTo(before.y, 0);
+      const point = { x: before.x + before.width / 2, y: before.y + before.height / 2 };
+      expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("button")?.textContent, point)).toBe(flow.filter);
+      await expect(filter).toBeFocused();
+      await expect(feedback).toBeEmpty();
+    });
+  }
+});
+
 test("operations has separate task inspection, correct summaries and retained edits on interrupted navigation", async ({ page }) => {
   await launch(page, flows[2]);
   const progress = page.getByRole("status", { name: "Guided progress" });

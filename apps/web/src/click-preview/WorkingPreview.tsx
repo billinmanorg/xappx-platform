@@ -44,9 +44,25 @@ export function WorkingPreview({ session, dispatch, onBack, onReset, onChangeWor
   useLayoutEffect(() => {
     // Clearing feedback must not move a filter/record under a rapid second click.
     // Keep only its measured space; stale alerts and recovery controls are removed.
-    if ((session.error || unavailable) && errorSpace.current) {
-      setReservedErrorHeight(errorSpace.current.getBoundingClientRect().height);
-    }
+    if (!(session.error || unavailable) || !errorSpace.current) return;
+    const space = errorSpace.current;
+    let active = true;
+    const retainHeight = () => {
+      if (!active) return;
+      const height = space.getBoundingClientRect().height;
+      setReservedErrorHeight((previous) => Math.max(previous, height));
+    };
+    retainHeight();
+    // Reflow can grow the same alert without changing its message. Observe the
+    // margin-containing wrapper; equal/smaller measurements never update state.
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(retainHeight) : null;
+    observer?.observe(space);
+    window.addEventListener("resize", retainHeight);
+    return () => {
+      active = false;
+      observer?.disconnect();
+      window.removeEventListener("resize", retainHeight);
+    };
   }, [session.error, unavailable]);
   const displayDetails = showDetails && !unavailable && selected?.entity === entity?.name && selected !== undefined;
   const summary = deriveSummary(session);
