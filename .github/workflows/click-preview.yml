@@ -1,0 +1,43 @@
+name: Click-first preview acceptance
+
+'on':
+  push:
+    branches: [preview/xappx-click-first]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: click-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    if: github.repository == 'billinmanorg/xappx-platform' && github.event.repository.private == false && github.ref == 'refs/heads/preview/xappx-click-first'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Check out the exact preview commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the locally tested Node version without dependency caching
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.23.3'
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck the isolated preview
+        run: npm run typecheck:click-preview
+      - name: Run preview unit and integration tests
+        run: npm run test:click-preview
+      - name: Build and verify the isolated artifact
+        run: npm run build:click-preview && npm run check:click-preview
+      - name: Install official Playwright Chromium and system dependencies
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Run browser acceptance against the built artifact
+        run: npm run test:e2e:click-preview -- --workers=1 --global-timeout=900000

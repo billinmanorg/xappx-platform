@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": [
+    "preview",
+    "src/click-preview",
+    "vite.click-preview.config.ts",
+    "vitest.click-preview.config.ts",
+    "playwright.click-preview.config.ts",
+    "test/click-preview"
+  ]
+}
