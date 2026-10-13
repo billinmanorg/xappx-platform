@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { PROBLEMS } from "../../src/click-preview/problems";
+import { observeNativePointerInput } from "./pointerDiagnostics";
 
 const flows = [
   { id: "sponsor", problem: "sponsor-leads", title: "Sponsor Lead Desk", filter: "High", target: "Sample Cloudberry Studio", other: "Sample Pebble Labs", action: "Mark Qualified", status: "Qualified", count: "Qualified leads", view: "Leads" },
@@ -122,10 +123,14 @@ for (const flow of flows.filter((item) => item.filter)) {
     await button(page, `Open ${flow.target}`).click();
     await expect(progress).toContainText("0 of 3");
     await expect(page.getByRole("alert")).toContainText("prompted guided step");
-    await button(page, flow.filter!).dblclick();
+    const reportFilterInput = await observeNativePointerInput(button(page, flow.filter!));
+    try { await button(page, flow.filter!).dblclick(); }
+    finally { await reportFilterInput(); }
     await expect(page.getByRole("region", { name: "Record details" })).toHaveCount(0);
     await expect(progress).toContainText("1 of 3");
-    await button(page, `Open ${flow.target}`).dblclick();
+    const reportRecordInput = await observeNativePointerInput(button(page, `Open ${flow.target}`));
+    try { await button(page, `Open ${flow.target}`).dblclick(); }
+    finally { await reportRecordInput(); }
     await expect(progress).toContainText("2 of 3");
     // Two native click events in one browser turn exercise a stale UI handler
     // before React paints the disabled state; the reducer still allows one write.
@@ -135,6 +140,45 @@ for (const flow of flows.filter((item) => item.filter)) {
     await button(page, "Back to records").click(); await button(page, "All").click();
     await expect(page.getByRole("list", { name: "Sample records" }).getByRole("button")).toHaveCount(6);
     await expect(progress).toContainText("3 of 3");
+  });
+}
+
+for (const width of [375, 768, 1440]) {
+  test.describe(`recovery layout at ${width}px`, () => {
+    test.use({ viewport: { width, height: 1000 }, hasTouch: width === 375 });
+    for (const flow of flows.filter((item) => item.filter)) {
+      test(`${flow.title}: clearing feedback keeps the pointer over the active filter`, async ({ page }) => {
+        await launch(page, flow);
+        await button(page, `Open ${flow.target}`).click();
+        await expect(page.getByRole("alert")).toContainText("prompted guided step");
+        if (width === 375) await button(page, "Back to records").tap();
+        const filter = button(page, flow.filter!);
+        await filter.scrollIntoViewIfNeeded();
+        const before = await filter.boundingBox();
+        expect(before).not.toBeNull();
+        const feedback = page.locator(".sample-error-space");
+        const feedbackBefore = await feedback.boundingBox();
+        expect(feedbackBefore!.height).toBeGreaterThan(0);
+        const reportInput = await observeNativePointerInput(filter);
+        try {
+          if (width === 375) await filter.tap();
+          else await filter.click();
+        } finally { await reportInput(); }
+        await expect(page.getByRole("alert")).toHaveCount(0);
+        await expect(page.getByRole("region", { name: "Record details" })).toHaveCount(0);
+        await expect(page.getByRole("status", { name: "Guided progress" })).toContainText("1 of 3");
+        const after = await filter.boundingBox();
+        expect(after).not.toBeNull();
+        expect((await feedback.boundingBox())!.height).toBeCloseTo(feedbackBefore!.height, 0);
+        const point = { x: before!.x + before!.width / 2, y: before!.y + before!.height / 2 };
+        expect(point.x).toBeGreaterThanOrEqual(after!.x);
+        expect(point.x).toBeLessThan(after!.x + after!.width);
+        expect(point.y).toBeGreaterThanOrEqual(after!.y);
+        expect(point.y).toBeLessThan(after!.y + after!.height);
+        expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("button")?.textContent, point)).toBe(flow.filter);
+        await expect(filter).toBeFocused();
+      });
+    }
   });
 }
 

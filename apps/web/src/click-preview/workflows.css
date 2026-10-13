@@ -82,6 +82,7 @@
 .preview-app .sample-result [role="status"] { font-size: 13px; margin-bottom: 9px; }
 .preview-app .sample-result .small-note { margin: 0; font-size: 11px; }
 .preview-app .result-check { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; background: #d5f3f6; color: var(--cyan-deep); border-radius: 50%; float: right; }
+.preview-app .sample-error-space { display: flow-root; }
 .preview-app .sample-error, .preview-app .session-notice { background: #faf5e9; border: 1px solid #e7d4aa; color: #594820; border-radius: 10px; padding: 17px 20px; margin: 15px 0; font-size: 13px; }
 .preview-app .sample-error p { margin: 6px 0 0; }
 .preview-app .sample-error .button { margin-top: 12px; }
