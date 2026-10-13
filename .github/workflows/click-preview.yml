@@ -40,4 +40,4 @@ jobs:
       - name: Install official Playwright Chromium and system dependencies
         run: npx --no-install playwright install --with-deps chromium
       - name: Run browser acceptance against the built artifact
-        run: npm run test:e2e:click-preview -- --workers=1 --global-timeout=900000
+        run: npm run test:e2e:click-preview -- --workers=1 --max-failures=3 --global-timeout=900000

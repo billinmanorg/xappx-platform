@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { reportBackLinkFailure } from "./backLinkDiagnostics";
 import { EVENTS_INDUSTRY, PROBLEMS } from "../../src/click-preview/problems";
+
+test.afterEach(({ page }, testInfo) => reportBackLinkFailure(page, testInfo));
 
 type Audit = { requests: string[]; writes: string[]; reads: string[] };
 declare global { interface Window { __acceptanceAudit: Audit; __markupExecuted?: boolean } }

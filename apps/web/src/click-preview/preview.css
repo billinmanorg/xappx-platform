@@ -84,7 +84,8 @@ body:has(.preview-app) { margin: 0; }
 .preview-app textarea { display: block; resize: vertical; width: 100%; max-width: 100%; min-height: 90px; border: 1px solid #b6c9de; border-radius: 8px; padding: 12px; color: var(--navy); background: #fff; font-size: 16px; line-height: 1.5; }
 .preview-app .character-count { display: block; text-align: right; color: var(--muted); font-size: 11px; margin-top: 7px; }
 .preview-app .back-link { margin-top: 10px; padding-left: 0; }
-.preview-app .back-link::before { content: "←"; }
+/* Paint the decorative cue without adding text to the accessible button name. */
+.preview-app .back-link::before { content: ""; width: 0.45em; height: 0.45em; flex-shrink: 0; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
 .preview-app .back-link + .question-row { margin-top: 13px; }
 .preview-app .recommendation-intro { display: flex; align-items: baseline; gap: 20px; margin-bottom: 12px; }
 .preview-app .recommendation-intro h2 { font-size: 18px; margin: 0; }
