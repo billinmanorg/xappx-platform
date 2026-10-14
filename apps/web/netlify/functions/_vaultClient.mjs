@@ -1,35 +1,49 @@
-// Server-side Twin Vault client. The Vault SDK holds an HMAC signing secret and
-// signs every request, so it MUST run server-side only — never in the browser.
-// Credentials come from env vars (set on Netlify, from the Client Admin Portal
-// → Configurations → Development tab). This module is the one seam the rest of
-// XAPPX goes through to reach the Twin Vault, so the SDK version/host is swapped
-// in exactly one place.
+// Server-side Twin Vault REST client.
+//
+// Auth is a single secret key sent as the `x-vault-secret-key` header; the Vault
+// API resolves it to the owning user's vault, so no userId is ever sent. That
+// key is a full-access credential, so this runs SERVER-SIDE ONLY — never in the
+// browser. This module is the one seam the rest of XAPPX goes through, so the
+// base URL / auth lives in exactly one place.
+//
+// Docs: GET https://vaultapi.twinprotocol.ai/api/v1/instructions?format=markdown
 
-import Vault from "vault-sdk-staging";
+const DEFAULT_BASE = "https://vaultapi.twinprotocol.ai/api/v1";
 
-/** True only when all required Vault credentials are present. */
+/** True only when the Vault secret key is present. */
 export function vaultConfigured() {
-  return Boolean(
-    process.env.VAULT_ACCESS_KEY &&
-    process.env.VAULT_SECRET_KEY &&
-    process.env.VAULT_CLIENT_API_KEY &&
-    process.env.VAULT_BASE_URL,
-  );
+  return Boolean(process.env.VAULT_SECRET_KEY);
 }
 
-let client = null;
+function baseUrl() {
+  return (process.env.VAULT_BASE_URL || DEFAULT_BASE).replace(/\/+$/, "");
+}
 
-/** Lazily construct a single Vault client, or null if not configured. */
-export function getVault() {
-  if (!vaultConfigured()) return null;
-  if (!client) {
-    client = new Vault({
-      VAULT_ACCESS_KEY: process.env.VAULT_ACCESS_KEY,
-      VAULT_SECRET_KEY: process.env.VAULT_SECRET_KEY,
-      VAULT_CLIENT_API_KEY: process.env.VAULT_CLIENT_API_KEY,
-      VAULT_BASE_URL: process.env.VAULT_BASE_URL,
-      VAULT_WS_URL: process.env.VAULT_WS_URL, // optional, for bot chat later
-    });
+/** GET a Vault endpoint and return its `data`, or throw with the API message. */
+export async function vaultGet(path, query = {}) {
+  if (!vaultConfigured()) throw new Error("vault_not_configured");
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(query)) {
+    if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
   }
-  return client;
+  const qs = params.toString();
+  const url = `${baseUrl()}${path}${qs ? `?${qs}` : ""}`;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(url, {
+      headers: { "x-vault-secret-key": process.env.VAULT_SECRET_KEY, accept: "application/json" },
+      signal: ctrl.signal,
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok || !body || body.success === false) {
+      const err = new Error((body && body.message) || `vault_http_${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    return body.data;
+  } finally {
+    clearTimeout(timer);
+  }
 }

@@ -10,16 +10,16 @@ These run server-side only. Set their secrets as **Netlify environment variables
 | `LLM_MODEL` | optional | Defaults to a Haiku model. |
 
 ## `vault` — Twin Vault data layer (read-only MVP)
-Credentials come from the **Client Admin Portal → Configurations → Development tab**.
-The Vault SDK signs every request with the secret, so it must stay server-side.
+Calls the Twin Vault REST API (`https://vaultapi.twinprotocol.ai/api/v1`) with a
+single secret key in the `x-vault-secret-key` header. That key is full-access,
+so it stays server-side. Mint the key in the vault app → **Secret Keys** (it's
+shown once). Docs: `GET /instructions?format=markdown`.
 
 | Env var | Required | Notes |
 | --- | --- | --- |
-| `VAULT_ACCESS_KEY` | yes | From the admin portal. |
-| `VAULT_SECRET_KEY` | yes | Signing secret — server-side only, never expose. |
-| `VAULT_CLIENT_API_KEY` | yes | From the admin portal. |
-| `VAULT_BASE_URL` | yes | The API base URL (https://…) — NOT `vault.twns.ai` (that's the app UI). |
-| `VAULT_WS_URL` | optional | `wss://…`, for live bot chat (later). |
-| `VAULT_PROXY_TOKEN` | to enable | A shared secret the caller must send as `Authorization: Bearer …`. Until it's set (and until XAPPX session auth is wired), the endpoint stays disabled so it isn't an open proxy. |
+| `VAULT_SECRET_KEY` | yes | The `vlt-sk-…` key — server-side only, never expose. This is the only Vault credential needed. |
+| `VAULT_BASE_URL` | optional | Defaults to `https://vaultapi.twinprotocol.ai/api/v1`. Override only for another environment. |
+| `VAULT_PROXY_TOKEN` | to enable | A shared secret the caller must send as `Authorization: Bearer …` (make one with `openssl rand -hex 32`). Until it's set (and until XAPPX session auth is wired), the endpoint stays disabled so it isn't an open proxy. |
 
 Behavior before setup: `vault` returns `{ "configured": false }` and touches nothing.
+Read actions: `profile`, `storage`, `files`, `folders`, `folder`, `folderFiles`, `search`, `favorites`.
