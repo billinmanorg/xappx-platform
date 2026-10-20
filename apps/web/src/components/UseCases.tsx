@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { fadeUp, stagger, inView } from "../lib/motion";
 import xappxShot from "../assets/usecases/xappx.webp";
 import hiringShot from "../assets/usecases/hiringpulse.webp";
+import magicShot from "../assets/usecases/magic.webp";
 import "./UseCases.css";
 
 type App = {
@@ -23,7 +24,7 @@ const APPS: App[] = [
     desc: "Describe the app you want to a guide named XAPPY and it turns the idea into a build plan — no technical spec required.",
   },
   {
-    name: "Magic Confidence Quest", cat: "Gamified Learning · Rewards", cta: "Try the free lessons ↗", accent: "#8A73FF",
+    name: "Magic Confidence Quest", cat: "Gamified Learning · Rewards", img: magicShot, href: "https://www.kidsdomagic.com", cta: "Try the free lessons ↗",
     desc: "Kids learn real magic tricks and build public-speaking confidence across 80 challenges, with a parent progress report. Built for KidsDoMagic.",
   },
   {
