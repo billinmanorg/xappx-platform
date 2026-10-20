@@ -3,6 +3,10 @@ import { fadeUp, stagger, inView } from "../lib/motion";
 import xappxShot from "../assets/usecases/xappx.webp";
 import hiringShot from "../assets/usecases/hiringpulse.webp";
 import magicShot from "../assets/usecases/magic.webp";
+import twinderShot from "../assets/usecases/twinder.webp";
+import theLightShot from "../assets/usecases/thelight.webp";
+import jobsShot from "../assets/usecases/jobs.webp";
+import natashaShot from "../assets/usecases/natasha.webp";
 import "./UseCases.css";
 
 type App = {
@@ -28,12 +32,28 @@ const APPS: App[] = [
     desc: "Kids learn real magic tricks and build public-speaking confidence across 80 challenges, with a parent progress report. Built for KidsDoMagic.",
   },
   {
-    name: "San Diego Home Buyers", cat: "Real Estate · Lead Capture", cta: "Open the site ↗", accent: "#2bd4a8",
-    desc: "Walks a visitor from browsing listings to a pre-approval letter — affordability calculator, text alerts, English and Spanish — and routes every step to the agent.",
-  },
-  {
     name: "HiringPulse", cat: "Recruitment · AI Hiring", img: hiringShot, href: "https://hiringpulse.in", cta: "Open the site ↗",
     desc: "One platform for hiring and getting hired — AI-matched roles and candidates across 10+ industries.",
+  },
+  {
+    name: "Twinder", cat: "Dating · Connection", img: twinderShot,
+    desc: "Let your AI twin break the ice — it opens on shared interests, and you decide where it goes.",
+  },
+  {
+    name: "The Light", cat: "Community · Events", img: theLightShot,
+    desc: "A membership community and global event experience where your personal Vault always stays yours.",
+  },
+  {
+    name: "Job by TWIN", cat: "Careers · Recruitment", img: jobsShot,
+    desc: "Candidates own their career evidence and AI makes better introductions — with human review first.",
+  },
+  {
+    name: "Natasha Graziano", cat: "Creator Membership", img: natashaShot,
+    desc: "A creator membership experience — explore the library, talk to Natasha's Twin, keep your journey in a personal Vault.",
+  },
+  {
+    name: "San Diego Home Buyers", cat: "Real Estate · Lead Capture", cta: "Open the site ↗", accent: "#2bd4a8",
+    desc: "Walks a visitor from browsing listings to a pre-approval letter — affordability calculator, text alerts, English and Spanish — and routes every step to the agent.",
   },
   {
     name: "Events platform", cat: "Events", accent: "#e0a93f", soon: true,
