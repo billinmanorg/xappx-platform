@@ -24,7 +24,7 @@ export function IndustryEntry() {
       <div className="container">
         <motion.div variants={stagger(0.08)} initial="hidden" whileInView="show" viewport={inView} className="ind__head">
           <motion.p className="eyebrow" variants={fadeUp}>Start where you work</motion.p>
-          <motion.h2 variants={fadeUp}>Pick your industry — XAPPX already knows its problems.</motion.h2>
+          <motion.h2 variants={fadeUp}>Pick your industry. XAPPX already knows its problems.</motion.h2>
         </motion.div>
 
         <motion.div className="ind__grid" variants={stagger(0.05)} initial="hidden" whileInView="show" viewport={inView}>

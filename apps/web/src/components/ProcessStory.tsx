@@ -16,7 +16,7 @@ export function ProcessStory() {
       <div className="container">
         <motion.div variants={stagger(0.08)} initial="hidden" whileInView="show" viewport={inView} className="story__head">
           <motion.p className="eyebrow" variants={fadeUp}>From problem to prototype</motion.p>
-          <motion.h2 variants={fadeUp}>You describe the problem. XAPPX builds toward the solution — in front of you.</motion.h2>
+          <motion.h2 variants={fadeUp}>You describe the problem. XAPPX builds toward the solution, right in front of you.</motion.h2>
         </motion.div>
 
         <motion.ol className="story__track" variants={stagger(0.1)} initial="hidden" whileInView="show" viewport={inView}>

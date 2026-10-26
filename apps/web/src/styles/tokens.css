@@ -12,7 +12,7 @@
   /* text */
   --text: #EEF2F8;        /* primary text */
   --text-dim: #93A0B4;    /* muted text */
-  --text-faint: #5C6A80;  /* faint / captions */
+  --text-faint: #808EA6;  /* faint / captions (lifted for readability) */
 
   /* lines & accents */
   --border: #1C2534;

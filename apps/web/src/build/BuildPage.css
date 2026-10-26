@@ -93,4 +93,4 @@
 .bp__outcomes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 22px; }
 .bp__outcomes-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); margin-right: 6px; }
 .bp__cta { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
-.bp__note { margin-top: 16px; font-size: var(--fs-xs); color: var(--text-faint); max-width: 60ch; }
+.bp__note { margin-top: 16px; font-size: var(--fs-xs); color: var(--text-dim); max-width: 60ch; }

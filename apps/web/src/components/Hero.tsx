@@ -14,7 +14,7 @@ export function Hero() {
           </motion.h1>
           <motion.p className="lede hero__lede" variants={fadeUp}>
             Tell XAPPX what isn't working. We help identify the opportunity, design the
-            solution, and generate an intelligent working prototype — no tech knowledge needed.
+            solution, and generate an intelligent working prototype. No tech knowledge needed.
           </motion.p>
           <motion.div className="hero__cta" variants={fadeUp}>
             <a className="btn btn-primary" href="/build">Build my solution</a>
