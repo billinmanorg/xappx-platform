@@ -19,7 +19,7 @@ export function PrototypeShell({ spec, onBack, onRestart, onUnlock }: { spec: Pr
     <div className="ps">
       <div className="ps__bar">
         <span className="ps__dots"><i /><i /><i /></span>
-        <span className="ps__url">app.xappx.io/{spec.appName.toLowerCase().replace(/\s+/g, "-")}</span>
+        <span className="ps__url">app.xappx.ai/{spec.appName.toLowerCase().replace(/\s+/g, "-")}</span>
         <span className="ps__badge">Prototype · sample data</span>
       </div>
 

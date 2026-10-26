@@ -55,7 +55,7 @@ export function HeroWorkflowDemo() {
       <div className="demo__win" aria-hidden="true">
         <div className="demo__bar">
           <i /><i /><i />
-          <span className="demo__url">xappx.com/build</span>
+          <span className="demo__url">xappx.ai/build</span>
         </div>
 
         <div className="demo__body">
