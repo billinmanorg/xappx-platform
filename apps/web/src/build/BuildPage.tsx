@@ -4,12 +4,10 @@ import { getDiscoveryService } from "./liveService";
 import type { Challenge, Industry, PrototypeSpec, SolutionDiscovery } from "./types";
 import { emptyDiscovery } from "./types";
 import { PrototypeShell } from "./PrototypeShell";
-import { PlanComparison } from "./PlanComparison";
 import { LeadForm } from "./LeadForm";
-import type { PlanId } from "./plans";
 import "./BuildPage.css";
 
-type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype" | "plans" | "lead";
+type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype" | "lead";
 const svc = getDiscoveryService();
 const KEY = "xappx_discovery";
 // The industry the flow is focused on for now (Bill's direction). Change or
@@ -43,7 +41,6 @@ export function BuildPage() {
   const [proc, setProc] = useState(0);
   const [procLabels, setProcLabels] = useState<readonly string[]>(PROC);
   const [proto, setProto] = useState<PrototypeSpec | null>(null);
-  const [chosenPlan, setChosenPlan] = useState<PlanId>("standard");
   const started = useRef(false);
 
   useEffect(() => { try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch { /* ignore */ } }, [d]);
@@ -111,7 +108,7 @@ export function BuildPage() {
     () => industries.filter((i) => i.label.toLowerCase().includes(search.trim().toLowerCase())),
     [industries, search],
   );
-  const stepNo = { industry: 1, challenge: 2, stakeholders: 3, outcomes: 4, processing: 4, blueprint: 5, prototype: 5, plans: 5, lead: 5 }[stage];
+  const stepNo = { industry: 1, challenge: 2, stakeholders: 3, outcomes: 4, processing: 4, blueprint: 5, prototype: 5, lead: 5 }[stage];
 
   return (
     <div className="build">
@@ -137,7 +134,7 @@ export function BuildPage() {
               key={stage}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               transition={{ duration: reduce ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className={"build__panel" + (stage === "prototype" || stage === "plans" || stage === "lead" ? " build__panel--wide" : "")}
+              className={"build__panel" + (stage === "prototype" || stage === "lead" ? " build__panel--wide" : "")}
             >
               {stage === "industry" && (
                 <>
@@ -246,15 +243,11 @@ export function BuildPage() {
               )}
 
               {stage === "prototype" && proto && (
-                <PrototypeShell spec={proto} onBack={() => setStage("blueprint")} onRestart={restart} onUnlock={() => setStage("plans")} />
-              )}
-
-              {stage === "plans" && (
-                <PlanComparison d={d} onBack={() => setStage(proto ? "prototype" : "blueprint")} onChoose={(id) => { setChosenPlan(id); setStage("lead"); }} />
+                <PrototypeShell spec={proto} onBack={() => setStage("blueprint")} onRestart={restart} onUnlock={() => setStage("lead")} />
               )}
 
               {stage === "lead" && (
-                <LeadForm d={d} plan={chosenPlan} onBack={() => setStage("plans")} onRestart={restart} />
+                <LeadForm d={d} onBack={() => setStage(proto ? "prototype" : "blueprint")} onRestart={restart} />
               )}
             </motion.section>
           </AnimatePresence>
