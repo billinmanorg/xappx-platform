@@ -15,7 +15,7 @@
     <!-- Hidden static form so Netlify Forms registers it at build time; the
          React lead form posts to it. Set the notification email (xappx@gmail.com)
          in Netlify -> Forms -> Notifications. -->
-    <form name="xappx-lead" netlify netlify-honeypot="bot-field" hidden>
+    <form name="xappx-lead" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
       <input type="text" name="name" />
       <input type="email" name="email" />
       <input type="text" name="company" />
