@@ -378,7 +378,7 @@ describe("the guided discovery funnel (Narinder's industry -> problem flow)", ()
     const r = await form("POST", "/apps", {
       client_id: "c1", name: "Custom Prob", slug: "custom-prob",
       application_type: "healthcare", problem: "Cut no-shows for clinic appointments",
-      problem_source: "custom",
+      problem_source: "custom", roles: "Patients\nStaff",
       discovery_answers: JSON.stringify([{ question: "Booking channel?", answer: "SMS" }]),
     });
     assert.equal(r.status, 302);
@@ -456,5 +456,30 @@ describe("the login page (replaces the browser's Basic Auth popup)", () => {
       delete process.env.FACTORY_USER;
       delete process.env.FACTORY_PASS;
     }
+  });
+});
+
+describe("wizard field rules (India QA #10/#11/#12)", () => {
+  const base_ = { client_id: "c1", name: "Rules", slug: "rules", application_type: "retail", problem: "leads" };
+  test("an app without any user types is refused with a field-specific message", async () => {
+    const r = await form("POST", "/apps", { ...base_ });
+    assert.equal(r.status, 400);
+    assert.match(await r.text(), /Users: add at least one user type/);
+  });
+  test("an over-long app name is refused with a field-specific message", async () => {
+    const r = await form("POST", "/apps", { ...base_, roles: "Members", name: "x".repeat(81) });
+    assert.equal(r.status, 400);
+    assert.match(await r.text(), /App name: keep it to 80 characters/);
+  });
+  test("an over-long discovery answer is refused and names the field", async () => {
+    const r = await form("POST", "/apps", { ...base_, roles: "Members", workflows: "w".repeat(1001) });
+    assert.equal(r.status, 400);
+    assert.match(await r.text(), /Discovery \(workflows\)/);
+  });
+  test("the new-app form carries the same limits client-side", async () => {
+    const html = await (await get("/apps/new")).text();
+    assert.match(html, /id="roles"[^>]*required[^>]*maxlength="500"/);
+    assert.match(html, /id="name"[^>]*maxlength="80"/);
+    assert.match(html, /name="user_goal"[^>]*maxlength="1000"/);
   });
 });

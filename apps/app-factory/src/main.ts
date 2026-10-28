@@ -307,9 +307,20 @@ export function createApp() {
       if (!discovery.problem) {
         return reshow(400, "Choose or describe the problem you want to solve.");
       }
+      if (!roles.trim()) {
+        return reshow(400, "Users: add at least one user type (one per line).");
+      }
       if (audience_model && !isAudienceModel(audience_model)) {
         return reshow(400, "Audience model must be B2C, B2B, or B2B2C.");
       }
+      // Field-specific length limits (QA #12). The form enforces the same caps
+      // client-side; these keep a hand-crafted POST honest.
+      const over = (s: string, n: number) => s.trim().length > n;
+      if (over(name, 80)) return reshow(400, "App name: keep it to 80 characters or fewer.");
+      if (over(discovery.problem, 300)) return reshow(400, "Problem: keep it to 300 characters or fewer.");
+      if (over(roles, 500)) return reshow(400, "Users: keep it to 500 characters (one user type per line) or fewer.");
+      const longAnswer = (["user_goal", "admin_goal", "onboarding", "workflows"] as const).find((k) => over(discovery[k], 1000));
+      if (longAnswer) return reshow(400, `Discovery (${longAnswer.replace("_", " ")}): keep each answer to 1,000 characters or fewer.`);
       const intake = {
         roles: roles.split(/\r?\n/).map((r) => r.trim()).filter(Boolean),
         ...discovery,

@@ -569,7 +569,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
     .join("");
   const discovery = DISCOVERY_QUESTIONS
     .map((q) => `<div class="field"><label for="${q.key}">${esc(q.label)}</label>
-      <textarea id="${q.key}" name="${q.key}" placeholder="${esc(q.placeholder)}">${v(q.key as keyof NewAppValues)}</textarea></div>`)
+      <textarea id="${q.key}" name="${q.key}" maxlength="1000" placeholder="${esc(q.placeholder)}">${v(q.key as keyof NewAppValues)}</textarea></div>`)
     .join("");
 
   const stepper = ["Industry", "Problem", "Users", "Discovery", "Launch"]
@@ -622,7 +622,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
           ${problemOpts}</select>
         <span class="hint" id="probstatus">This shapes the recommended modules and defaults. You can change everything later.</span></div>
       <div class="field" id="problem_other_wrap" hidden><label for="problem_other">Describe the problem</label>
-        <textarea id="problem_other" placeholder="In a sentence or two, what should this app solve?"></textarea></div>
+        <textarea id="problem_other" maxlength="300" placeholder="In a sentence or two, what should this app solve?"></textarea></div>
       <div id="followups"></div>
       <input type="hidden" id="problem_source" name="problem_source" value="">
       <input type="hidden" id="discovery_answers" name="discovery_answers" value="">
@@ -630,7 +630,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
 
     <section class="step" data-step="2" hidden>
       <div class="field"><label for="roles">Users — Who uses this app?</label>
-        <textarea id="roles" name="roles" style="min-height:132px" placeholder="One user type per line — e.g. Members, Staff, Customers">${v("roles")}</textarea>
+        <textarea id="roles" name="roles" style="min-height:132px" required maxlength="500" placeholder="One user type per line — e.g. Members, Staff, Customers">${v("roles")}</textarea>
         <span class="hint">These are your user types. Suggested from your audience model — add or remove any, one per line.</span>
         <div class="rolechips" id="rolehints"></div></div>
     </section>
@@ -644,9 +644,9 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       <div class="summary" id="review" style="margin-bottom:16px"></div>
       ${clientField}
       <div class="field"><label for="name">App name</label>
-        <input id="name" name="name" value="${v("name")}" placeholder="Aurora" required></div>
+        <input id="name" name="name" value="${v("name")}" placeholder="Aurora" required maxlength="80"></div>
       <div class="field"><label for="slug">Slug</label>
-        <input id="slug" name="slug" value="${v("slug")}" placeholder="aurora" pattern="[a-z0-9]+(-[a-z0-9]+)*" required>
+        <input id="slug" name="slug" value="${v("slug")}" placeholder="aurora" pattern="[a-z0-9]+(-[a-z0-9]+)*" required maxlength="40">
         <span class="hint">Lowercase words with hyphens. Used in the URL: <code>/&lt;slug&gt;</code></span></div>
       ${catalog.length ? `<div class="field"><label>Modules to launch with</label><div class="checks">${checks}</div>
         <span class="hint">Pre-selected for the problem you chose — adjust freely.</span></div>` : ""}
@@ -689,12 +689,17 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       var o=problemSel.options[problemSel.selectedIndex];
       return o&&o.value?o.text:'';
     }
+    // Validate the CURRENT step before moving on, so a missing or over-long field
+    // is caught right where it is — not after all five steps (QA #10/#11/#12).
     function valid(){
       if(i===0 && !industrySel.value){industrySel.reportValidity();return false;}
       if(i===problemStep){
         if(!problemSel.value){problemSel.reportValidity();return false;}
-        if(isOther() && !otherBox.value.trim()){otherBox.focus();return false;}
+        if(isOther() && !otherBox.value.trim()){otherBox.setCustomValidity('Describe the problem to continue.');otherBox.reportValidity();otherBox.setCustomValidity('');return false;}
       }
+      if(i===2 && !roles.value.trim()){roles.setCustomValidity('Add at least one user type to continue.');roles.reportValidity();roles.setCustomValidity('');return false;}
+      var fields=steps[i].querySelectorAll('input,textarea,select');
+      for(var f=0;f<fields.length;f++){ if(!fields[f].checkValidity()){fields[f].reportValidity();return false;} }
       return true;
     }
     next.addEventListener('click',function(){if(valid()&&i<launchStep){i++;show();}});
