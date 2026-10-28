@@ -94,7 +94,14 @@ before(async () => {
   base = `http://127.0.0.1:${(console_.address() as { port: number }).port}`;
 });
 
-after(() => { console_.close(); source.close(); });
+// Destroy idle keep-alive sockets (left by fetch) before closing, otherwise
+// server.close() waits on them forever and the test process never exits.
+after(async () => {
+  for (const srv of [console_, source]) {
+    srv.closeAllConnections();
+    await new Promise<void>((res) => srv.close(() => res()));
+  }
+});
 
 const get = (p: string) => fetch(base + p);
 const form = (m: string, p: string, obj: Record<string, string>) =>
@@ -393,6 +400,58 @@ describe("the password gate (for public deploys)", () => {
       const wrong = { authorization: "Basic " + Buffer.from("bill:nope").toString("base64") };
       assert.equal((await fetch(base + "/", { headers: wrong })).status, 401);
       assert.equal((await fetch(base + "/healthz")).status, 200); // health stays public
+    } finally {
+      delete process.env.FACTORY_USER;
+      delete process.env.FACTORY_PASS;
+    }
+  });
+});
+
+describe("the login page (replaces the browser's Basic Auth popup)", () => {
+  test("shows a form, explains a wrong password inline, and sets a session cookie on success", async () => {
+    process.env.FACTORY_USER = "bill";
+    process.env.FACTORY_PASS = "s3cret-demo";
+    try {
+      // Blocked requests get our sign-in page, not a bare popup.
+      const blocked = await fetch(base + "/apps");
+      assert.equal(blocked.status, 401);
+      assert.equal(blocked.headers.get("www-authenticate"), null);
+      assert.match(await blocked.text(), /Sign in to XAPPX Factory/);
+      const form = await fetch(base + "/login");
+      assert.equal(form.status, 200);
+      await form.text(); // always drain bodies so keep-alive sockets don't hold the server open at teardown
+
+      const post = (body: Record<string, string>) =>
+        fetch(base + "/login", {
+          method: "POST",
+          redirect: "manual",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams(body).toString(),
+        });
+
+      const bad = await post({ user: "bill", pass: "nope" });
+      assert.equal(bad.status, 401);
+      assert.match(await bad.text(), /Incorrect username or password/); // the inline error the QA team asked for
+
+      const ok = await post({ user: "bill", pass: "s3cret-demo", next: "/apps" });
+      assert.equal(ok.status, 303);
+      assert.equal(ok.headers.get("location"), "/apps");
+      const setCookie = ok.headers.get("set-cookie") ?? "";
+      assert.match(setCookie, /^factory_session=/);
+      assert.match(setCookie, /HttpOnly/);
+      await ok.text();
+      const session = setCookie.split(";")[0]!;
+      const withCookie = await fetch(base + "/apps", { headers: { cookie: session } });
+      assert.equal(withCookie.status, 200);
+      await withCookie.text();
+      const tampered = await fetch(base + "/apps", { headers: { cookie: "factory_session=dGFtcGVyZWQ.bad" } });
+      assert.equal(tampered.status, 401);
+      await tampered.text();
+
+      // An open-redirect attempt is ignored.
+      const evil = await post({ user: "bill", pass: "s3cret-demo", next: "//evil.example" });
+      assert.equal(evil.headers.get("location"), "/");
+      await evil.text();
     } finally {
       delete process.env.FACTORY_USER;
       delete process.env.FACTORY_PASS;

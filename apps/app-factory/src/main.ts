@@ -1,9 +1,9 @@
 import express from "express";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { timingSafeEqual } from "node:crypto";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { timingSafeEqual, createHmac } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, isKnownType, isAudienceModel, isStatus, isModuleStatus, PROBLEMS, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, loginPage, isKnownType, isAudienceModel, isStatus, isModuleStatus, PROBLEMS, type FactoryStats } from "./render.js";
 import { llmEnabled, suggestProblems, followUpQuestions } from "./llm.js";
 
 /**
@@ -20,20 +20,73 @@ function timingEqual(a: string, b: string): boolean {
   return x.length === y.length && timingSafeEqual(x, y);
 }
 
-function basicAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+/** True when the shared factory credentials match (constant-time). */
+function credentialsOk(u: string, p: string): boolean {
   const user = process.env.FACTORY_USER;
   const pass = process.env.FACTORY_PASS;
-  if (!user || !pass) return next();
+  return !!user && !!pass && timingEqual(u, user) && timingEqual(p, pass);
+}
+
+/*
+ * Session cookie for the login page. The value is `<base64url payload>.<hmac>`
+ * where payload = "user.issuedAt". Signed with FACTORY_SESSION_SECRET, or — so
+ * no new env var is required — a key derived from FACTORY_PASS. Sessions last
+ * 12 hours; tampering with the payload invalidates the signature.
+ */
+const SESSION_COOKIE = "factory_session";
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+function sessionSecret(): string {
+  return (
+    process.env.FACTORY_SESSION_SECRET ??
+    createHmac("sha256", "xappx-factory-session").update(process.env.FACTORY_PASS ?? "").digest("hex")
+  );
+}
+function signSession(payload: string): string {
+  return createHmac("sha256", sessionSecret()).update(payload).digest("base64url");
+}
+function makeSession(user: string): string {
+  const payload = `${user}.${Date.now()}`;
+  return `${Buffer.from(payload).toString("base64url")}.${signSession(payload)}`;
+}
+/** Returns the signed-in user from the cookie header, or null. */
+function readSession(cookieHeader: string | undefined): string | null {
+  const m = new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`).exec(cookieHeader ?? "");
+  if (!m) return null;
+  const [b64, sig] = (m[1] ?? "").split(".");
+  if (!b64 || !sig) return null;
+  const payload = Buffer.from(b64, "base64url").toString("utf8");
+  if (!timingEqual(signSession(payload), sig)) return null;
+  const dot = payload.lastIndexOf(".");
+  const user = payload.slice(0, dot);
+  const issued = Number(payload.slice(dot + 1));
+  if (!user || !Number.isFinite(issued) || Date.now() - issued > SESSION_TTL_MS) return null;
+  return user;
+}
+/** Only allow redirecting back to a same-origin path after sign-in. */
+function safeNext(v: unknown): string {
+  return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : "/";
+}
+
+/**
+ * The gate. Accepts a Basic Auth header (automation, tests) or a valid session
+ * cookie (the login page). Anything else gets 401 with the sign-in form — no
+ * WWW-Authenticate header, so the browser shows our page, not its popup.
+ */
+function gate(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const user = process.env.FACTORY_USER;
+  const pass = process.env.FACTORY_PASS;
+  if (!user || !pass) return next(); // local dev: open
   const match = /^Basic (.+)$/.exec(req.header("authorization") ?? "");
   if (match) {
     const decoded = Buffer.from(match[1] ?? "", "base64").toString("utf8");
     const sep = decoded.indexOf(":");
     const u = sep === -1 ? decoded : decoded.slice(0, sep);
     const p = sep === -1 ? "" : decoded.slice(sep + 1);
-    if (timingEqual(u, user) && timingEqual(p, pass)) return next();
+    if (credentialsOk(u, p)) return next();
   }
-  res.set("WWW-Authenticate", 'Basic realm="XAPPX Factory", charset="UTF-8"');
-  res.status(401).type("text/plain").send("Authentication required.");
+  if (readSession(req.header("cookie")) === user) return next();
+  res.status(401).type("html").send(loginPage(undefined, req.originalUrl));
 }
 
 const TOKENS =
@@ -52,7 +105,31 @@ export function createApp() {
   app.use(express.json());
 
   app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
-  app.use(basicAuth);
+
+  // ---- sign in / out (public) ----
+  app.get("/login", (req, res) => {
+    res.type("html").send(loginPage(undefined, safeNext(req.query.next)));
+  });
+  app.post("/login", (req, res) => {
+    const u = String(req.body.user ?? "");
+    const p = String(req.body.pass ?? "");
+    const nextUrl = safeNext(req.body.next);
+    if (!credentialsOk(u, p)) {
+      return res.status(401).type("html").send(loginPage("Incorrect username or password.", nextUrl));
+    }
+    const secure = req.secure || req.header("x-forwarded-proto") === "https";
+    res.setHeader(
+      "Set-Cookie",
+      `${SESSION_COOKIE}=${makeSession(u)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_MS / 1000}${secure ? "; Secure" : ""}`,
+    );
+    res.redirect(303, nextUrl);
+  });
+  app.post("/logout", (_req, res) => {
+    res.setHeader("Set-Cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+    res.redirect(303, "/login");
+  });
+
+  app.use(gate);
 
   app.get("/tokens.css", (_req, res) => {
     try {
@@ -405,7 +482,13 @@ function parseDiscoveryAnswers(v: unknown): Array<{ question: string; answer: st
   }
 }
 
-if (process.env.NODE_ENV !== "test") {
+// Only auto-listen when this file is the program entry (`node dist/src/main.js`).
+// The tests import createApp() and start their own server on a random port; an
+// extra listener here would keep the test process alive forever.
+const isEntry = (() => {
+  try { return import.meta.url === pathToFileURL(process.argv[1] ?? "").href; } catch { return false; }
+})();
+if (isEntry && process.env.NODE_ENV !== "test") {
   const port = Number(process.env.PORT ?? 8096);
   createApp().listen(port, () => console.log(`xappx-factory console on ${port}`));
 }

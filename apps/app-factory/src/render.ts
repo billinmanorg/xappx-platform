@@ -347,7 +347,7 @@ function layout(title: string, body: string, active = ""): string {
 <header class="top">
   <span class="wm">X<b>APP</b>X</span><span class="sep">/</span><span class="app">Factory</span>
   <span class="badge">internal</span>
-  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}<a class="ext" href="${siteBase()}">Website ↗</a></nav>
+  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}<a class="ext" href="${siteBase()}">Website ↗</a><form method="post" action="/logout" style="display:inline"><button type="submit" class="ext" style="background:none;border:0;cursor:pointer;font:inherit;color:inherit">Sign out</button></form></nav>
 </header>
 <main>${body}</main>
 <footer>XAPPX Factory — a pure API client over the platform services. This build uses a shared-password
@@ -878,4 +878,21 @@ function detailsPanel(app: Application): string {
 
 export function errorPage(status: number, message: string): string {
   return layout(String(status), `<div class="empty"><h1>${status}</h1><p>${esc(message)}</p><p><a href="/apps">← All apps</a></p></div>`);
+}
+
+/**
+ * Sign-in screen for the password gate: a real form with inline error messages
+ * instead of the browser's bare Basic Auth popup (which can't explain a failure).
+ */
+export function loginPage(error?: string, next = "/"): string {
+  return layout("Sign in", `<div class="empty" style="max-width:420px;margin:48px auto;text-align:left">
+  <h1>Sign in to XAPPX Factory</h1>
+  <p>Internal console. Enter the factory credentials to continue.</p>
+  ${error ? `<p role="alert" style="color:#ff6b6b;font-weight:600">${esc(error)}</p>` : ""}
+  <form method="post" action="/login" style="display:grid;gap:12px;margin-top:12px">
+    <input type="hidden" name="next" value="${esc(next)}">
+    <label>Username<br><input name="user" autocomplete="username" required autofocus></label>
+    <label>Password<br><input name="pass" type="password" autocomplete="current-password" required></label>
+    <button type="submit">Sign in</button>
+  </form></div>`);
 }
