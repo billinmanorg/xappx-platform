@@ -30,7 +30,7 @@ export function Nav() {
           ))}
         </nav>
         <div className="nav__actions">
-          <a className="nav__signin" href="https://app-factory-3jf3.onrender.com">Sign in</a>
+          <a className="nav__signin" href="/admin">Sign in</a>
           <a className="btn btn-primary nav__cta" href="/build">Build my solution</a>
         </div>
         <button
@@ -47,7 +47,7 @@ export function Nav() {
           {LINKS.map((l) => (
             <a key={l.href} href={l.href} onClick={() => setOpen(false)}>{l.label}</a>
           ))}
-          <a href="https://app-factory-3jf3.onrender.com">Sign in</a>
+          <a href="/admin">Sign in</a>
           <a className="btn btn-primary" href="/build" onClick={() => setOpen(false)}>Build my solution</a>
         </div>
       )}

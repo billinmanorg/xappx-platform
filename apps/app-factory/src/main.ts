@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { timingSafeEqual, createHmac } from "node:crypto";
 import * as api from "./api.js";
-import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, loginPage, isKnownType, isAudienceModel, isStatus, isModuleStatus, PROBLEMS, type FactoryStats } from "./render.js";
+import { dashboardPage, appsPage, modulesPage, moduleEditPage, newPage, editPage, errorPage, loginPage, base, isKnownType, isAudienceModel, isStatus, isModuleStatus, PROBLEMS, type FactoryStats } from "./render.js";
 import { llmEnabled, suggestProblems, followUpQuestions } from "./llm.js";
 
 /**
@@ -65,7 +65,7 @@ function readSession(cookieHeader: string | undefined): string | null {
 }
 /** Only allow redirecting back to a same-origin path after sign-in. */
 function safeNext(v: unknown): string {
-  return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : "/";
+  return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : base() + "/";
 }
 
 /**
@@ -120,13 +120,13 @@ export function createApp() {
     const secure = req.secure || req.header("x-forwarded-proto") === "https";
     res.setHeader(
       "Set-Cookie",
-      `${SESSION_COOKIE}=${makeSession(u)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_MS / 1000}${secure ? "; Secure" : ""}`,
+      `${SESSION_COOKIE}=${makeSession(u)}; Path=${base() || "/"}; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_MS / 1000}${secure ? "; Secure" : ""}`,
     );
     res.redirect(303, nextUrl);
   });
   app.post("/logout", (_req, res) => {
-    res.setHeader("Set-Cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
-    res.redirect(303, "/login");
+    res.setHeader("Set-Cookie", `${SESSION_COOKIE}=; Path=${base() || "/"}; HttpOnly; SameSite=Lax; Max-Age=0`);
+    res.redirect(303, `${base()}/login`);
   });
 
   app.use(gate);
@@ -211,7 +211,7 @@ export function createApp() {
       const q = new URLSearchParams();
       if (status && !isModuleStatus(status)) {
         q.set("err", "That is not a valid module state.");
-        return res.redirect(`/modules/${encodeURIComponent(code)}?${q.toString()}`);
+        return res.redirect(`${base()}/modules/${encodeURIComponent(code)}?${q.toString()}`);
       }
       const r = await api.updateModule(code, {
         status,
@@ -221,7 +221,7 @@ export function createApp() {
       });
       if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Could not save the module.");
       else q.set("ok", "Module saved.");
-      res.redirect(`/modules/${encodeURIComponent(code)}?${q.toString()}`);
+      res.redirect(`${base()}/modules/${encodeURIComponent(code)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }
@@ -338,7 +338,7 @@ export function createApp() {
       if (created.status >= 400) {
         return reshow(created.status, (created.data as any)?.detail ?? "Could not create the app.");
       }
-      res.redirect(`/apps/${encodeURIComponent(slug)}`);
+      res.redirect(`${base()}/apps/${encodeURIComponent(slug)}`);
     } catch (e) {
       next(e);
     }
@@ -368,7 +368,7 @@ export function createApp() {
       const q = new URLSearchParams();
       if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "The module could not be changed.");
       else q.set("ok", `${code} switched ${enabled ? "on" : "off"}.`);
-      res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+      res.redirect(`${base()}/apps/${encodeURIComponent(slug)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }
@@ -381,7 +381,7 @@ export function createApp() {
       const q = new URLSearchParams();
       if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Publish failed.");
       else q.set("ok", "App published.");
-      res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+      res.redirect(`${base()}/apps/${encodeURIComponent(slug)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }
@@ -392,7 +392,7 @@ export function createApp() {
       const slug = req.params.slug;
       const application_type = String(req.body.application_type ?? "").trim();
       const audience_model = String(req.body.audience_model ?? "").trim();
-      const back = (q: URLSearchParams) => res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+      const back = (q: URLSearchParams) => res.redirect(`${base()}/apps/${encodeURIComponent(slug)}?${q.toString()}`);
       if (application_type && !isKnownType(application_type)) {
         const q = new URLSearchParams(); q.set("err", "That industry is not recognised.");
         return back(q);
@@ -433,22 +433,22 @@ export function createApp() {
       const q = new URLSearchParams();
       if (!isStatus(status)) {
         q.set("err", "That is not a valid lifecycle status.");
-        return res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+        return res.redirect(`${base()}/apps/${encodeURIComponent(slug)}?${q.toString()}`);
       }
       const r = await api.setStatus(slug, status);
       if (r.status >= 400) q.set("err", (r.data as any)?.detail ?? "Could not change the status.");
       else q.set("ok", status === "published" ? "App published." : `Status set to ${status.replace(/_/g, " ")}.`);
-      res.redirect(`/apps/${encodeURIComponent(slug)}?${q.toString()}`);
+      res.redirect(`${base()}/apps/${encodeURIComponent(slug)}?${q.toString()}`);
     } catch (e) {
       next(e);
     }
   });
 
   // ---- backward-compatible redirects from the old "brand" URLs ----
-  app.get("/new", (_req, res) => res.redirect(301, "/apps/new"));
-  app.get("/brands", (_req, res) => res.redirect(301, "/apps"));
+  app.get("/new", (_req, res) => res.redirect(301, `${base()}/apps/new`));
+  app.get("/brands", (_req, res) => res.redirect(301, `${base()}/apps`));
   app.get("/brands/:slug", (req, res) => res.redirect(301, `/apps/${encodeURIComponent(req.params.slug)}`));
-  app.post("/brands", (_req, res) => res.redirect(307, "/apps")); // 307 preserves the POST body
+  app.post("/brands", (_req, res) => res.redirect(307, `${base()}/apps`)); // 307 preserves the POST body
 
   app.use((_req, res) => res.status(404).type("html").send(errorPage(404, "Page not found.")));
   app.use((err: unknown, _req: express.Request, res: express.Response, _n: express.NextFunction) => {
@@ -456,7 +456,15 @@ export function createApp() {
     res.status(502).type("html").send(errorPage(502, "The platform API could not be reached."));
   });
 
-  return app;
+  const prefix = base();
+  if (!prefix) return app;
+  // Served under a base path (e.g. /admin behind the xappx.ai proxy). The health
+  // check stays at the service root for Render; the root redirects into the console.
+  const root = express();
+  root.get("/healthz", (_req, res) => res.json({ status: "ok" }));
+  root.get("/", (_req, res) => res.redirect(302, prefix + "/"));
+  root.use(prefix, app);
+  return root;
 }
 
 /** The module catalogue, from the registry endpoint. */

@@ -483,3 +483,32 @@ describe("wizard field rules (India QA #10/#11/#12)", () => {
     assert.match(html, /name="user_goal"[^>]*maxlength="1000"/);
   });
 });
+
+describe("serving under a base path (xappx.ai/admin via the Netlify proxy)", () => {
+  test("mounts at FACTORY_BASE_PATH, prefixes links and redirects, keeps /healthz at the root", async () => {
+    process.env.FACTORY_BASE_PATH = "/admin";
+    const { createApp } = await import("../src/main.js");
+    const srv = await new Promise<Server>((res) => { const s = createApp().listen(0, () => res(s)); });
+    const b = `http://127.0.0.1:${(srv.address() as { port: number }).port}`;
+    try {
+      assert.equal((await fetch(b + "/healthz")).status, 200); // Render's health check path
+      const login = await fetch(b + "/admin/login");
+      assert.equal(login.status, 200);
+      const html = await login.text();
+      assert.match(html, /action="\/admin\/login"/);
+      assert.match(html, /href="\/admin\/apps"/);
+      assert.match(html, /href="\/admin\/tokens\.css"/);
+      const r = await fetch(b + "/admin/new", { redirect: "manual" });
+      assert.equal(r.headers.get("location"), "/admin/apps/new");
+      await r.text();
+      const root = await fetch(b + "/", { redirect: "manual" });
+      assert.equal(root.headers.get("location"), "/admin/");
+      await root.text();
+      assert.equal((await fetch(b + "/apps")).status, 404); // nothing leaks outside the base path
+    } finally {
+      delete process.env.FACTORY_BASE_PATH;
+      srv.closeAllConnections();
+      await new Promise<void>((res) => srv.close(() => res()));
+    }
+  });
+});

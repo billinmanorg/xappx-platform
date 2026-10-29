@@ -9,6 +9,20 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Admin console under the public domain: xappx.ai/admin proxies to the
+# app-factory service (which serves itself under /admin via FACTORY_BASE_PATH).
+# Must come before the SPA catch-all. status 200 = transparent proxy.
+[[redirects]]
+  from = "/admin"
+  to = "https://app-factory-3jf3.onrender.com/admin/"
+  status = 200
+  force = true
+[[redirects]]
+  from = "/admin/*"
+  to = "https://app-factory-3jf3.onrender.com/admin/:splat"
+  status = 200
+  force = true
+
 # SPA routing so /build (and any client route) resolves to the app.
 # Function routes (/.netlify/functions/*) are handled before this.
 [[redirects]]

@@ -337,17 +337,20 @@ const STYLE = `
   .modrow .use b{display:block;font-family:var(--mono);font-size:20px;color:var(--white);font-weight:600}
 `;
 
+/** Base path the console is served under ("/admin" behind the xappx.ai proxy); "" locally and in tests. */
+export const base = () => (process.env.FACTORY_BASE_PATH ?? "").trim().replace(/\/+$/, "");
+
 function layout(title: string, body: string, active = ""): string {
   const nav = (href: string, label: string) =>
-    `<a href="${href}"${active === href ? ' class="on"' : ""}>${label}</a>`;
+    `<a href="${base()}${href}"${active === href ? ' class="on"' : ""}>${label}</a>`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)} · XAPPX Factory</title>
-<link rel="stylesheet" href="/tokens.css"><style>${STYLE}</style></head><body>
+<link rel="stylesheet" href="${base()}/tokens.css"><style>${STYLE}</style></head><body>
 <header class="top">
   <span class="wm">X<b>APP</b>X</span><span class="sep">/</span><span class="app">Factory</span>
   <span class="badge">internal</span>
-  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}<a class="ext" href="${siteBase()}">Website ↗</a><form method="post" action="/logout" style="display:inline"><button type="submit" class="ext" style="background:none;border:0;cursor:pointer;font:inherit;color:inherit">Sign out</button></form></nav>
+  <nav>${nav("/", "Dashboard")}${nav("/apps", "Apps")}${nav("/modules", "Modules")}${nav("/apps/new", "New app")}<a class="ext" href="${siteBase()}">Website ↗</a><form method="post" action="${base()}/logout" style="display:inline"><button type="submit" class="ext" style="background:none;border:0;cursor:pointer;font:inherit;color:inherit">Sign out</button></form></nav>
 </header>
 <main>${body}</main>
 <footer>XAPPX Factory — a pure API client over the platform services. This build uses a shared-password
@@ -373,10 +376,10 @@ export function dashboardPage(stats: FactoryStats, recent: Application[]): strin
 
   const recentRows = recent.length
     ? recent.slice(0, 6).map((a) =>
-        `<div class="appcard"><a href="/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
+        `<div class="appcard"><a href="${base()}/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
           <div class="meta"><div class="nm">${esc(a.name)}</div><div class="sl">${esc(a.slug)}</div>
           <div class="foot"><span class="status ${statusClass(a.status)}">${esc(a.status)}</span>
-          <a href="/apps/${encodeURIComponent(a.slug)}">Configure →</a></div></div></div>`,
+          <a href="${base()}/apps/${encodeURIComponent(a.slug)}">Configure →</a></div></div></div>`,
       ).join("")
     : `<div class="empty">No applications yet. Create your first one.</div>`;
 
@@ -385,13 +388,13 @@ export function dashboardPage(stats: FactoryStats, recent: Application[]): strin
       <div class="eyebrow" style="margin:0 0 12px">The XAPPX Factory</div>
       <h1 style="font-size:30px;margin-bottom:12px">Let's build your first app</h1>
       <p class="sub" style="max-width:54ch;margin:0 auto 22px">This is where apps are built — no code to start. Pick what you're building, name it, switch on the modules it needs, and publish. It takes a couple of minutes.</p>
-      <a class="btn" href="/apps/new">Create your first app</a>
+      <a class="btn" href="${base()}/apps/new">Create your first app</a>
       <p class="hint" style="margin-top:16px">${stats.modules} module${stats.modules === 1 ? "" : "s"} ready to switch on · ${stats.clients} client${stats.clients === 1 ? "" : "s"}</p>
     </div>`;
 
   const full = `<div class="row"><div class="spacer"><h1>Factory</h1>
       <p class="sub">The XAPPX application-building platform. An <b>app</b> is a product you launch for members; <b>modules</b> are the capabilities (like Agents or Vault) you switch on inside it.</p></div>
-      <a class="btn" href="/apps/new">Create New App</a></div>
+      <a class="btn" href="${base()}/apps/new">Create New App</a></div>
 
     <div class="eyebrow">Platform</div>
     <div class="cards">
@@ -411,7 +414,7 @@ export function dashboardPage(stats: FactoryStats, recent: Application[]): strin
 
     <div class="eyebrow">Recent applications</div>
     <div class="applist">${recentRows}</div>
-    <p class="hint" style="margin-top:18px"><a href="/apps">View all apps →</a></p>`;
+    <p class="hint" style="margin-top:18px"><a href="${base()}/apps">View all apps →</a></p>`;
 
   return layout("Dashboard", stats.totalApps === 0 ? welcome : full, "/");
 }
@@ -431,13 +434,13 @@ export function appsPage(
       const owner = clientName.get(a.client_id);
       const search = [a.name, a.slug, industryLabel(a.application_type), owner].filter(Boolean).join(" ").toLowerCase();
       return `<div class="appcard" data-search="${esc(search)}">
-        <a href="/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
+        <a href="${base()}/apps/${encodeURIComponent(a.slug)}">${monogram(a.name, a.slug)}</a>
         <div class="meta">
           <div class="nm">${esc(a.name)}</div><div class="sl">${esc(a.slug)}</div>
           <div class="foot"><span class="status ${statusClass(a.status)}">${esc(a.status)}</span>${taxoLine(a)}${
             owner ? `<span class="modn">${esc(owner)}</span>` : ""
           }${a.primary_domain ? `<span class="modn">${esc(a.primary_domain)}</span>` : ""}</div>
-          <div class="acts"><a href="/apps/${encodeURIComponent(a.slug)}">Configure</a>
+          <div class="acts"><a href="${base()}/apps/${encodeURIComponent(a.slug)}">Configure</a>
             <a href="${esc(memberView)}" target="_blank" rel="noreferrer">Open member view ↗</a></div>
         </div></div>`;
     })
@@ -450,7 +453,7 @@ export function appsPage(
 
   const clientOpts = clients.map((c) => [c.client_id, c.name] as const);
   const active = Object.values(filters).some(Boolean);
-  const filterBar = `<form class="filters" method="get" action="/apps">
+  const filterBar = `<form class="filters" method="get" action="${base()}/apps">
       <div class="ff"><label>Client</label>${sel("client_id", filters.client_id, "All clients", clientOpts)}</div>
       <div class="ff"><label>Status</label>${sel("status", filters.status, "Any status", STATUS_STATES)}</div>
       <div class="ff"><label>Industry</label>${sel("application_type", filters.application_type, "Any industry", INDUSTRIES)}</div>
@@ -460,14 +463,14 @@ export function appsPage(
     </form>`;
 
   const count = `<div class="countline"><span id="appcount">${apps.length}</span> app${apps.length === 1 ? "" : "s"}${
-    active ? ` match these filters<a class="clear" href="/apps">Clear filters</a>` : ""}</div>`;
+    active ? ` match these filters<a class="clear" href="${base()}/apps">Clear filters</a>` : ""}</div>`;
 
   const body = `<div class="row"><div class="spacer"><h1>Apps</h1>
       <p class="sub">Every app on the XAPPX Platform — a product you launch for members. Inside each app you switch on <b>modules</b> (the capabilities). Launching one is configuration first, with custom development available when needed.</p></div>
-      <a class="btn" href="/apps/new">New app</a></div>
+      <a class="btn" href="${base()}/apps/new">New app</a></div>
     ${filterBar}
     ${count}
-    ${apps.length ? `<div class="applist">${cards}</div>` : `<div class="empty">No apps match. <a href="/apps">Clear filters</a> or <a href="/apps/new">create one</a>.</div>`}
+    ${apps.length ? `<div class="applist">${cards}</div>` : `<div class="empty">No apps match. <a href="${base()}/apps">Clear filters</a> or <a href="${base()}/apps/new">create one</a>.</div>`}
     <script>
     (function(){
       var box=document.getElementById('appsearch'), count=document.getElementById('appcount');
@@ -498,7 +501,7 @@ export function modulesPage(modules: ModuleRow[]): string {
           ${m.description ? `<div class="md">${esc(m.description)}</div>` : ""}
           ${tags ? `<div class="tags">${tags}</div>` : ""}</div>
         <div class="use"><b>${m.app_count}</b>${m.app_count === 1 ? "app" : "apps"}
-          <div style="margin-top:8px"><a href="/modules/${encodeURIComponent(m.code)}">Edit →</a></div></div>
+          <div style="margin-top:8px"><a href="${base()}/modules/${encodeURIComponent(m.code)}">Edit →</a></div></div>
       </div>`;
     })
     .join("");
@@ -521,10 +524,10 @@ export function moduleEditPage(m: ModuleRow, flash?: { ok?: string; err?: string
   ].join("");
   const body = `<div class="row"><div class="spacer"><h1>${esc(m.name)}</h1>
       <p class="sub"><span class="sl">${esc(m.code)}</span> · ${moduleChip(m.status) || '<span class="status st-published">Available</span>'}</p></div>
-      <a class="btn quiet" href="/modules">← All modules</a></div>
+      <a class="btn quiet" href="${base()}/modules">← All modules</a></div>
     ${flash?.ok ? `<div class="notice ok">${esc(flash.ok)}</div>` : ""}
     ${flash?.err ? `<div class="notice err">${esc(flash.err)}</div>` : ""}
-    <form class="panel" method="post" action="/modules/${encodeURIComponent(m.code)}">
+    <form class="panel" method="post" action="${base()}/modules/${encodeURIComponent(m.code)}">
       <div class="field"><label for="status">Lifecycle state</label>
         <select id="status" name="status" style="max-width:260px">${stateOpts}</select>
         <span class="hint">How the module reads across the platform. Retiring one does not switch it off in apps that already use it.</span></div>
@@ -537,7 +540,7 @@ export function moduleEditPage(m: ModuleRow, flash?: { ok?: string; err?: string
         <span class="hint">Lower shows first in the registry and module lists.</span></div>
       <div class="field"><label>Capabilities</label><div class="tags">${tags}</div>
         <span class="hint">Dependencies and billing are defined in the catalogue, not edited here.</span></div>
-      <div class="row"><button class="btn" type="submit">Save module</button><a class="btn quiet" href="/modules">Cancel</a></div>
+      <div class="row"><button class="btn" type="submit">Save module</button><a class="btn quiet" href="${base()}/modules">Cancel</a></div>
     </form>`;
   return layout(m.name, body, "/modules");
 }
@@ -586,7 +589,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
   let clientField: string;
   if (clients.length === 0) {
     clientField = `<div class="notice err">Couldn't reach the platform to load your account — it may be waking up.
-      <a href="/apps/new">Refresh</a> in a few seconds and try again.</div>
+      <a href="${base()}/apps/new">Refresh</a> in a few seconds and try again.</div>
       <input type="hidden" name="client_id" value="">`;
   } else if (clients.length === 1) {
     const only = clients[0]!;
@@ -603,7 +606,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
   <p class="sub">Start with the industry and the problem to solve — they shape the defaults — then name it and launch.</p>
   ${error ? `<div class="notice err">${esc(error)}</div>` : ""}
   <div class="stepper">${stepper}</div>
-  <form class="panel" method="post" action="/apps" id="wizard">
+  <form class="panel" method="post" action="${base()}/apps" id="wizard">
 
     <section class="step" data-step="0">
       <div class="field"><label for="application_type">What industry is this for?</label>
@@ -656,7 +659,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       <button class="btn quiet" type="button" id="back" hidden>← Back</button>
       <button class="btn" type="button" id="next">Continue →</button>
       <button class="btn" type="submit" id="create" hidden>Create app</button>
-      <a class="btn quiet" href="/apps">Cancel</a>
+      <a class="btn quiet" href="${base()}/apps">Cancel</a>
     </div>
   </form>
   <script>
@@ -720,7 +723,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
       var ind=industrySel.value; if(!ind || loadedFor===ind) return; loadedFor=ind;
       fups.innerHTML=''; ansField.value='';
       status.textContent='Finding the top problems in '+(INDUSTRIES[ind]||'your industry')+'…';
-      post('/api/discovery/problems',{industry:ind}).then(function(d){
+      post('${base()}/api/discovery/problems',{industry:ind}).then(function(d){
         source=d.source||'static';
         if(source==='ai' && d.problems && d.problems.length){
           var keep=problemSel.value; problemSel.innerHTML='<option value="" disabled selected>Choose a problem…</option>';
@@ -748,7 +751,7 @@ export function newPage(clients: Client[], catalog: ModuleRow[], values: NewAppV
     function loadFollowups(){
       var p=problemText(); if(!p || source!=='ai'){fups.innerHTML='';return;}
       fups.innerHTML='<p class="hint">A couple more questions…</p>';
-      post('/api/discovery/followups',{industry:industrySel.value,problem:p}).then(function(d){
+      post('${base()}/api/discovery/followups',{industry:industrySel.value,problem:p}).then(function(d){
         if(!d.questions||!d.questions.length){fups.innerHTML='';return;}
         var html='<p class="hint" style="margin-bottom:8px">A couple more questions to sharpen the build:</p>';
         d.questions.forEach(function(q,j){
@@ -808,7 +811,7 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
       return `<div class="prod">
         <div><span class="pn">${esc(p.display_name || p.name)}</span>${moduleChip(p.status)} <span class="pc">${esc(p.code)}</span></div>
         ${req}
-        <form method="post" action="/apps/${encodeURIComponent(app.slug)}/toggle">
+        <form method="post" action="${base()}/apps/${encodeURIComponent(app.slug)}/toggle">
           <input type="hidden" name="code" value="${esc(p.code)}">
           <input type="hidden" name="enabled" value="${enabled ? "false" : "true"}">
           <button class="switch ${enabled ? "on" : ""}" type="submit" aria-pressed="${enabled}">${enabled ? "On" : "Off"}</button>
@@ -826,7 +829,7 @@ export function editPage(app: Application, products: ProductRow[], flash?: { ok?
     <div class="panel"><label style="display:block;margin-bottom:6px">Modules</label>
       <p class="hint" style="margin-bottom:8px">Switch a module on and it appears in this app — nav, onboarding and API — with no deploy. Off is non-destructive.</p>
       ${rows || `<p class="hint">No modules in the catalogue.</p>`}</div>
-    <p class="hint" style="margin-top:20px"><a href="/apps">← All apps</a></p>`;
+    <p class="hint" style="margin-top:20px"><a href="${base()}/apps">← All apps</a></p>`;
   return layout(app.name, body, "/apps");
 }
 
@@ -836,7 +839,7 @@ function statusPanel(app: Application): string {
     .map(([v, label]) => `<option value="${v}"${v === app.status ? " selected" : ""}>${esc(label)}</option>`)
     .join("");
   return `<div class="panel"><label for="status">Lifecycle status</label>
-    <form class="row" method="post" action="/apps/${encodeURIComponent(app.slug)}/status" style="margin-top:8px;gap:10px">
+    <form class="row" method="post" action="${base()}/apps/${encodeURIComponent(app.slug)}/status" style="margin-top:8px;gap:10px">
       <select id="status" name="status" style="max-width:260px">${opts}</select>
       <button class="btn" type="submit">Update status</button>
     </form>
@@ -862,7 +865,7 @@ function detailsPanel(app: Application): string {
     return `<div class="field"><label for="e_${q.key}">${esc(q.label)}</label>
       <textarea id="e_${q.key}" name="${q.key}" placeholder="${esc(q.placeholder)}">${esc(typeof val === "string" ? val : "")}</textarea></div>`;
   }).join("");
-  return `<form class="panel" method="post" action="/apps/${encodeURIComponent(app.slug)}/edit">
+  return `<form class="panel" method="post" action="${base()}/apps/${encodeURIComponent(app.slug)}/edit">
     <label style="display:block;margin-bottom:10px">Details</label>
     <div class="field"><label for="e_name">App name</label>
       <input id="e_name" name="name" value="${esc(app.name)}" required></div>
@@ -882,7 +885,7 @@ function detailsPanel(app: Application): string {
 }
 
 export function errorPage(status: number, message: string): string {
-  return layout(String(status), `<div class="empty"><h1>${status}</h1><p>${esc(message)}</p><p><a href="/apps">← All apps</a></p></div>`);
+  return layout(String(status), `<div class="empty"><h1>${status}</h1><p>${esc(message)}</p><p><a href="${base()}/apps">← All apps</a></p></div>`);
 }
 
 /**
@@ -894,7 +897,7 @@ export function loginPage(error?: string, next = "/"): string {
   <h1>Sign in to XAPPX Factory</h1>
   <p>Internal console. Enter the factory credentials to continue.</p>
   ${error ? `<p role="alert" style="color:#ff6b6b;font-weight:600">${esc(error)}</p>` : ""}
-  <form method="post" action="/login" style="display:grid;gap:12px;margin-top:12px">
+  <form method="post" action="${base()}/login" style="display:grid;gap:12px;margin-top:12px">
     <input type="hidden" name="next" value="${esc(next)}">
     <label>Username<br><input name="user" autocomplete="username" required autofocus></label>
     <label>Password<br><input name="pass" type="password" autocomplete="current-password" required></label>
