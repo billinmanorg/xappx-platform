@@ -12,15 +12,17 @@
 //   CLIENTS_API_BASE             platform API the console talks to
 //   WEB_RUNTIME_BASE             where generated apps are served (links only)
 // Optional: FACTORY_SESSION_SECRET, ANTHROPIC_API_KEY, LLM_MODEL.
+// Static imports only (no top-level await): Netlify bundles v1 `handler`
+// functions to CommonJS. The console reads all of these env vars lazily, at
+// request time, so setting them after the import is fine.
 import serverless from "serverless-http";
+import { createApp } from "./admin-lib/main.js";
 import { tokensCss } from "./admin-lib/tokens.js";
 
 process.env.FACTORY_BASE_PATH ??= "/admin";
 process.env.CLIENTS_API_BASE ??= "https://clients-service-84j5.onrender.com";
 process.env.WEB_RUNTIME_BASE ??= "https://web-runtime.onrender.com";
 process.env.WEB_TOKENS_CSS ??= "tokens.css"; // never read from disk here; tokensCss is inlined
-
-const { createApp } = await import("./admin-lib/main.js");
 
 const configured = () => !!process.env.FACTORY_USER && !!process.env.FACTORY_PASS;
 
