@@ -90,17 +90,26 @@ function gate(req: express.Request, res: express.Response, next: express.NextFun
   res.status(401).type("html").send(loginPage(undefined, req.originalUrl));
 }
 
-const TOKENS =
-  process.env.WEB_TOKENS_CSS ??
-  fileURLToPath(new URL("../../../../packages/design-system/tokens.css", import.meta.url));
+/** Where the design tokens live on disk (resolved lazily so bundlers can't trip on import.meta). */
+function tokensPath(): string {
+  return (
+    process.env.WEB_TOKENS_CSS ??
+    fileURLToPath(new URL("../../../../packages/design-system/tokens.css", import.meta.url))
+  );
+}
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+export interface CreateAppOptions {
+  /** Pre-loaded tokens.css contents (used when the console runs bundled, e.g. as a serverless function). */
+  tokensCss?: string;
+}
 
 /**
  * The XAPPX Factory console. Server-rendered screens over the platform's public
  * API; it holds no database. Forms POST and redirect (Post/Redirect/Get).
  */
-export function createApp() {
+export function createApp(opts: CreateAppOptions = {}) {
   const app = express();
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
@@ -134,7 +143,7 @@ export function createApp() {
 
   app.get("/tokens.css", (_req, res) => {
     try {
-      res.type("text/css").send(readFileSync(TOKENS, "utf8"));
+      res.type("text/css").send(opts.tokensCss ?? readFileSync(tokensPath(), "utf8"));
     } catch {
       res.status(500).type("text/css").send("/* tokens unavailable */");
     }
