@@ -400,6 +400,9 @@ describe("the password gate (for public deploys)", () => {
       const wrong = { authorization: "Basic " + Buffer.from("bill:nope").toString("base64") };
       assert.equal((await fetch(base + "/", { headers: wrong })).status, 401);
       assert.equal((await fetch(base + "/healthz")).status, 200); // health stays public
+      const css = await fetch(base + "/tokens.css");
+      assert.equal(css.status, 200); // the sign-in page's stylesheet is public too
+      await css.text();
     } finally {
       delete process.env.FACTORY_USER;
       delete process.env.FACTORY_PASS;
@@ -498,6 +501,9 @@ describe("serving under a base path (xappx.ai/admin via the Netlify proxy)", () 
       assert.match(html, /action="\/admin\/login"/);
       assert.match(html, /href="\/admin\/apps"/);
       assert.match(html, /href="\/admin\/tokens\.css"/);
+      const css = await fetch(b + "/admin/tokens.css");
+      assert.equal(css.status, 200);
+      await css.text();
       const r = await fetch(b + "/admin/new", { redirect: "manual" });
       assert.equal(r.headers.get("location"), "/admin/apps/new");
       await r.text();

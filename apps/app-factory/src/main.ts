@@ -74,6 +74,7 @@ function safeNext(v: unknown): string {
  * WWW-Authenticate header, so the browser shows our page, not its popup.
  */
 function gate(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (req.path === "/tokens.css") return next(); // the sign-in page needs its stylesheet
   const user = process.env.FACTORY_USER;
   const pass = process.env.FACTORY_PASS;
   if (!user || !pass) return next(); // local dev: open
