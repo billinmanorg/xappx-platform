@@ -57,7 +57,8 @@ export function HeroVideoCarousel() {
     <div className="hv" aria-roledescription="carousel" aria-label="XAPPX app overview videos">
       <div className="hv__phone">
         <div className="hv__screen">
-          <AnimatePresence initial={false} custom={dir} mode="popLayout">
+          {/* default (sync) mode: popLayout would clone the child and override our ref */}
+          <AnimatePresence initial={false} custom={dir}>
             <motion.video
               key={current.src}
               ref={setVideoRef}
