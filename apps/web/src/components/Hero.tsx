@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { fadeUp, stagger } from "../lib/motion";
-import { HeroWorkflowDemo } from "./HeroWorkflowDemo";
+import { HeroVideoCarousel } from "./HeroVideoCarousel";
 import "./Hero.css";
 
 export function Hero() {
@@ -31,7 +31,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
         >
-          <HeroWorkflowDemo />
+          <HeroVideoCarousel />
         </motion.div>
       </div>
     </section>
