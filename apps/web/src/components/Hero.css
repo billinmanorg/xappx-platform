@@ -9,6 +9,7 @@
 .hero__title span { color: var(--accent); }
 .hero__lede { max-width: 42ch; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.hero__voice { margin-top: 14px; }
 .hero__trust { margin-top: 20px; font-size: var(--fs-xs); color: var(--text-faint); max-width: 44ch; }
 
 @media (max-width: 900px) {

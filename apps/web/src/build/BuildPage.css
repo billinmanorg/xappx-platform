@@ -94,3 +94,5 @@
 .bp__outcomes-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); margin-right: 6px; }
 .bp__cta { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
 .bp__note { margin-top: 16px; font-size: var(--fs-xs); color: var(--text-dim); max-width: 60ch; }
+.build__custom-row { display: flex; gap: 10px; align-items: flex-start; }
+.build__custom-row textarea { flex: 1; }

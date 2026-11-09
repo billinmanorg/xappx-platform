@@ -5,9 +5,12 @@ import type { Challenge, Industry, PrototypeSpec, SolutionDiscovery } from "./ty
 import { emptyDiscovery } from "./types";
 import { PrototypeShell } from "./PrototypeShell";
 import { LeadForm } from "./LeadForm";
+import { buildAppSpec } from "./discoveryService";
+import { CommandCenter } from "../command/CommandCenter";
+import { MicButton } from "../components/MicButton";
 import "./BuildPage.css";
 
-type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype" | "lead";
+type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype" | "command" | "lead";
 const svc = getDiscoveryService();
 const KEY = "xappx_discovery";
 // The industry the flow is focused on for now (Bill's direction). Change or
@@ -41,9 +44,14 @@ export function BuildPage() {
   const [proc, setProc] = useState(0);
   const [procLabels, setProcLabels] = useState<readonly string[]>(PROC);
   const [proto, setProto] = useState<PrototypeSpec | null>(null);
+  const [leadDraft, setLeadDraft] = useState<string | undefined>(undefined);
   const started = useRef(false);
+  const stageBeforeLead = useRef<Stage>("prototype");
+  // The App Spec the Command Center's agents work from (same spec the prototype renders).
+  const appSpec = useMemo(() => (d.industry && d.challenge ? buildAppSpec(d) : null), [d]);
 
   useEffect(() => { try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch { /* ignore */ } }, [d]);
+  useEffect(() => { if (stage !== "lead") stageBeforeLead.current = stage; }, [stage]);
 
   // Focused on Events & Conferences for now: a fresh visitor lands straight in
   // that industry. A ?industry=slug deep link still wins, and the Industry row
@@ -55,6 +63,14 @@ export function BuildPage() {
       const found = svc.getIndustries().find((i) => i.slug === slug);
       if (found) pickIndustry(found);
     }
+    // A problem spoken into the hero's microphone arrives here (session storage, not the URL).
+    try {
+      const spoken = sessionStorage.getItem("xappx_voice_problem");
+      if (spoken) {
+        sessionStorage.removeItem("xappx_voice_problem");
+        setCustom(spoken); setCustomOn(true); setStage("challenge");
+      }
+    } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -108,7 +124,7 @@ export function BuildPage() {
     () => industries.filter((i) => i.label.toLowerCase().includes(search.trim().toLowerCase())),
     [industries, search],
   );
-  const stepNo = { industry: 1, challenge: 2, stakeholders: 3, outcomes: 4, processing: 4, blueprint: 5, prototype: 5, lead: 5 }[stage];
+  const stepNo = { industry: 1, challenge: 2, stakeholders: 3, outcomes: 4, processing: 4, blueprint: 5, prototype: 5, command: 5, lead: 5 }[stage];
 
   return (
     <div className="build">
@@ -125,7 +141,7 @@ export function BuildPage() {
           <CtxRow n="02" label="Challenge" value={d.challenge} onEdit={d.industry ? () => setStage("challenge") : undefined} active={stage === "challenge"} />
           <CtxRow n="03" label="Users" value={d.stakeholders.join(", ")} onEdit={d.challenge ? () => setStage("stakeholders") : undefined} active={stage === "stakeholders"} />
           <CtxRow n="04" label="Outcomes" value={d.outcomes.join(", ")} onEdit={d.stakeholders.length ? () => setStage("outcomes") : undefined} active={stage === "outcomes"} />
-          <CtxRow n="05" label="Blueprint" value={proto ? "Prototype ready" : d.blueprint ? "Ready" : undefined} active={stage === "blueprint" || stage === "processing" || stage === "prototype"} />
+          <CtxRow n="05" label="Blueprint" value={stage === "command" ? "Command Center" : proto ? "Prototype ready" : d.blueprint ? "Ready" : undefined} active={stage === "blueprint" || stage === "processing" || stage === "prototype" || stage === "command"} />
         </aside>
 
         <main className="build__main">
@@ -134,7 +150,7 @@ export function BuildPage() {
               key={stage}
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               transition={{ duration: reduce ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className={"build__panel" + (stage === "prototype" || stage === "lead" ? " build__panel--wide" : "")}
+              className={"build__panel" + (stage === "prototype" || stage === "lead" || stage === "command" ? " build__panel--wide" : "")}
             >
               {stage === "industry" && (
                 <>
@@ -175,7 +191,10 @@ export function BuildPage() {
                   )}
                   {customOn && (
                     <div className="build__custom">
-                      <textarea placeholder="In a sentence, what isn't working?" value={custom} onChange={(e) => setCustom(e.target.value)} />
+                      <div className="build__custom-row">
+                        <textarea placeholder="In a sentence, what isn't working?" value={custom} onChange={(e) => setCustom(e.target.value)} />
+                        <MicButton label="Say it instead" onText={(t) => setCustom((c) => (c.trim() ? c.trim() + " " : "") + t)} />
+                      </div>
                       {custom.length > 0 && !validText(custom) && (
                         <p className="build__warn">That doesn't look like enough for XAPPX to work with. Try a short sentence describing the issue.</p>
                       )}
@@ -243,11 +262,22 @@ export function BuildPage() {
               )}
 
               {stage === "prototype" && proto && (
-                <PrototypeShell spec={proto} onBack={() => setStage("blueprint")} onRestart={restart} onUnlock={() => setStage("lead")} />
+                <PrototypeShell spec={proto} onBack={() => setStage("blueprint")} onRestart={restart} onUnlock={() => setStage("lead")} onCommand={appSpec ? () => setStage("command") : undefined} />
+              )}
+
+              {stage === "command" && appSpec && (
+                <CommandCenter
+                  d={d}
+                  spec={appSpec}
+                  onOpenPrototype={() => (proto ? setStage("prototype") : generatePrototype())}
+                  onMakeReal={(draft) => { setLeadDraft(draft || undefined); setStage("lead"); }}
+                  onBack={() => setStage(proto ? "prototype" : "blueprint")}
+                  onRestart={restart}
+                />
               )}
 
               {stage === "lead" && (
-                <LeadForm d={d} onBack={() => setStage(proto ? "prototype" : "blueprint")} onRestart={restart} />
+                <LeadForm d={d} initialMessage={leadDraft} onBack={() => setStage(appSpec && stageBeforeLead.current === "command" ? "command" : proto ? "prototype" : "blueprint")} onRestart={restart} />
               )}
             </motion.section>
           </AnimatePresence>

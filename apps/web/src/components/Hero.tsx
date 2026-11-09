@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
 import { fadeUp, stagger } from "../lib/motion";
 import { HeroVideoCarousel } from "./HeroVideoCarousel";
+import { MicButton } from "./MicButton";
 import "./Hero.css";
+
+/** Voice entry: the spoken problem is handed to /build through session storage, never the URL. */
+function startFromVoice(text: string) {
+  try { sessionStorage.setItem("xappx_voice_problem", text); } catch { /* ignore */ }
+  window.location.href = "/build";
+}
 
 export function Hero() {
   return (
@@ -19,6 +26,9 @@ export function Hero() {
           <motion.div className="hero__cta" variants={fadeUp}>
             <a className="btn btn-primary" href="/build">Build my solution</a>
             <a className="btn btn-ghost" href="#how">See how it works</a>
+          </motion.div>
+          <motion.div className="hero__voice" variants={fadeUp}>
+            <MicButton size="lg" label="Or just tell XAPPY what isn't working" onText={startFromVoice} />
           </motion.div>
           <motion.p className="hero__trust" variants={fadeUp}>
             Your description is used only to design your solution. Every build is reviewed by XAPPX experts.

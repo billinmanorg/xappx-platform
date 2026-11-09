@@ -6,7 +6,7 @@ import "./PrototypeShell.css";
    clearly-labeled sample data. Dashboard + the primary workflow are usable;
    advanced features are locked — the natural bridge to the commercial step. */
 
-export function PrototypeShell({ spec, onBack, onRestart, onUnlock }: { spec: PrototypeSpec; onBack: () => void; onRestart: () => void; onUnlock: () => void }) {
+export function PrototypeShell({ spec, onBack, onRestart, onUnlock, onCommand }: { spec: PrototypeSpec; onBack: () => void; onRestart: () => void; onUnlock: () => void; onCommand?: () => void }) {
   const [active, setActive] = useState("dashboard");
   const [selected, setSelected] = useState<PrototypeItem | null>(null);
   const [aiState, setAiState] = useState<"idle" | "running" | "done">("idle");
@@ -49,9 +49,10 @@ export function PrototypeShell({ spec, onBack, onRestart, onUnlock }: { spec: Pr
       </div>
 
       <div className="ps__foot">
-        <p>This is a working preview built from your blueprint — real screens, sample data. The full solution is engineered and deployed by XAPPX experts.</p>
+        <p>This is a working preview built from your blueprint: real screens, sample data. Next, watch your Agent Organization research, build and prepare the launch, then approve what goes out.</p>
         <div className="ps__foot-cta">
-          <button className="btn btn-primary" onClick={onUnlock}>Make it real →</button>
+          {onCommand && <button className="btn btn-primary" onClick={onCommand}>Open the Command Center →</button>}
+          <button className={"btn " + (onCommand ? "btn-ghost" : "btn-primary")} onClick={onUnlock}>Make it real →</button>
           <button className="btn btn-ghost" onClick={onBack}>← Blueprint</button>
           <button className="btn btn-ghost" onClick={onRestart}>Start over</button>
         </div>

@@ -9,11 +9,11 @@ import "./commerce.css";
 const svc = getLeadService();
 const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
-export function LeadForm({ d, onBack, onRestart }: { d: SolutionDiscovery; onBack: () => void; onRestart: () => void }) {
+export function LeadForm({ d, onBack, onRestart, initialMessage }: { d: SolutionDiscovery; onBack: () => void; onRestart: () => void; initialMessage?: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage ?? "");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
