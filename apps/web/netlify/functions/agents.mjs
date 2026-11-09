@@ -14,17 +14,32 @@
 //   -> { ok, data: { headline, subhead, cta, ai:boolean } }
 import { vaultConfigured, vaultGet } from "./_vaultClient.mjs";
 
-const MODEL = process.env.LLM_MODEL || "claude-haiku-4-5-20251001";
+// Current Haiku (chosen for cost on a public funnel); override with LLM_MODEL.
+const MODEL = process.env.LLM_MODEL || "claude-haiku-5-5";
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const clean = (s, max) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, max);
+/** Count the items in a Vault response whatever its envelope: a bare array, {items|files|folders|results|data: []}, {total: n}, or one level deeper. */
 const count = (data, ...keys) => {
-  if (Array.isArray(data)) return data.length;
-  if (data && typeof data === "object") {
-    for (const k of keys) if (Array.isArray(data[k])) return data[k].length;
-    if (typeof data.total === "number") return data.total;
-  }
-  return 0;
+  const seen = new Set();
+  const walk = (node, depth) => {
+    if (node == null || depth > 3 || seen.has(node)) return null;
+    if (Array.isArray(node)) return node.length;
+    if (typeof node !== "object") return null;
+    seen.add(node);
+    for (const k of [...keys, "items", "files", "folders", "results", "rows", "data", "list"]) {
+      if (Array.isArray(node[k])) return node[k].length;
+    }
+    for (const k of ["total", "count", "totalCount", "totalFiles", "totalFolders"]) {
+      if (typeof node[k] === "number") return node[k];
+    }
+    for (const v of Object.values(node)) {
+      const n = walk(v, depth + 1);
+      if (n != null) return n;
+    }
+    return null;
+  };
+  return walk(data, 0) ?? 0;
 };
 
 function extractJson(text) {
@@ -47,13 +62,14 @@ function extractJson(text) {
 
 async function complete(system, user, maxTokens) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 7000);
+  const timer = setTimeout(() => ctrl.abort(), 8500);
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       signal: ctrl.signal,
       headers: { "content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+      // Short structured answers: low effort keeps the model's built-in thinking brief. max_tokens includes thinking.
+      body: JSON.stringify({ model: MODEL, max_tokens: Math.max(maxTokens, 2000), output_config: { effort: "low" }, system, messages: [{ role: "user", content: user }] }),
     });
     if (!res.ok) throw new Error("anthropic " + res.status);
     const data = await res.json();
@@ -97,6 +113,7 @@ export default async (req) => {
   const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
 
   if (action === "research") {
+    let aiReason = "";
     const [vault, insights] = await Promise.all([
       researchVault(industry).catch((e) => ({ configured: vaultConfigured(), error: clean(e?.message || "read_failed", 60) })),
       (async () => {
@@ -106,10 +123,10 @@ export default async (req) => {
             "You are the research agent of XAPPX, a studio that builds AI solutions on the Twin Vault (each party owns its data; the AI acts only on what they authorize). Given an industry and a specific business problem, list what a solution designer must know before building: existing data the business already holds, the two or three failure points in today's manual process, and one measurable baseline to beat. Be concrete to this industry and problem; no generic advice. Reply with ONLY a JSON array of 3-4 short strings (<=18 words each). No markdown.",
             `Industry: ${industry}\nProblem: ${challenge}\nPeople involved: ${stakeholders.join(", ")}\nDesired outcomes: ${outcomes.join("; ")}`, 450));
           return Array.isArray(out) ? out.map((s) => clean(s, 140)).filter(Boolean).slice(0, 4) : [];
-        } catch { return []; }
+        } catch (e) { aiReason = clean(e?.name === "AbortError" ? "timeout" : e?.message || "failed", 40); return []; }
       })(),
     ]);
-    return json({ ok: true, data: { vault, ai: { enabled: aiEnabled, used: insights.length > 0 }, insights } });
+    return json({ ok: true, data: { vault, ai: { enabled: aiEnabled, used: insights.length > 0, reason: aiReason || undefined }, insights } });
   }
 
   if (action === "content") {

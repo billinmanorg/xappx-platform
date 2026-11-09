@@ -3,7 +3,8 @@
 // missing or anything fails, it returns { fallback: true } so the client
 // gracefully uses its curated data — nothing breaks, no cost until enabled.
 
-const MODEL = process.env.LLM_MODEL || "claude-haiku-4-5-20251001";
+// Current Haiku (chosen for cost on a public funnel); override with LLM_MODEL.
+const MODEL = process.env.LLM_MODEL || "claude-haiku-5-5";
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } });
 const clean = (s, max) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, max);
@@ -35,7 +36,8 @@ async function complete(system, user, maxTokens) {
       method: "POST",
       signal: ctrl.signal,
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+      // Short structured answers: low effort keeps the model's built-in thinking brief. max_tokens includes thinking.
+      body: JSON.stringify({ model: MODEL, max_tokens: Math.max(maxTokens, 2000), output_config: { effort: "low" }, system, messages: [{ role: "user", content: user }] }),
     });
     if (!res.ok) throw new Error("anthropic " + res.status);
     const data = await res.json();
