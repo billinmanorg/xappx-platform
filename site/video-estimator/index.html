@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">\n  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="XAPPX internal AI video production cost and profitability calculator.">
+  <title>XAPPX · Video Pricing Calculator</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0a1020;--card:#121a2d;--card2:#19243a;--line:#28344b;--txt:#f5f7fd;--muted:#a9b4ca;--cyan:#30cce6;--violet:#9d7bf9;--good:#61dab4;--red:#fd9b9b}
+    *{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 85% -25%,#29336b66,transparent 47%),var(--bg);color:var(--txt);min-height:100vh}
+    main{width:min(920px,calc(100% - 36px));margin:0 auto;padding:35px 0 60px}header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:34px} .brand{font-size:23px;font-weight:850;letter-spacing:.105em;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}.internal{font-size:11px;text-transform:uppercase;letter-spacing:.11em;border:1px solid var(--line);padding:7px 10px;border-radius:30px;color:var(--muted)}h1{font-size:clamp(29px,4.6vw,41px);letter-spacing:-.045em;margin:0 0 6px;font-weight:750}.subtitle{margin:0 0 26px;color:var(--muted)}.panel{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:24px;box-shadow:0 10px 40px #00000016}.primary-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:17px}.field{display:flex;flex-direction:column;gap:8px}label{font-size:13px;font-weight:650;color:#dce3f4}input,select{border:1px solid #38465d;background:#0c1425;color:var(--txt);border-radius:10px;font:inherit;padding:12px 13px;width:100%;min-width:0;outline:none}input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #30cce626}input[type=number]{font-variant-numeric:tabular-nums}small{font-size:12px;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.stat{border:1px solid var(--line);border-radius:15px;background:var(--card);padding:18px 16px}.stat span{display:block;color:var(--muted);font-size:12px;font-weight:600;margin-bottom:9px}.stat strong{display:block;font-size:clamp(22px,3vw,31px);line-height:1.2;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.stat.profit{border-color:#39cda34a;background:linear-gradient(125deg,#16312f,var(--card))}.stat.profit strong{color:var(--good)}.meter{height:7px;background:#273248;border-radius:20px;overflow:hidden;margin-top:12px}.meter>div{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .15s}.explain{font-size:13px;color:var(--muted);margin:11px 0 0}.summary{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:19px 0 12px;color:#d8e1f3}.summary span{color:var(--muted)}.note{padding:15px 17px;border:1px solid var(--line);border-radius:12px;background:#111b2c;color:#d2deed;font-size:13px}.note strong{color:var(--txt)}.tools{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 18px}button{border:1px solid var(--line);background:#1b2840;color:#edf5ff;border-radius:10px;padding:10px 15px;font:600 13px inherit;cursor:pointer;font-weight:650}button:hover{border-color:var(--cyan)}button.primary{background:linear-gradient(90deg,var(--cyan),var(--violet));color:#07101b;border:none}details{border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}summary{cursor:pointer;padding:17px 20px;font-weight:670;display:flex;align-items:center;justify-content:space-between}summary::marker{color:var(--cyan)}.more{padding:2px 20px 22px;border-top:1px solid var(--line)}.moregrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:17px}.breakdown{border-top:1px solid var(--line);margin-top:19px;padding-top:14px;font-size:13px}.breakdown>div{display:flex;justify-content:space-between;padding:5px 0;color:var(--muted)}.breakdown strong{color:var(--txt)}.foot{font-size:12px;color:#8d9ab3;margin-top:23px}a{color:var(--cyan)}
+    @media(max-width:680px){main{width:min(100% - 24px,550px);padding-top:22px}header{margin-bottom:25px}.primary-inputs{grid-template-columns:1fr 1fr}.primary-inputs .field:first-child{grid-column:1/-1}.stats{grid-template-columns:1fr 1fr}.stat{padding:15px}.moregrid{grid-template-columns:1fr 1fr}.summary{font-size:13px}.panel{padding:18px}.internal{font-size:10px}}
+    @media(max-width:390px){.moregrid{grid-template-columns:1fr}.stat strong{font-size:22px}}
+    @media print{body{background:white;color:#111}main{width:100%;padding:0}.panel,.stat,details,.note{background:white;border-color:#ddd;color:#111}.brand{-webkit-text-fill-color:#165f8a}.subtitle,.stat span,.explain,.foot,small,.note{color:#333}.tools{display:none}details:not([open]){display:none}input,select{border:none;color:#111;background:white;padding:0}.stat.profit{background:white}.stat.profit strong{color:#065b42}}
+  </style>
+</head>
+<body>
+<main>
+  <header><div class="brand">XAPPX</div><div class="internal">Internal pricing tool</div></header>
+  <h1>Video Pricing Calculator</h1>
+  <p class="subtitle">How much will it cost to make the videos—and what will we earn?</p>
+  <section class="panel" aria-label="Quick estimate">
+    <div class="primary-inputs">
+      <div class="field"><label for="quantity">Number of videos</label><input type="number" id="quantity" min="1" max="1000" step="1" value="3"></div>
+      <div class="field"><label for="firstPrice">First video price ($)</label><input type="number" id="firstPrice" min="0" step="1" value="449"></div>
+      <div class="field"><label for="extraPrice">Each additional video ($)</label><input type="number" id="extraPrice" min="0" step="1" value="169"></div>
+    </div>
+    <p class="explain"><strong style="color:#eef4ff">Your time assumptions:</strong> 3 hours for the first video (including setup and client communication), then 1 hour per additional video.</p>
+  </section>
+  <section class="stats" aria-live="polite">
+    <div class="stat"><span>Customer total</span><strong id="revenue">$787</strong></div>
+    <div class="stat"><span>Your estimated cost</span><strong id="cost">$258</strong></div>
+    <div class="stat profit"><span>Estimated profit</span><strong id="profit">$529</strong></div>
+    <div class="stat"><span>Profit margin</span><strong id="margin">67%</strong><div class="meter"><div id="marginBar"></div></div></div>
+  </section>
+  <div class="summary"><div><span>Total production time:</span> <strong id="hours">5 hours</strong></div><div><span>AI generation cost:</span> <strong id="generation">$17.91</strong></div></div>
+  <div class="note"><strong>Client approval process:</strong> Script approval → image approval → video production. Approval and communication labor is included in the first-video estimate. Client waiting time is not billed as production hours. Extra rounds of changes can increase costs.</div>
+  <div class="tools"><button class="primary" id="copyBtn" type="button">Copy estimate</button><button id="printBtn" type="button">Print</button></div>
+  <details id="advanced"><summary>Change cost assumptions <small>Optional</small></summary>
+    <div class="more">
+      <div class="moregrid">
+        <div class="field"><label for="hourly">Labor cost / hour ($)</label><input id="hourly" type="number" min="0" step="1" value="45"></div>
+        <div class="field"><label for="firstHours">First video hours</label><input id="firstHours" type="number" min="0" step="0.25" value="3"></div>
+        <div class="field"><label for="extraHours">Additional video hours</label><input id="extraHours" type="number" min="0" step="0.25" value="1"></div>
+        <div class="field"><label for="engine">AI model</label><select id="engine"><option value="seedance">Seedance 2.0</option><option value="kling">Kling 4.0</option><option value="wan">Wan (assumed)</option></select></div>
+        <div class="field"><label for="attempts">Generations / video</label><input id="attempts" type="number" min="1" max="50" step="1" value="2"></div>
+        <div class="field"><label for="extras">Other cost / video ($)</label><input id="extras" type="number" min="0" step="1" value="5"></div>
+        <div class="field"><label for="planCost">Higgsfield plan ($)</label><input id="planCost" type="number" min="0" step="1" value="79"></div>
+        <div class="field"><label for="planCredits">Monthly credits</label><input id="planCredits" type="number" min="1" step="1" value="1800"></div>
+      </div>
+      <div class="breakdown" aria-label="Cost breakdown">
+        <div><span>Labor</span><strong id="laborCost">$225.00</strong></div>
+        <div><span>AI video generations</span><strong id="aiCost">$17.91</strong></div>
+        <div><span>Other production costs</span><strong id="otherCost">$15.00</strong></div>
+        <div><span>Credits used</span><strong id="creditsUsed">408</strong></div>
+        <div><span>Suggested minimum price for 60% margin</span><strong id="target">$644.77</strong></div>
+      </div>
+      <p class="foot">Model credit assumptions for ~15-second deliverables: Seedance 2.0 = 68 credits per 15s; Kling 4.0 = two 10-second segments × 32.5 credits; Wan = 30 credits per 15s (duration unverified). Figures are estimates based on subscription credit allocation, not API pricing. The monthly plan is not charged again per project. If multiple projects use a subscription, verify available credits and actual billed usage. Longer videos need proportionately more generation segments and editing labor.</p>
+    </div>
+  </details>
+  <p class="foot">XAPPX · Internal working estimates. Excludes taxes, payment fees, customer acquisition, and overhead. Review script and image approval scope before quoting clients.</p>
+</main>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const ids = ['quantity','firstPrice','extraPrice','hourly','firstHours','extraHours','engine','attempts','extras','planCost','planCredits'];
+  const read = (id,def=0) => {const v=Number($(id).value);return Number.isFinite(v)?Math.max(0,v):def};
+  const dollar = n=>n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+  const dollar0 = n=>n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+  function estimate(){
+    const n=Math.max(1,Math.floor(read('quantity',1))),extra=n-1;
+    const hours=read('firstHours')+extra*read('extraHours');
+    const labor=hours*read('hourly');
+    const creditsPerVideo= $('engine').value==='seedance'?68:($('engine').value==='kling'?65:30);
+    const used=creditsPerVideo*Math.max(1,Math.floor(read('attempts',1)))*n;
+    const ai=used*read('planCost')/Math.max(1,read('planCredits',1));
+    const other=n*read('extras');
+    const cost=labor+ai+other;
+    const revenue=read('firstPrice')+extra*read('extraPrice');
+    const profit=revenue-cost;
+    const margin=revenue>0?(profit/revenue)*100:0;
+    $('revenue').textContent=dollar0(revenue);
+    $('cost').textContent=dollar0(cost);
+    $('profit').textContent=dollar0(profit);
+    $('profit').style.color=profit>=0?'var(--good)':'var(--red)';
+    $('margin').textContent=margin.toFixed(1)+'%';
+    $('marginBar').style.width=Math.min(100,Math.max(0,margin))+'%';
+    $('hours').textContent=Number(hours.toFixed(2))+(hours===1?' hour':' hours');
+    $('generation').textContent=dollar(ai);
+    $('laborCost').textContent=dollar(labor);
+    $('aiCost').textContent=dollar(ai);
+    $('otherCost').textContent=dollar(other);
+    $('creditsUsed').textContent=used.toLocaleString('en-US');
+    $('target').textContent=dollar(cost/0.4);
+    return {n,hours,labor,ai,other,cost,revenue,profit,margin,used};
+  }
+  ids.forEach(id=>$(id).addEventListener('input',estimate));
+  $('printBtn').addEventListener('click',()=>window.print());
+  $('copyBtn').addEventListener('click',async()=>{
+    const e=estimate();
+    const s=`XAPPX Video Estimate\nVideos: ${e.n}\nFirst video: ${$('firstHours').value} hours\nAdditional videos: ${$('extraHours').value} hours each\nTotal labor time: ${e.hours} hours\nLabor expense: ${dollar(e.labor)}\nAI generation: ${dollar(e.ai)}\nOther direct costs: ${dollar(e.other)}\nTotal cost: ${dollar(e.cost)}\nCustomer quote: ${dollar(e.revenue)}\nGross profit: ${dollar(e.profit)}\nGross margin: ${e.margin.toFixed(1)}%\nScript and image approvals included; extra revision cycles may cost more.`;
+    const b=$('copyBtn');
+    try{await navigator.clipboard.writeText(s);b.textContent='Copied';setTimeout(()=>b.textContent='Copy estimate',1600)}catch(err){window.prompt('Copy this estimate:',s)}
+  });
+  estimate();
+})();
+</script>
+</body>
+</html>
