@@ -3,10 +3,10 @@ import { Logo } from "./Logo";
 import "./Nav.css";
 
 const LINKS = [
-  { label: "Solutions", href: "/solutions" },
   { label: "How it works", href: "/#how" },
   { label: "Industries", href: "/#industries" },
   { label: "Why XAPPX", href: "/#why" },
+  { label: "Solutions", href: "/solutions" },
 ];
 const here = typeof window !== "undefined" ? window.location.pathname.replace(/\/+$/, "") : "";
 
@@ -34,7 +34,6 @@ export function Nav() {
         </nav>
         <div className="nav__actions">
           <a className="nav__signin" href="/admin">Sign in</a>
-          <a className="btn btn-primary nav__cta" href="/solutions">Explore solutions</a>
         </div>
         <button
           className="nav__burger"
@@ -51,7 +50,6 @@ export function Nav() {
             <a key={l.href} href={l.href} onClick={() => setOpen(false)}>{l.label}</a>
           ))}
           <a href="/admin">Sign in</a>
-          <a className="btn btn-primary" href="/solutions" onClick={() => setOpen(false)}>Explore solutions</a>
         </div>
       )}
     </header>
