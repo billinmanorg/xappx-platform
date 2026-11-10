@@ -25,7 +25,7 @@ export function Footer() {
 
       <footer className="footer">
         <div className="container footer__in">
-          <a className="footer__logo" href="#top" aria-label="XAPPX home"><Logo size={24} /></a>
+          <a className="footer__logo" href="#top" aria-label="XAPPX home"><Logo height={56} /></a>
           <nav className="footer__links" aria-label="Footer">
             <a href="#how">How it works</a>
             <a href="#industries">Industries</a>

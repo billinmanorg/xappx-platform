@@ -1,13 +1,2 @@
-.logo { --logo-h: 28px; display: inline-flex; align-items: center; gap: calc(var(--logo-h) * 0.38); line-height: 1; text-decoration: none; }
-.logo__mark { height: var(--logo-h); width: calc(var(--logo-h) * 1.25); flex: none; display: block; }
-.logo__word {
-  font-family: var(--font-display); font-weight: 800; letter-spacing: 0.08em;
-  font-size: calc(var(--logo-h) * 0.78); color: var(--text); white-space: nowrap;
-  display: inline-flex; align-items: baseline;
-}
-.logo__x1, .logo__x2 { font-weight: 800; background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
-.logo__x1 { background-image: linear-gradient(135deg, #00D4FF, #2F7BFF); }
-.logo__x2 { background-image: linear-gradient(135deg, #5A3BFF, #8A2BFF); }
-.logo__app { color: var(--text); }
-.logo--light .logo__app, .logo--light .logo__word { color: #10153F; }
-a.logo:hover .logo__word { opacity: 0.9; }
+.logo { display: block; width: auto; height: 48px; object-fit: contain; }
+a:hover > .logo { opacity: 0.92; }

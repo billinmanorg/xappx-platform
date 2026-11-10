@@ -130,7 +130,7 @@ export function BuildPage() {
   return (
     <div className="build">
       <header className="build__top">
-        <a className="build__logo" href="/" aria-label="XAPPX home"><Logo size={24} /></a>
+        <a className="build__logo" href="/" aria-label="XAPPX home"><Logo height={40} /></a>
         <span className="build__step">Step {stepNo} of 5</span>
         <a className="build__exit" href="/">Exit</a>
       </header>
