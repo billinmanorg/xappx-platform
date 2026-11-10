@@ -24,7 +24,7 @@ type App = {
 // out to the live site. (Prototype/concept demos are intentionally NOT here.)
 const APPS: App[] = [
   {
-    name: "XAPPX", cat: "AI Guide · Agents · Tokenization", img: xappxShot, href: "/build", cta: "Open XAPPX ↗",
+    name: "XAPPX", cat: "AI Guide · Agents · Tokenization", img: xappxShot, href: "/solutions", cta: "Open XAPPX ↗",
     desc: "Describe the app you want to a guide named XAPPY and it turns the idea into a build plan — no technical spec required.",
   },
   {

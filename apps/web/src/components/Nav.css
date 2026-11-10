@@ -27,3 +27,4 @@
   .nav__mobile { display: flex; flex-direction: column; gap: 14px; padding: 18px var(--gutter) 24px; background: var(--bg-2); border-bottom: 1px solid var(--border); }
   .nav__mobile a { color: var(--text-dim); }
 }
+.nav__links a[aria-current="page"] { color: var(--text); font-weight: 600; }

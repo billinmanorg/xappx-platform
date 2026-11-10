@@ -8,6 +8,7 @@ import { UseCases } from "./components/UseCases";
 import { Founders } from "./components/Founders";
 import { Footer } from "./components/Footer";
 import { BuildPage } from "./build/BuildPage";
+import { SolutionsPage } from "./solutions/SolutionsPage";
 
 function Home() {
   return (
@@ -33,5 +34,6 @@ export default function App() {
   // (public/_redirects), so the app reads the path and renders the right screen.
   const path = window.location.pathname.replace(/\/+$/, "");
   if (path === "/build") return <BuildPage />;
+  if (path === "/solutions") return <SolutionsPage />;
   return <Home />;
 }
