@@ -24,6 +24,34 @@ function load(): SolutionDiscovery {
   try { const s = sessionStorage.getItem(KEY); if (s) return { ...emptyDiscovery, ...JSON.parse(s) }; } catch { /* ignore */ }
   return emptyDiscovery;
 }
+/**
+ * Everything the page needs to open on the right stage, decided BEFORE the
+ * first render. Flipping the stage in an effect right after mount used to leave
+ * the stage transition stuck on the first panel (the exit never finished), so a
+ * visitor could land on the wrong industry or an empty challenge list.
+ *  - ?industry=<slug> always wins over an earlier visit's session;
+ *  - ?industry=all (or an unknown slug) opens the full picker;
+ *  - no param and no session: the featured industry;
+ *  - a spoken problem from the hero microphone pre-fills the custom box.
+ */
+function initialState(): { d: SolutionDiscovery; stage: Stage; spoken: string } {
+  const stored = load();
+  let spoken = "";
+  try { spoken = sessionStorage.getItem("xappx_voice_problem") ?? ""; } catch { /* ignore */ }
+  const param = new URLSearchParams(window.location.search).get("industry");
+  const bySlug = (slug: string) => svc.getIndustries().find((i) => i.slug === slug);
+  if (param) {
+    const found = bySlug(param);
+    if (!found) return { d: emptyDiscovery, stage: "industry", spoken };
+    if (found.slug !== stored.industry?.slug) return { d: { ...emptyDiscovery, industry: found }, stage: "challenge", spoken };
+    return { d: stored, stage: "challenge", spoken };
+  }
+  if (!stored.industry) {
+    const found = bySlug(FEATURED_INDUSTRY);
+    return found ? { d: { ...emptyDiscovery, industry: found }, stage: "challenge", spoken } : { d: emptyDiscovery, stage: "industry", spoken };
+  }
+  return { d: stored, stage: "challenge", spoken };
+}
 function validText(s: string) {
   const t = s.trim();
   return t.length >= 10 && /[a-zA-Z]/.test(t) && /\s/.test(t) && !/(.)\1{5,}/.test(t);
@@ -31,8 +59,9 @@ function validText(s: string) {
 
 export function BuildPage() {
   const reduce = useReducedMotion();
-  const [d, setD] = useState<SolutionDiscovery>(load);
-  const [stage, setStage] = useState<Stage>(() => (load().industry ? "challenge" : "industry"));
+  const [init] = useState(initialState);
+  const [d, setD] = useState<SolutionDiscovery>(init.d);
+  const [stage, setStage] = useState<Stage>(init.stage);
   const [industries] = useState<Industry[]>(() => svc.getIndustries());
   const [search, setSearch] = useState("");
   const [challenges, setChallenges] = useState<Challenge[] | null>(null);
@@ -40,8 +69,8 @@ export function BuildPage() {
   const [outcomeOpts, setOutcomeOpts] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [custom, setCustom] = useState("");
-  const [customOn, setCustomOn] = useState(false);
+  const [custom, setCustom] = useState(init.spoken);
+  const [customOn, setCustomOn] = useState(Boolean(init.spoken));
   const [proc, setProc] = useState(0);
   const [procLabels, setProcLabels] = useState<readonly string[]>(PROC);
   const [proto, setProto] = useState<PrototypeSpec | null>(null);
@@ -54,34 +83,12 @@ export function BuildPage() {
   useEffect(() => { try { sessionStorage.setItem(KEY, JSON.stringify(d)); } catch { /* ignore */ } }, [d]);
   useEffect(() => { if (stage !== "lead") stageBeforeLead.current = stage; }, [stage]);
 
-  // Focused on Events & Conferences for now: a fresh visitor lands straight in
-  // that industry. A ?industry=slug deep link still wins, and the Industry row
-  // in the context rail lets them switch. (brief §49)
+  // First load: fetch the options for the stage we opened on (the stage itself
+  // was decided in initialState, before the first render).
   useEffect(() => {
     if (started.current) return; started.current = true;
-    // A ?industry= deep link always wins over whatever an earlier visit left in
-    // session storage; "all" (or an unknown slug) opens the full picker.
-    const param = new URLSearchParams(window.location.search).get("industry");
-    if (param) {
-      const found = svc.getIndustries().find((i) => i.slug === param);
-      if (!found) restart();
-      else if (found.slug !== d.industry?.slug) pickIndustry(found);
-      else void run(svc.getChallenges(found.slug), setChallenges);
-    } else if (!d.industry) {
-      const found = svc.getIndustries().find((i) => i.slug === FEATURED_INDUSTRY);
-      if (found) pickIndustry(found);
-    } else {
-      // Restored session: reload the options for the stage it reopens on.
-      void run(svc.getChallenges(d.industry.slug), setChallenges);
-    }
-    // A problem spoken into the hero's microphone arrives here (session storage, not the URL).
-    try {
-      const spoken = sessionStorage.getItem("xappx_voice_problem");
-      if (spoken) {
-        sessionStorage.removeItem("xappx_voice_problem");
-        setCustom(spoken); setCustomOn(true); setStage("challenge");
-      }
-    } catch { /* ignore */ }
+    try { sessionStorage.removeItem("xappx_voice_problem"); } catch { /* ignore */ }
+    if (init.d.industry && init.stage === "challenge") void run(svc.getChallenges(init.d.industry.slug), setChallenges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
