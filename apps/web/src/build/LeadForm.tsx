@@ -16,6 +16,7 @@ export function LeadForm({ d, onBack, onRestart, initialMessage }: { d: Solution
   const [message, setMessage] = useState(initialMessage ?? "");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [emailed, setEmailed] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const valid = name.trim().length >= 2 && emailOk(email) && company.trim().length >= 2;
 
@@ -30,7 +31,7 @@ export function LeadForm({ d, onBack, onRestart, initialMessage }: { d: Solution
     };
     try {
       const r = await svc.submit(payload);
-      if (r.ok) setDone(true); else setErr("Something went wrong. Please try again.");
+      if (r.ok) { setEmailed(r.emailed); setDone(true); } else setErr("Something went wrong. Please try again.");
     } catch { setErr("Something went wrong. Please try again."); }
     finally { setBusy(false); }
   }
@@ -42,6 +43,7 @@ export function LeadForm({ d, onBack, onRestart, initialMessage }: { d: Solution
           <div className="cm__done-badge">✓</div>
           <h1 className="build__q">Thanks, {name.trim().split(" ")[0]}. We've got it.</h1>
           <p className="build__sub">A XAPPX solution expert will reach out about your <b>{d.industry?.label}</b> build. They already have your blueprint, so you won't repeat yourself.</p>
+          {emailed && <p className="build__sub">We've sent a confirmation to <b>{email.trim()}</b>. Reply to it any time; it reaches a person.</p>}
           <button className="btn btn-ghost" onClick={onRestart}>Design another solution</button>
         </div>
       </div>

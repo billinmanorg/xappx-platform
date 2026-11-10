@@ -160,6 +160,7 @@ function ContactSection() {
   const [company, setCompany] = useState("");
   const [message, setMessage] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [emailed, setEmailed] = useState(false);
 
   // A product CTA that points here pre-selects that product.
   useEffect(() => {
@@ -178,6 +179,7 @@ function ContactSection() {
       name: name.trim(), email: email.trim(), company: company.trim(), message: message.trim() || undefined,
       industry: product, challenge: "Solutions page enquiry", stakeholders: [], outcomes: [], submittedAt: Date.now(),
     });
+    setEmailed(res.emailed);
     setState(res.ok ? "sent" : "error");
   }
 
@@ -192,7 +194,7 @@ function ContactSection() {
         {state === "sent" ? (
           <div className="contact__done" role="status">
             <h3>Got it. Thank you.</h3>
-            <p>We'll be in touch about <b>{product}</b> at {email}.</p>
+            <p>We'll be in touch about <b>{product}</b> at {email}.{emailed ? " A confirmation is on its way to your inbox." : ""}</p>
           </div>
         ) : (
           <form className="contact__form" onSubmit={submit}>
