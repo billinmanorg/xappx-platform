@@ -11,6 +11,7 @@ import { prototypeFromSpec } from "./appSpec";
 // so any industry is covered (the AI tailors to whatever it's given).
 const INDUSTRIES: Industry[] = [
   { slug: "events_conferences", label: "Events & Conferences" },
+  { slug: "support_admin", label: "Support & Administration" },
   { slug: "financial_services", label: "Financial Services" },
   { slug: "healthcare", label: "Healthcare" },
   { slug: "retail", label: "Retail" },
