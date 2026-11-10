@@ -59,10 +59,20 @@ export function BuildPage() {
   // in the context rail lets them switch. (brief §49)
   useEffect(() => {
     if (started.current) return; started.current = true;
-    if (!d.industry) {
-      const slug = new URLSearchParams(window.location.search).get("industry") || FEATURED_INDUSTRY;
-      const found = svc.getIndustries().find((i) => i.slug === slug);
+    // A ?industry= deep link always wins over whatever an earlier visit left in
+    // session storage; "all" (or an unknown slug) opens the full picker.
+    const param = new URLSearchParams(window.location.search).get("industry");
+    if (param) {
+      const found = svc.getIndustries().find((i) => i.slug === param);
+      if (!found) restart();
+      else if (found.slug !== d.industry?.slug) pickIndustry(found);
+      else void run(svc.getChallenges(found.slug), setChallenges);
+    } else if (!d.industry) {
+      const found = svc.getIndustries().find((i) => i.slug === FEATURED_INDUSTRY);
       if (found) pickIndustry(found);
+    } else {
+      // Restored session: reload the options for the stage it reopens on.
+      void run(svc.getChallenges(d.industry.slug), setChallenges);
     }
     // A problem spoken into the hero's microphone arrives here (session storage, not the URL).
     try {
