@@ -4,6 +4,12 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  # SMTP_USER holds the public team address (info.xappx@gmail.com), which also
+  # appears in page copy. It is not a secret; without this the secrets scanner
+  # fails every build that mentions the address.
+  SECRETS_SCAN_OMIT_KEYS = "SMTP_USER"
+
 # Server-side discovery proxy (holds ANTHROPIC_API_KEY; never exposed to the browser).
 [functions]
   directory = "netlify/functions"
