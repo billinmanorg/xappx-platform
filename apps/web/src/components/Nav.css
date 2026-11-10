@@ -9,8 +9,7 @@
   border-bottom-color: var(--border);
 }
 .nav__in { display: flex; align-items: center; gap: 24px; height: 68px; }
-.nav__logo { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.28em; font-size: 15px; color: var(--text); }
-.nav__logo span { color: var(--accent); }
+.nav__logo { display: inline-flex; align-items: center; color: var(--text); }
 .nav__links { display: flex; gap: 26px; margin-left: 12px; }
 .nav__links a { color: var(--text-dim); font-size: var(--fs-sm); transition: color var(--dur-micro) var(--ease); }
 .nav__links a:hover { color: var(--text); }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Logo } from "./Logo";
 import "./Nav.css";
 
 const LINKS = [
@@ -22,7 +23,7 @@ export function Nav() {
     <header className={"nav" + (scrolled ? " nav--scrolled" : "")}>
       <div className="container nav__in">
         <a className="nav__logo" href="#top" aria-label="XAPPX home">
-          X<span>APP</span>X
+          <Logo size={30} />
         </a>
         <nav className="nav__links" aria-label="Primary">
           {LINKS.map((l) => (

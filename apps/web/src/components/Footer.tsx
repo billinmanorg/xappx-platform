@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { fadeUp, inView } from "../lib/motion";
+import { Logo } from "./Logo";
 import "./Footer.css";
 
 const SITE = ""; // same-domain deploy — legal pages ship in this app's public/ folder
@@ -24,7 +25,7 @@ export function Footer() {
 
       <footer className="footer">
         <div className="container footer__in">
-          <a className="footer__logo" href="#top">X<span>APP</span>X</a>
+          <a className="footer__logo" href="#top" aria-label="XAPPX home"><Logo size={24} /></a>
           <nav className="footer__links" aria-label="Footer">
             <a href="#how">How it works</a>
             <a href="#industries">Industries</a>

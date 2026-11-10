@@ -8,6 +8,7 @@ import { LeadForm } from "./LeadForm";
 import { buildAppSpec } from "./discoveryService";
 import { CommandCenter } from "../command/CommandCenter";
 import { MicButton } from "../components/MicButton";
+import { Logo } from "../components/Logo";
 import "./BuildPage.css";
 
 type Stage = "industry" | "challenge" | "stakeholders" | "outcomes" | "processing" | "blueprint" | "prototype" | "command" | "lead";
@@ -129,7 +130,7 @@ export function BuildPage() {
   return (
     <div className="build">
       <header className="build__top">
-        <a className="build__logo" href="/">X<span>APP</span>X</a>
+        <a className="build__logo" href="/" aria-label="XAPPX home"><Logo size={24} /></a>
         <span className="build__step">Step {stepNo} of 5</span>
         <a className="build__exit" href="/">Exit</a>
       </header>

@@ -7,8 +7,7 @@
 
 .footer { border-top: 1px solid var(--border); background: var(--bg-2); }
 .footer__in { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding-block: 28px; }
-.footer__logo { font-family: var(--font-mono); letter-spacing: 0.28em; font-size: 14px; }
-.footer__logo span { color: var(--accent); }
+.footer__logo { display: inline-flex; align-items: center; }
 .footer__links { display: flex; gap: 20px; flex-wrap: wrap; }
 .footer__links a { color: var(--text-dim); font-size: var(--fs-sm); }
 .footer__links a:hover { color: var(--text); }

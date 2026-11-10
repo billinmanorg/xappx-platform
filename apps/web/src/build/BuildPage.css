@@ -1,7 +1,6 @@
 .build { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
 .build__top { display: flex; align-items: center; gap: 16px; padding: 16px var(--gutter); border-bottom: 1px solid var(--border); }
-.build__logo { font-family: var(--font-mono); letter-spacing: 0.28em; font-size: 14px; }
-.build__logo span { color: var(--accent); }
+.build__logo { display: inline-flex; align-items: center; }
 .build__step { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 0.08em; }
 .build__exit { color: var(--text-dim); font-size: var(--fs-sm); }
 .build__exit:hover { color: var(--text); }
