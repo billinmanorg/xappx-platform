@@ -11,7 +11,8 @@
     "build": "tsc && vite build",
     "build:preview": "vite build --mode preview",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:data-licensing": "node scripts/test-data-licensing.mjs"
   },
   "dependencies": {
     "express": "^4.21.2",
