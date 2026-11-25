@@ -1,7 +1,10 @@
 // XAPPX-owned intake endpoint for /data-licensing.
 //
-// Durable store: Netlify Forms (form "xappx-data-licensing", visible only to
-// people signed in to the XAPPX Netlify account). Internal notice: a short
+// Durable store: the full record is written to Netlify Blobs (site storage,
+// reachable only through this site's functions / the Netlify account) under
+// its record ID, then copied to Netlify Forms (form "xappx-data-licensing") as
+// the human-readable view. Netlify's spam filter can hide a Forms copy under
+// the Spam tab; the Blobs copy is unaffected. Internal notice: a short
 // email to the team inbox carrying the record ID and a private link to the
 // form, NOT the full submission. Nothing is forwarded anywhere else.
 //
@@ -86,6 +89,11 @@ async function remember(submissionId, recordId) {
   try { await store.setJSON(submissionId, { recordId, at: new Date().toISOString() }); } catch { /* best effort */ }
 }
 
+async function storeRecord(record, recordId) {
+  const store = getStore({ name: "data-licensing-records", consistency: "strong" });
+  await store.setJSON(recordId, { recordId, receivedAt: new Date().toISOString(), ...record });
+}
+
 async function storeInNetlifyForms(record, recordId) {
   const site = (process.env.URL || "").replace(/\/+$/, "");
   if (!site) throw new Error("site_url_missing");
@@ -120,10 +128,16 @@ export default async (req) => {
 
   const recordId = newRecordId();
   try {
-    await storeInNetlifyForms(v.record, recordId);
+    await storeRecord(v.record, recordId);
   } catch (e) {
     console.log(`data-licensing: store failed (${clean(e?.message, 40)}) submission=${v.record.submissionId}`);
     return json({ ok: false, error: "store_failed", retry: true }, 502);
+  }
+  try {
+    await storeInNetlifyForms(v.record, recordId);
+  } catch (e) {
+    // The record is already durable in site storage; the Forms copy is a convenience.
+    console.log(`data-licensing: forms copy failed (${clean(e?.message, 40)}) record=${recordId}`);
   }
 
   // Internal notice: record ID + private link, not the form contents.
@@ -144,7 +158,8 @@ export default async (req) => {
         `Systems listed: ${v.systemCount}${v.record.needHelpIdentifying === "yes" ? " (asked for help identifying)" : ""}`,
         `Notice version: ${v.record.noticeVersion}`,
         "",
-        `Full record (Netlify sign-in required): ${FORMS_LINK}`,
+        `Full record (Netlify sign-in required): ${FORMS_LINK}  (check the Spam tab if it is not listed)`,
+        `Also kept in site storage under the record ID.`,
         "XAPPX reviews first. No onward sharing without separate approval.",
       ].join("\n"),
     });
