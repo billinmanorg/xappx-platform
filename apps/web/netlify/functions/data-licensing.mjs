@@ -9,11 +9,14 @@
 //   - server-side validation; required = company, contact name, valid work
 //     email, authority, privacy acknowledgement, US domicile;
 //   - a non-enumerable record ID (random), never a counter;
-//   - a client-generated submissionId travels with the record so a retried
-//     submission can be recognised as a duplicate by the team;
+//   - a client-generated submissionId travels with the record; a retry with
+//     the same id returns the original record ID instead of storing twice
+//     (seen ids are kept in Netlify Blobs; if Blobs is unavailable the retry
+//     is still stored and the id lets the team spot it);
 //   - a receipt (200 + recordId) only after the store accepted the record;
 //   - no field values in logs.
 import { randomBytes } from "node:crypto";
+import { getStore } from "@netlify/blobs";
 import { send } from "./notify.mjs";
 
 const FORM_NAME = "xappx-data-licensing";
@@ -68,6 +71,21 @@ export function validate(body) {
   return { ok: Object.keys(errors).length === 0, errors, record: r, systemCount: Array.isArray(systems) ? systems.length : 0 };
 }
 
+/** Retry memory: submissionId -> recordId. Best effort; never blocks a submission. */
+function seenStore() {
+  try { return getStore({ name: "data-licensing-submissions", consistency: "strong" }); } catch { return null; }
+}
+async function alreadyStored(submissionId) {
+  const store = seenStore();
+  if (!store) return null;
+  try { return (await store.get(submissionId, { type: "json" }))?.recordId ?? null; } catch { return null; }
+}
+async function remember(submissionId, recordId) {
+  const store = seenStore();
+  if (!store) return;
+  try { await store.setJSON(submissionId, { recordId, at: new Date().toISOString() }); } catch { /* best effort */ }
+}
+
 async function storeInNetlifyForms(record, recordId) {
   const site = (process.env.URL || "").replace(/\/+$/, "");
   if (!site) throw new Error("site_url_missing");
@@ -93,6 +111,12 @@ export default async (req) => {
 
   const v = validate(body);
   if (!v.ok) return json({ ok: false, error: "invalid", fields: Object.keys(v.errors), retry: false }, 400);
+
+  const previous = await alreadyStored(v.record.submissionId);
+  if (previous) {
+    console.log(`data-licensing: duplicate submission=${v.record.submissionId} -> ${previous}`);
+    return json({ ok: true, recordId: previous, duplicate: true });
+  }
 
   const recordId = newRecordId();
   try {
@@ -128,6 +152,7 @@ export default async (req) => {
     console.log(`data-licensing: notice failed (${clean(e?.message, 40)}) record=${recordId}`);
   }
 
+  await remember(v.record.submissionId, recordId);
   console.log(`data-licensing: stored record=${recordId} submission=${v.record.submissionId}`);
   return json({ ok: true, recordId });
 };
