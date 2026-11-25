@@ -1,4 +1,4 @@
-import { useMemo, useState, type RefObject } from "react";
+import { useMemo, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { Area, Checks, Field, Radios, Select, Text } from "./fields";
 import {
   SYSTEMS, DATA_TYPES, COUNT_UNITS, COVERAGE, OWNERSHIP_TYPES, DECISION_ROLES, RIGHTS_KNOWN, RESTRICTIONS, RETENTION,
@@ -9,13 +9,15 @@ import { looksPersonalEmail, newSystem, unknownFields, validateStep1, validateSt
 
 /** 04 Intake: company & systems → per-system details → review & submit. */
 export function IntakeForm({ intake, setIntake, step, setStep, onSubmit, sending, sendError, receipt, onBack, headingRef }: {
-  intake: Model; setIntake: (i: Model) => void; step: 1 | 2 | 3; setStep: (s: 1 | 2 | 3) => void;
+  intake: Model; setIntake: Dispatch<SetStateAction<Model>>; step: 1 | 2 | 3; setStep: (s: 1 | 2 | 3) => void;
   onSubmit: () => Promise<Record<string, string>>; sending: boolean; sendError: string | null; receipt: { recordId: string } | null;
   onBack: () => void; headingRef: RefObject<HTMLHeadingElement>;
 }) {
   const [tried, setTried] = useState<Record<number, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const set = <K extends keyof Model>(k: K, v: Model[K]) => setIntake({ ...intake, [k]: v });
+  // Functional updates: rapid events (browser autofill fills many fields in one
+  // tick) must never overwrite each other.
+  const set = <K extends keyof Model>(k: K, v: Model[K]) => setIntake((prev) => ({ ...prev, [k]: v }));
   const err = (k: string) => (tried[step] ? errors[k] : undefined);
 
   function next() {
@@ -87,18 +89,18 @@ export function IntakeForm({ intake, setIntake, step, setStep, onSubmit, sending
   );
 }
 
-function Step1({ intake: i, set, err, setIntake }: { intake: Model; set: <K extends keyof Model>(k: K, v: Model[K]) => void; err: (k: string) => string | undefined; setIntake: (i: Model) => void }) {
+function Step1({ intake: i, set, err, setIntake }: { intake: Model; set: <K extends keyof Model>(k: K, v: Model[K]) => void; err: (k: string) => string | undefined; setIntake: Dispatch<SetStateAction<Model>> }) {
   const [search, setSearch] = useState("");
   const [custom, setCustom] = useState("");
   const selected = new Set(i.systems.map((s) => s.id));
   const results = useMemo(() => SYSTEMS.filter((s) => s.label.toLowerCase().includes(search.trim().toLowerCase())), [search]);
   const toggle = (sys: { id: string; label: string }) => {
-    setIntake({ ...i, systems: selected.has(sys.id) ? i.systems.filter((s) => s.id !== sys.id) : [...i.systems, newSystem(sys.label, false, sys.id)] });
+    setIntake((prev) => ({ ...prev, systems: prev.systems.some((s) => s.id === sys.id) ? prev.systems.filter((s) => s.id !== sys.id) : [...prev.systems, newSystem(sys.label, false, sys.id)] }));
   };
   const addCustom = () => {
     const label = custom.trim();
     if (label.length < 2) return;
-    setIntake({ ...i, systems: [...i.systems, newSystem(label, true)] });
+    setIntake((prev) => ({ ...prev, systems: [...prev.systems, newSystem(label, true)] }));
     setCustom("");
   };
   const today = new Date().toISOString().slice(0, 10);
@@ -242,7 +244,7 @@ function Step1({ intake: i, set, err, setIntake }: { intake: Model; set: <K exte
       </div>
       {i.systems.length > 0 && (
         <ul className="dl-selected">
-          {i.systems.map((s) => <li key={s.id}>{s.label}{s.custom && <em> (custom)</em>} <button type="button" aria-label={`Remove ${s.label}`} onClick={() => setIntake({ ...i, systems: i.systems.filter((x) => x.id !== s.id) })}>×</button></li>)}
+          {i.systems.map((s) => <li key={s.id}>{s.label}{s.custom && <em> (custom)</em>} <button type="button" aria-label={`Remove ${s.label}`} onClick={() => setIntake((prev) => ({ ...prev, systems: prev.systems.filter((x) => x.id !== s.id) }))}>×</button></li>)}
         </ul>
       )}
       <label className="dl-check">
@@ -253,8 +255,8 @@ function Step1({ intake: i, set, err, setIntake }: { intake: Model; set: <K exte
   );
 }
 
-function Step2({ intake: i, setIntake, err }: { intake: Model; setIntake: (i: Model) => void; err: (k: string) => string | undefined }) {
-  const update = (id: string, patch: Partial<SystemDetail>) => setIntake({ ...i, systems: i.systems.map((s) => (s.id === id ? { ...s, ...patch } : s)) });
+function Step2({ intake: i, setIntake, err }: { intake: Model; setIntake: Dispatch<SetStateAction<Model>>; err: (k: string) => string | undefined }) {
+  const update = (id: string, patch: Partial<SystemDetail>) => setIntake((prev) => ({ ...prev, systems: prev.systems.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
   if (!i.systems.length) {
     return <p className="dl-notice">You asked for help identifying systems, so there is nothing to detail here yet. Continue to review.</p>;
   }
