@@ -77,3 +77,20 @@ export function ConsultingMock() {
     </div>
   );
 }
+
+/** Data Licensing: the estimator card as it reads before the rules are approved. */
+export function DataLicensingMock() {
+  return (
+    <div className="mock dlm" aria-label="Data licensing, how it works">
+      <div className="dlm__head"><span className="media__tag">Illustrative estimate</span><span>US businesses · nonbinding</span></div>
+      <div className="dlm__rows">
+        {[["Industry", "Real Estate"], ["Desk employees", "40"], ["Years of records", "12"]].map(([k, v]) => <div key={k} className="dlm__row"><span>{k}</span><b>{v}</b></div>)}
+      </div>
+      <div className="dlm__result"><span>Illustrative range</span><b>Shown once the estimate rules are approved</b></div>
+      <ul className="dlm__list">
+        <li>Keep your originals</li><li>Agree what is shared</li><li>Review any proposal first</li>
+      </ul>
+      <p className="mock__note">No files, logins or payments at this stage.</p>
+    </div>
+  );
+}

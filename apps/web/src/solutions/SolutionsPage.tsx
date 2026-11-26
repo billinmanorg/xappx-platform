@@ -6,7 +6,8 @@ import { Footer } from "../components/Footer";
 import { HeroWorkflowDemo } from "../components/HeroWorkflowDemo";
 import { MicButton } from "../components/MicButton";
 import { getLeadService } from "../build/leadService";
-import { TwinChatMock, MediaMock, ConsultingMock } from "./mocks";
+import { TwinChatMock, MediaMock, ConsultingMock, DataLicensingMock } from "./mocks";
+import { dataLicensingHref } from "../lib/routes";
 import "./SolutionsPage.css";
 
 /**
@@ -14,7 +15,7 @@ import "./SolutionsPage.css";
  * Four products, each explained by XAPPY, with one contact form at the end.
  * The guided app-building flow (/build) is reached from the first product only.
  */
-type ProductId = "apps" | "twins" | "media" | "consulting";
+type ProductId = "apps" | "twins" | "media" | "consulting" | "data";
 
 interface Product {
   id: ProductId;
@@ -55,7 +56,7 @@ const PRODUCTS: Product[] = [
     cta: { label: "Talk to us about Twin Chat", href: "#contact" },
   },
   {
-    id: "media", num: "03", name: "AI Media",
+    id: "media", num: "03", name: "Twin Media",
     title: "Videos and podcasts, made for you every day.",
     body: "Our media team and XAPPY's agents produce the content that keeps your business visible: explainer and promo videos, an AI version of you on camera, and a daily local podcast in your own voice.",
     points: [
@@ -65,7 +66,7 @@ const PRODUCTS: Product[] = [
       "Everything delivered into your Vault",
     ],
     xappy: "Say the word and tomorrow morning there's a seven-minute podcast about your market, in your voice, already posted.",
-    cta: { label: "Request media", href: "#contact" },
+    cta: { label: "See Twin Media", href: "/twin-media" },
   },
   {
     id: "consulting", num: "04", name: "Consulting",
@@ -78,6 +79,18 @@ const PRODUCTS: Product[] = [
     ],
     xappy: "Bring the messy version. We'll leave with a plan and a first build.",
     cta: { label: "Book a conversation", href: "#contact" },
+  },
+  {
+    id: "data", num: "05", name: "Data Licensing",
+    title: "Your business already creates data AI can learn from.",
+    body: "Historical business records show how real teams communicate, make decisions and serve customers. XAPPX helps US businesses explore whether a qualifying copy of those records could be licensed. You keep your originals, you agree what is shared before anything moves, and you review any proposal before deciding.",
+    points: [
+      "Five questions to check initial fit; no files, logins or commitment",
+      "An illustrative estimate, then a short description of your systems",
+      "XAPPX reviews every inquiry first; nothing is shared onward without separate approval",
+    ],
+    xappy: "You describe what records exist. Nothing is uploaded. If there's a fit, you see the terms before you decide anything.",
+    cta: { label: "See what my data could be worth", href: dataLicensingHref() ?? "#contact" },
   },
 ];
 
@@ -132,7 +145,9 @@ export function SolutionsPage() {
                   <figcaption><span className="xappy__who">XAPPY explains</span><p>{p.xappy}</p></figcaption>
                 </motion.figure>
                 <motion.div className="prod__cta" variants={fadeUp}>
-                  <a className="btn btn-primary" href={p.cta.href} data-product={p.name}>{p.cta.label} →</a>
+                  {p.id === "data" && !dataLicensingHref()
+                  ? <><button className="btn btn-primary" type="button" disabled aria-disabled="true">Opening soon</button><a className="btn btn-ghost" href="#contact" data-product={p.name}>Ask a question first</a></>
+                  : <a className="btn btn-primary" href={p.cta.href} data-product={p.name}>{p.cta.label} →</a>}
                   {p.id === "apps" && <MicButton size="lg" label="Or tell XAPPY what isn't working" onText={startFromVoice} />}
                 </motion.div>
               </motion.div>
@@ -141,6 +156,7 @@ export function SolutionsPage() {
                 {p.id === "twins" && <TwinChatMock />}
                 {p.id === "media" && <MediaMock />}
                 {p.id === "consulting" && <ConsultingMock />}
+                {p.id === "data" && <DataLicensingMock />}
               </motion.div>
             </div>
           </section>
@@ -153,8 +169,8 @@ export function SolutionsPage() {
   );
 }
 
-function ContactSection() {
-  const [product, setProduct] = useState<string>(PRODUCTS[1]!.name);
+export function ContactSection({ defaultProduct }: { defaultProduct?: string } = {}) {
+  const [product, setProduct] = useState<string>(defaultProduct ?? PRODUCTS[1]!.name);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");

@@ -99,3 +99,14 @@
 .contact__done h3 { margin: 0 0 8px; }
 .contact__done p { margin: 0; color: var(--text-dim); }
 @media (max-width: 820px) { .contact__in { grid-template-columns: 1fr; } .contact__row { grid-template-columns: 1fr; } }
+
+/* Data Licensing mock */
+.dlm { padding: 16px 0 0; }
+.dlm__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 16px 12px; font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); }
+.dlm__rows { display: flex; flex-direction: column; }
+.dlm__row { display: flex; justify-content: space-between; padding: 9px 16px; border-top: 1px solid var(--border); font-size: var(--fs-xs); color: var(--text-dim); }
+.dlm__row b { color: var(--text); }
+.dlm__result { display: flex; flex-direction: column; gap: 2px; margin: 12px 16px; padding: 12px 14px; border-radius: var(--r-md); background: var(--bg-2); border: 1px solid var(--border); }
+.dlm__result span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); }
+.dlm__result b { color: var(--text); font-size: var(--fs-sm); }
+.dlm__list { margin: 0 16px 14px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-xs); color: var(--text); }

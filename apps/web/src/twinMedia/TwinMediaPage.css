@@ -1,0 +1,27 @@
+/* /twin-media (shares .prod, .xappy and .contact styles from SolutionsPage.css) */
+.tm__hero { position: relative; overflow: hidden; padding-block: clamp(40px, 6vw, 84px) clamp(32px, 5vw, 64px); }
+.tm__hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 50% at 15% 0%, rgba(0, 194, 255, 0.10), transparent 60%); }
+.tm__hero-in { position: relative; display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(28px, 5vw, 64px); align-items: center; }
+.tm__title { font-size: var(--fs-h1); margin: 16px 0 18px; max-width: 18ch; }
+.tm__title span { color: var(--accent); }
+.tm__lede { max-width: 50ch; }
+.tm__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.tm__visual { min-width: 0; }
+@media (max-width: 900px) { .tm__hero-in { grid-template-columns: 1fr; } }
+
+.tm__what h2, .tm__how h2 { font-size: var(--fs-h2); margin-top: 14px; }
+.tm__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 28px; }
+.tm__card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+.tm__card-n { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--accent); }
+.tm__card h3 { font-size: var(--fs-h3); margin: 0; }
+.tm__card p { margin: 0; color: var(--text-dim); font-size: var(--fs-sm); line-height: 1.5; }
+.tm__card ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-xs); color: var(--text); }
+.tm__card--small { padding: 18px; }
+@media (max-width: 900px) { .tm__grid { grid-template-columns: 1fr; } }
+
+.tm__how { background: var(--bg-2); border-block: 1px solid var(--border); }
+.tm__how-in { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
+.tm__steps { margin: 22px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 12px; font-size: var(--fs-sm); color: var(--text-dim); line-height: 1.55; }
+.tm__steps b { color: var(--text); }
+.tm__xappy { margin: 0; }
+@media (max-width: 900px) { .tm__how-in { grid-template-columns: 1fr; } }

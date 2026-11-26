@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { fadeUp, inView } from "../lib/motion";
 import { Logo } from "./Logo";
+import { dataLicensingHref } from "../lib/routes";
 import "./Footer.css";
 
 const SITE = ""; // same-domain deploy — legal pages ship in this app's public/ folder
@@ -28,6 +29,8 @@ export function Footer() {
           <a className="footer__logo" href="/" aria-label="XAPPX home"><Logo height={56} /></a>
           <nav className="footer__links" aria-label="Footer">
             <a href="/solutions">Solutions</a>
+            <a href="/twin-media">Twin Media</a>
+            {dataLicensingHref() && <a href={dataLicensingHref()!}>Data Licensing</a>}
             <a href="/#how">How it works</a>
             <a href="/#industries">Industries</a>
             <a href="/#why">Why XAPPX</a>

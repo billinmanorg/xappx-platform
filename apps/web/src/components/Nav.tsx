@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
+import { dataLicensingHref } from "../lib/routes";
 import "./Nav.css";
 
 const LINKS = [
@@ -7,6 +8,8 @@ const LINKS = [
   { label: "Industries", href: "/#industries" },
   { label: "Why XAPPX", href: "/#why" },
   { label: "Solutions", href: "/solutions" },
+  { label: "Twin Media", href: "/twin-media" },
+  ...(dataLicensingHref() ? [{ label: "Data Licensing", href: dataLicensingHref()! }] : []),
 ];
 const here = typeof window !== "undefined" ? window.location.pathname.replace(/\/+$/, "") : "";
 
