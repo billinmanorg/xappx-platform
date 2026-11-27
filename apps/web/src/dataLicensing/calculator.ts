@@ -9,9 +9,9 @@
  * `npm run test:data-licensing` (fixtures below must match), and ship.
  */
 
-export type HomeIndustry = "legal" | "real_estate" | "finance" | "small_business" | "other";
+export type HomeIndustry = "legal" | "real_estate" | "finance" | "accounting" | "medical" | "small_business" | "nonprofit" | "marketing" | "consulting" | "tech" | "construction" | "other";
 /** The qualifier's industry list differs from the home estimator's. */
-export type QualifyIndustry = "legal" | "real_estate" | "medical_accounting_finance" | "small_business" | "other";
+export type QualifyIndustry = "legal" | "real_estate" | "medical_accounting_finance" | "small_business" | "nonprofit" | "marketing" | "consulting" | "tech" | "construction" | "other";
 
 export interface EstimateInputs {
   industry: HomeIndustry;
@@ -52,19 +52,33 @@ export const QUALIFY_LIMITS = {
   years: { min: 0, max: 200 },
 } as const;
 
+/** Home estimator industries, matching the live reference as of 2026-11-28. */
 export const HOME_INDUSTRIES: { id: HomeIndustry; label: string }[] = [
   { id: "legal", label: "Legal" },
   { id: "real_estate", label: "Real Estate" },
   { id: "finance", label: "Finance" },
-  { id: "small_business", label: "Small Business" },
+  { id: "accounting", label: "Accounting" },
+  { id: "medical", label: "Medical" },
+  { id: "small_business", label: "Small Biz" },
+  { id: "nonprofit", label: "Nonprofit" },
+  { id: "marketing", label: "Marketing" },
+  { id: "consulting", label: "Consulting" },
+  { id: "tech", label: "Tech / SaaS" },
+  { id: "construction", label: "Construction" },
   { id: "other", label: "Other" },
 ];
 
+/** Qualifier industries (the reference's list) and the home industry each carries forward to. */
 export const QUALIFY_INDUSTRIES: { id: QualifyIndustry; label: string; home: HomeIndustry }[] = [
   { id: "legal", label: "Legal", home: "legal" },
   { id: "real_estate", label: "Real Estate", home: "real_estate" },
-  { id: "medical_accounting_finance", label: "Medical, Accounting & Finance", home: "finance" },
+  { id: "medical_accounting_finance", label: "Medical, accounting & finance", home: "finance" },
   { id: "small_business", label: "Small Business", home: "small_business" },
+  { id: "nonprofit", label: "Nonprofit organization", home: "nonprofit" },
+  { id: "marketing", label: "Marketing / creative agency", home: "marketing" },
+  { id: "consulting", label: "Consulting firm", home: "consulting" },
+  { id: "tech", label: "Tech / SaaS", home: "tech" },
+  { id: "construction", label: "Construction / trades", home: "construction" },
   { id: "other", label: "Other", home: "other" },
 ];
 
